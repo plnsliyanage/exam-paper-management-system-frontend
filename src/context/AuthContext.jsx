@@ -6,6 +6,26 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem("token"));
 
+  const getRole = () => {
+    if (!token) return null;
+    try {
+      const decoded = jwtDecode(token);
+      return decoded.role;
+    } catch {
+      return null;
+    }
+  };
+
+  const getUsername = () => {
+    if (!token) return null;
+    try {
+      const decoded = jwtDecode(token);
+      return decoded.sub;
+    } catch {
+      return null;
+    }
+  }
+
   const login = async (username, password) => {
     const response = await axiosInstance.post("/auth/login", {
       username,
