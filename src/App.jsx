@@ -14,24 +14,24 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
       <Route
-        path="/"
         element={
           <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
         }
-      > 
-      <Route path="dashboard" element={<div className="text-xl font-semibold">Dashboard</div>} />
-        <Route path="packets" element={<div className="text-xl font-semibold">Packets</div>} />
-        <Route path="workflow" element={<div className="text-xl font-semibold">Workflow</div>} />
-        <Route path="reports" element={<div className="text-xl font-semibold">Reports</div>} />
-        <Route path="notifications" element={<div className="text-xl font-semibold">Notifications</div>} />
-        <Route path="users" element={<div className="text-xl font-semibold">User Management</div>} />
-        <Route path="settings" element={<div className="text-xl font-semibold">Settings</div>} />
-        <Route index element={<Navigate to="dashboard" />} />
-
+      >
+        <Route path="/dashboard" element={<div className="text-xl font-semibold">Dashboard</div>} />
+        <Route path="/packets" element={<div className="text-xl font-semibold">Packets</div>} />
+        <Route path="/workflow" element={<div className="text-xl font-semibold">Workflow</div>} />
+        <Route path="/reports" element={<div className="text-xl font-semibold">Reports</div>} />
+        <Route path="/notifications" element={<div className="text-xl font-semibold">Notifications</div>} />
+        <Route path="/users" element={<div className="text-xl font-semibold">User Management</div>} />
+        <Route path="/settings" element={<div className="text-xl font-semibold">Settings</div>} />
       </Route>
+
+      <Route path="/" element={<Navigate to="/dashboard" />} />
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );

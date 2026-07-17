@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import { jwtDecode } from "jwt-decode";  // ← add this
 import axiosInstance from "../api/axiosInstance";
 
 const AuthContext = createContext();
@@ -24,7 +25,7 @@ export function AuthProvider({ children }) {
     } catch {
       return null;
     }
-  }
+  };
 
   const login = async (username, password) => {
     const response = await axiosInstance.post("/auth/login", {
@@ -49,9 +50,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await axiosInstance.post("/auth/logout");
-    } catch (err) {
-      // even if it fails server-side, clear local state
-    }
+    } catch (err) {}
     localStorage.removeItem("token");
     setToken(null);
   };
