@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardLayout from "./components/DashboardLayout";
+import "./index.css";
+import ARDashboard from "./pages/AR/Dashboard";
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -22,7 +24,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/dashboard" element={<div className="text-xl font-semibold">Dashboard</div>} />
+        <Route path="/dashboard" element={<ARDashboard />} />
         <Route path="/packets" element={<div className="text-xl font-semibold">Packets</div>} />
         <Route path="/workflow" element={<div className="text-xl font-semibold">Workflow</div>} />
         <Route path="/reports" element={<div className="text-xl font-semibold">Reports</div>} />
