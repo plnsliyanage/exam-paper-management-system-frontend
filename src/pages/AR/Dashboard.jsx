@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 const summaryCards = [
   {
@@ -98,6 +99,7 @@ export default function Dashboard() {
     { name: "Under Moderation", value: summary.underModeration },
     { name: "Delayed", value: summary.delayed },
   ];
+  const { submissionTrend, recentActivity } = res.data;
 try {
   return (
 
@@ -229,6 +231,48 @@ try {
             ))}
           </div>
         </div>
+
+// Add this section below the charts row
+        <div className="grid grid-cols-2 gap-4">
+
+  {/* Submission Trend */}
+  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div className="flex items-center gap-2 mb-6">
+      <span className="text-[#7c4dff]">↗</span>
+      <h2 className="font-semibold text-gray-800">Submission Trend</h2>
+    </div>
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={submissionTrend}>
+        <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+        <Tooltip contentStyle={{ borderRadius: "10px", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.1)", fontSize: "13px" }} />
+        <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2.5} dot={{ fill: "#3b82f6", r: 4 }} />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* Recent Activity */}
+  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="font-semibold text-gray-800">Recent Activity</h2>
+      <button className="text-sm text-[#7c4dff] hover:underline">View all →</button>
+    </div>
+    <div className="space-y-4">
+      {recentActivity?.map((item, index) => (
+        <div key={index} className="flex items-start gap-3">
+          <div className={`w-8 h-8 rounded-full ${item.actorColor} flex items-center justify-center text-white text-xs font-semibold shrink-0`}>
+            {item.actorInitials}
+          </div>
+          <div>
+            <p className="text-sm text-gray-700">{item.message}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{item.timeAgo}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+</div>
 
       </div>
     </div>
