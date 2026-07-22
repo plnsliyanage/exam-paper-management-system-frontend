@@ -145,3 +145,17 @@ export const getPacketDetails = async (
   return response.data;
 
 };
+export const updatePacketStatus = async (
+  packetId,
+  status
+) => {
+
+  const response = await API.patch(
+    `/packets/${packetId}/status`,
+    {
+      statusName: status
+    }
+  );
+
+  return response.data;
+};
