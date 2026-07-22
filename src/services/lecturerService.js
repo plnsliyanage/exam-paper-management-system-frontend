@@ -159,3 +159,43 @@ export const updatePacketStatus = async (
 
   return response.data;
 };
+
+export const addScriptCount = async(
+    packetId,
+    lecturerId,
+    scriptCount
+)=>{
+
+
+const response = await API.post(
+
+`/markings/${packetId}?lecturerId=${lecturerId}`,
+
+{
+    scriptCount:Number(scriptCount)
+}
+
+);
+
+
+return response.data;
+
+
+};
+
+
+
+export const getMarking = async(packetId)=>{
+
+
+const response = await API.get(
+
+`/markings/${packetId}`
+
+);
+
+
+return response.data;
+
+
+};
