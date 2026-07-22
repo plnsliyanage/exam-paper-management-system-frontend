@@ -1,25 +1,128 @@
 import axios from "axios";
 
+
 const API = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
+
+// Dashboard
 export const getDashboard = async (lecturerId) => {
+
   const response = await API.get("/packets/dashboard", {
-    params: {
-      lecturerId,
-    },
+    params:{
+      lecturerId
+    }
   });
 
   return response.data;
 };
 
-export const getAssignedPackets = async (lecturerId) => {
-  const response = await API.get("/packets/dashboard/current", {
-    params: {
-      lecturerId,
-    },
-  });
+
+
+// Current semester assigned packets
+export const getAssignedPackets = async (lecturerId)=>{
+
+  const response = await API.get(
+    "/packets/dashboard/current",
+    {
+      params:{
+        lecturerId
+      }
+    }
+  );
 
   return response.data;
+};
+
+
+
+// Search by course code
+export const searchByCourseCode = async(
+  lecturerId,
+  courseCode
+)=>{
+
+ const response = await API.get(
+   "/packets/search/course-code",
+   {
+    params:{
+      lecturerId,
+      courseCode
+    }
+   }
+ );
+
+ return response.data;
+
+};
+
+
+
+// Search by course name
+export const searchByCourseName = async(
+ lecturerId,
+ courseName
+)=>{
+
+ const response = await API.get(
+   "/packets/search/course-name",
+   {
+    params:{
+      lecturerId,
+      courseName
+    }
+   }
+ );
+
+ return response.data;
+
+};
+
+
+
+// Filter by status
+export const filterByStatus = async(
+ lecturerId,
+ status
+)=>{
+
+
+const response = await API.get(
+ "/packets/filter/status",
+ {
+  params:{
+    lecturerId,
+    status
+  }
+ }
+);
+
+
+return response.data;
+
+};
+
+
+
+// Filter by deadline
+export const filterByDeadline = async(
+ lecturerId,
+ deadline
+)=>{
+
+
+const response = await API.get(
+ "/packets/filter/deadline",
+ {
+  params:{
+    lecturerId,
+    deadline
+  }
+ }
+);
+
+
+return response.data;
+
 };
