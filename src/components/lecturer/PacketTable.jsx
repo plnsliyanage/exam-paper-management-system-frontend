@@ -18,6 +18,7 @@ const PacketTable = ({ packets }) => {
             <th className="px-4 py-3 text-left">Department</th>
             <th className="px-4 py-3 text-left">Deadline</th>
             <th className="px-4 py-3 text-left">Status</th>
+            <th className="px-4 py-3 text-left">Action</th>
           </tr>
         </thead>
 
@@ -35,6 +36,15 @@ const PacketTable = ({ packets }) => {
               <td className="px-4 py-3">{packet.deadline}</td>
 
               <td className="px-4 py-3">{packet.status}</td>
+
+              <td className="px-4 py-3">
+                <a
+                  href={`/lecturer/packets/${packet.packetId}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  View
+                </a>
+              </td>
             </tr>
           ))}
         </tbody>

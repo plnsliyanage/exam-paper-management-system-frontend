@@ -126,3 +126,22 @@ const response = await API.get(
 return response.data;
 
 };
+
+export const getPacketDetails = async (
+  packetId,
+  lecturerId
+) => {
+
+  const response = await API.get(
+    `/packets/${packetId}/my`,
+    {
+      params:{
+        lecturerId
+      }
+    }
+  );
+
+
+  return response.data;
+
+};
