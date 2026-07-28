@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import DashboardLayout from "./components/DashboardLayout";
 import "./index.css";
 import ARDashboard from "./pages/AR/Dashboard";
+import Packets from "./pages/Packets";
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -16,6 +17,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      
 
       <Route
         element={
@@ -25,6 +27,7 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<ARDashboard />} />
+        <Route path="/packets" element={<Packets />} />
         <Route path="/packets" element={<div className="text-xl font-semibold">Packets</div>} />
         <Route path="/workflow" element={<div className="text-xl font-semibold">Workflow</div>} />
         <Route path="/reports" element={<div className="text-xl font-semibold">Reports</div>} />
