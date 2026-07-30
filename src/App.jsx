@@ -1,7 +1,9 @@
-export default function App() {
+function App() {
   return (
-    <div className="text-center mt-10 text-gray-500 text-sm">
-      <p>Faculty of Science – Exam Paper Packet Tracking System</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <h1 className="text-4xl font-bold text-blue-600">Lecturer Frontend</h1>
     </div>
   );
 }
+
+export default App;
