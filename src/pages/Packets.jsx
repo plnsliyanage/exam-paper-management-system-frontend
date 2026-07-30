@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { useNavigate } from "react-router-dom";
 
 const statusColors = {
   PENDING: "bg-blue-100 text-blue-700",
@@ -34,6 +35,7 @@ export default function Packets() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPackets = async () => {
@@ -62,7 +64,7 @@ export default function Packets() {
           p.packetId.toLowerCase().includes(q) ||
           p.courseCode.toLowerCase().includes(q) ||
           p.courseName.toLowerCase().includes(q) ||
-          p.lecturerName.toLowerCase().includes(q)
+          p.lecturerName.toLowerCase().includes(q),
       );
     }
     setFiltered(result);
@@ -70,14 +72,25 @@ export default function Packets() {
 
   const statusTabs = [
     "ALL", "DRAFT", "PENDING", "UNDER_MODERATION",
-    "APPROVED", "PRINTING_QUEUE", "COMPLETED", "DELAYED"
+    "APPROVED", "PRINTING_QUEUE", "COMPLETED", "DELAYED",
   ];
 
   const countFor = (s) =>
     s === "ALL" ? packets.length : packets.filter((p) => p.status === s).length;
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-gray-400 text-sm">Loading packets...</div>;
-  if (error) return <div className="flex items-center justify-center h-64 text-red-400 text-sm">{error}</div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+        Loading packets...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="flex items-center justify-center h-64 text-red-400 text-sm">
+        {error}
+      </div>
+    );
 
   return (
     <div className="space-y-4">
@@ -85,6 +98,7 @@ export default function Packets() {
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+
           {/* Search */}
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 w-72">
             <span className="text-gray-400 text-sm">🔍</span>
@@ -160,38 +174,63 @@ export default function Packets() {
             ) : (
               filtered.map((p, index) => (
                 <tr key={index} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                  <td className="px-5 py-4 text-sm font-semibold text-[#7c4dff]">{p.packetId}</td>
+
+                  <td className="px-5 py-4 text-sm font-semibold text-[#7c4dff]">
+                    {p.packetId}
+                  </td>
+
                   <td className="px-5 py-4">
                     <p className="text-sm font-medium text-gray-800">{p.courseCode}</p>
                     <p className="text-xs text-gray-400">{p.courseName}</p>
                   </td>
+
                   <td className="px-5 py-4 text-sm text-gray-600">{p.lecturerName}</td>
+
                   <td className="px-5 py-4 text-sm text-gray-600">{p.moderatorName}</td>
+
                   <td className="px-5 py-4">
                     <p className={`text-sm font-medium ${p.overdue ? "text-red-500" : "text-gray-700"}`}>
-                      {new Date(p.deadline).toLocaleDateString("en-GB", {
-                        day: "2-digit", month: "short", year: "numeric"
-                      })}
+                      {p.deadline
+                        ? new Date(p.deadline).toLocaleDateString("en-GB", {
+                            day: "2-digit", month: "short", year: "numeric",
+                          })
+                        : "—"}
                     </p>
                     {p.overdue && <p className="text-xs text-red-400">Overdue</p>}
                   </td>
+
                   <td className="px-5 py-4">
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[p.status] || "bg-gray-100 text-gray-500"}`}>
                       {statusLabels[p.status] || p.status}
                     </span>
                   </td>
+
                   <td className="px-5 py-4">
                     <span className={`text-sm font-semibold ${priorityColors[p.priority]}`}>
                       ● {p.priority.charAt(0) + p.priority.slice(1).toLowerCase()}
                     </span>
                   </td>
+
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <button className="text-blue-400 hover:text-blue-600 text-lg">👁</button>
-                      <button className="text-gray-400 hover:text-gray-600 text-lg">✏️</button>
-                      <button className="text-red-400 hover:text-red-600 text-lg">🗑</button>
+                      <button
+                        onClick={() => {
+                          const numericId = parseInt(p.packetId.split("-")[2]);
+                          navigate(`/packets/${numericId}`);
+                        }}
+                        className="text-blue-400 hover:text-blue-600 text-lg"
+                      >
+                        👁
+                      </button>
+                      <button className="text-gray-400 hover:text-gray-600 text-lg">
+                        ✏️
+                      </button>
+                      <button className="text-red-400 hover:text-red-600 text-lg">
+                        🗑
+                      </button>
                     </div>
                   </td>
+
                 </tr>
               ))
             )}
