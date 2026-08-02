@@ -61,3 +61,37 @@ export const getPacketMovementHistory = async (packetId) => {
     return response.data;
 
 };
+
+export const updatePacketStatus = async(
+    packetId,
+    data
+)=>{
+
+
+    const response = await axios.put(
+
+        `${API_URL}/packets/${packetId}/status`,
+
+        data
+
+    );
+
+
+    return response.data;
+
+};
+
+// Get lecturer notifications
+
+export const getNotifications = async (lecturerId)=>{
+
+    const response = await axios.get(
+
+        `${API_URL}/${lecturerId}/notifications`
+
+    );
+
+
+    return response.data;
+
+};

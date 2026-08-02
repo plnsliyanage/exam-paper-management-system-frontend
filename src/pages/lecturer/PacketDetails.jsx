@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getPacketDetails } from "../../api/lecturerApi";
+
+import { getPacketDetails, updatePacketStatus } from "../../api/lecturerApi";
 
 const PacketDetails = () => {
   const { packetId } = useParams();
 
   const [packet, setPacket] = useState(null);
+
+  const [status, setStatus] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,74 +19,161 @@ const PacketDetails = () => {
   const loadPacket = async () => {
     try {
       const data = await getPacketDetails(packetId);
+
       setPacket(data);
+
+      setStatus(data.status);
     } catch (error) {
-      console.error("Failed to load packet details:", error);
+      console.error("Packet loading error", error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleStatusUpdate = async () => {
+    try {
+      await updatePacketStatus(packet.packetId, status);
+
+      alert("Packet status updated successfully");
+
+      loadPacket();
+    } catch (error) {
+      console.error(error);
+
+      alert("Status update failed");
+    }
+  };
+
   if (loading) {
-    return <h2 className="text-xl font-semibold">Loading Packet Details...</h2>;
+    return <h2 className="text-xl font-bold">Loading Packet Details...</h2>;
   }
 
   if (!packet) {
-    return (
-      <h2 className="text-xl font-semibold text-red-500">Packet Not Found</h2>
-    );
+    return <h2 className="text-red-500 text-xl">Packet Not Found</h2>;
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-8">
-      <h1 className="text-3xl font-bold mb-8">Packet Details</h1>
+    <div
+      className="
+            max-w-5xl 
+            mx-auto 
+            bg-white 
+            shadow-lg 
+            rounded-lg 
+            p-8
+        "
+    >
+      <h1
+        className="
+                text-3xl
+                font-bold
+                mb-8
+            "
+      >
+        Packet Details
+      </h1>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <p className="font-semibold">Packet ID</p>
-          <p>{packet.packetId}</p>
-        </div>
+      <div
+        className="
+                grid
+                grid-cols-2
+                gap-6
+            "
+      >
+        <Detail label="Packet ID" value={packet.packetId} />
 
-        <div>
-          <p className="font-semibold">Course Code</p>
-          <p>{packet.courseCode}</p>
-        </div>
+        <Detail label="Course Code" value={packet.courseCode} />
 
-        <div>
-          <p className="font-semibold">Course Name</p>
-          <p>{packet.courseName}</p>
-        </div>
+        <Detail label="Course Name" value={packet.courseName} />
 
-        <div>
-          <p className="font-semibold">Department</p>
-          <p>{packet.departmentName}</p>
-        </div>
+        <Detail label="Department" value={packet.departmentName} />
 
-        <div>
-          <p className="font-semibold">Academic Year</p>
-          <p>{packet.academicYear}</p>
-        </div>
+        <Detail label="Academic Year" value={packet.academicYear} />
 
-        <div>
-          <p className="font-semibold">Semester</p>
-          <p>{packet.semester}</p>
-        </div>
+        <Detail label="Semester" value={packet.semester} />
 
-        <div>
-          <p className="font-semibold">Deadline</p>
-          <p>{packet.deadline}</p>
-        </div>
+        <Detail label="Deadline" value={packet.deadline} />
 
-        <div>
-          <p className="font-semibold">Status</p>
-          <p>{packet.status}</p>
-        </div>
+        <Detail label="Current Holder" value={packet.currentHolderName} />
 
-        <div>
-          <p className="font-semibold">Current Holder</p>
-          <p>{packet.currentHolderName}</p>
-        </div>
+        <Detail label="Current Status" value={packet.status} />
       </div>
+
+      {/* STATUS UPDATE */}
+
+      <div
+        className="
+                mt-10
+                border-t
+                pt-6
+            "
+      >
+        <h2
+          className="
+                    text-xl
+                    font-bold
+                    mb-4
+                "
+        >
+          Update Packet Status
+        </h2>
+
+        <select
+          className="
+                        border
+                        rounded
+                        p-3
+                        w-64
+                    "
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="RECEIVED">RECEIVED</option>
+
+          <option value="MARKING">MARKING</option>
+
+          <option value="COMPLETED">COMPLETED</option>
+
+          <option value="SUBMITTED">SUBMITTED</option>
+        </select>
+
+        <button
+          onClick={handleStatusUpdate}
+          className="
+                        ml-4
+                        bg-blue-600
+                        text-white
+                        px-6
+                        py-3
+                        rounded
+                        hover:bg-blue-700
+                    "
+        >
+          Update Status
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Detail = ({ label, value }) => {
+  return (
+    <div>
+      <p
+        className="
+                font-semibold
+            "
+      >
+        {label}
+      </p>
+
+      <p
+        className="
+                text-gray-700
+            "
+      >
+        {value || "-"}
+      </p>
     </div>
   );
 };

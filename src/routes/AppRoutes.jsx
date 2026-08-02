@@ -7,6 +7,7 @@ import PacketDetails from "../pages/lecturer/PacketDetails";
 import AddMarking from "../pages/lecturer/AddMarking";
 import PreviousPackets from "../pages/lecturer/PreviousPackets";
 import PacketMovementHistory from "../pages/lecturer/PacketMovementHistory";
+import Notifications from "../pages/lecturer/Notifications";
 
 const AppRoutes = () => {
   return (
@@ -23,6 +24,7 @@ const AppRoutes = () => {
           path="packets/:packetId/movements"
           element={<PacketMovementHistory />}
         />
+        <Route path="notifications" element={<Notifications />} />
       </Route>
     </Routes>
   );
