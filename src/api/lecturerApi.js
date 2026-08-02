@@ -11,3 +11,8 @@ export const getAssignedPackets = async (lecturerId) => {
   const response = await api.get(`/lecturer/${lecturerId}/packets`);
   return response.data;
 };
+
+export const getPacketDetails = async (packetId) => {
+  const response = await api.get(`/lecturer/packets/${packetId}`);
+  return response.data;
+};
