@@ -8,7 +8,8 @@ import AddMarking from "../pages/lecturer/AddMarking";
 import PreviousPackets from "../pages/lecturer/PreviousPackets";
 import PacketMovementHistory from "../pages/lecturer/PacketMovementHistory";
 import Notifications from "../pages/lecturer/Notifications";
-
+import Workload from "../pages/lecturer/Workload";
+import Calendar from "../pages/lecturer/Calendar";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -25,6 +26,8 @@ const AppRoutes = () => {
           element={<PacketMovementHistory />}
         />
         <Route path="notifications" element={<Notifications />} />
+        <Route path="workload" element={<Workload />} />
+        <Route path="calendar" element={<Calendar />} />
       </Route>
     </Routes>
   );
