@@ -24,39 +24,64 @@ const PacketDetails = () => {
   };
 
   if (loading) {
-    return <h2>Loading Packet Details...</h2>;
+    return <h2 className="text-xl font-semibold">Loading Packet Details...</h2>;
   }
 
   if (!packet) {
-    return <h2>Packet not found.</h2>;
+    return (
+      <h2 className="text-xl font-semibold text-red-500">Packet Not Found</h2>
+    );
   }
 
   return (
-    <div className="max-w-3xl bg-white shadow rounded-lg p-6">
-      <h1 className="text-3xl font-bold mb-6">Packet Details</h1>
+    <div className="max-w-4xl mx-auto bg-white shadow rounded-lg p-8">
+      <h1 className="text-3xl font-bold mb-8">Packet Details</h1>
 
-      <div className="space-y-3">
-        <p>
-          <strong>Packet ID:</strong> {packet.packetId}
-        </p>
-        <p>
-          <strong>Course Code:</strong> {packet.courseCode}
-        </p>
-        <p>
-          <strong>Course Name:</strong> {packet.courseName}
-        </p>
-        <p>
-          <strong>Department:</strong> {packet.department}
-        </p>
-        <p>
-          <strong>Deadline:</strong> {packet.deadline}
-        </p>
-        <p>
-          <strong>Status:</strong> {packet.status}
-        </p>
-        <p>
-          <strong>Current Holder:</strong> {packet.currentHolder}
-        </p>
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <p className="font-semibold">Packet ID</p>
+          <p>{packet.packetId}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Course Code</p>
+          <p>{packet.courseCode}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Course Name</p>
+          <p>{packet.courseName}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Department</p>
+          <p>{packet.departmentName}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Academic Year</p>
+          <p>{packet.academicYear}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Semester</p>
+          <p>{packet.semester}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Deadline</p>
+          <p>{packet.deadline}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Status</p>
+          <p>{packet.status}</p>
+        </div>
+
+        <div>
+          <p className="font-semibold">Current Holder</p>
+          <p>{packet.currentHolderName}</p>
+        </div>
       </div>
     </div>
   );

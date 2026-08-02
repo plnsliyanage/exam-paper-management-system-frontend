@@ -18,8 +18,8 @@ const Sidebar = () => {
     },
 
     {
-      name: "Marking Process",
-      path: "/lecturer/marking-process",
+      name: "Add Marking Scripts",
+      path: "/lecturer/marking",
     },
 
     {

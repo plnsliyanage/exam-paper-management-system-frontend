@@ -16,3 +16,14 @@ export const getPacketDetails = async (packetId) => {
   const response = await api.get(`/lecturer/packets/${packetId}`);
   return response.data;
 };
+
+export const addMarkingScripts = async (markingData) => {
+
+  const response = await api.post(
+    "/lecturer/marking",
+    markingData
+  );
+
+  return response.data;
+
+};
