@@ -37,3 +37,27 @@ export const getPreviousPackets = async () => {
     return response.data;
 
 };
+
+export const getPacketMovements = async (packetId) => {
+
+    const response = await api.get(
+        `/lecturer/packets/${packetId}/movements`
+    );
+
+    return response.data;
+
+};
+
+// Existing methods...
+
+
+export const getPacketMovementHistory = async (packetId) => {
+
+    const response = await api.get(
+        `/lecturer/packets/${packetId}/movements`
+    );
+
+
+    return response.data;
+
+};

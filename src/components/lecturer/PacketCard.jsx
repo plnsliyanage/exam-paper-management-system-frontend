@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 
 const PacketCard = ({ packet }) => {
   return (
-    <Link to={`/lecturer/packets/${packet.packetId}`} className="block">
-      <div className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg hover:scale-[1.01] transition-all duration-300">
+    <div className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg hover:scale-[1.01] transition-all duration-300">
+      {/* Packet Details Click */}
+      <Link to={`/lecturer/packets/${packet.packetId}`} className="block">
         <h2 className="text-xl font-semibold text-blue-700">
           {packet.courseCode}
         </h2>
@@ -38,8 +39,25 @@ const PacketCard = ({ packet }) => {
             {packet.currentHolderName}
           </p>
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* Movement History Button */}
+      <Link
+        to={`/lecturer/packets/${packet.packetId}/movements`}
+        className="
+          mt-5
+          inline-block
+          bg-blue-600
+          text-white
+          px-4
+          py-2
+          rounded
+          hover:bg-blue-700
+        "
+      >
+        View Movement History
+      </Link>
+    </div>
   );
 };
 
