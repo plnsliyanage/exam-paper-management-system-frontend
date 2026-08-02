@@ -5,6 +5,7 @@ import Dashboard from "../pages/lecturer/Dashboard";
 import AssignedPackets from "../pages/lecturer/AssignedPackets";
 import PacketDetails from "../pages/lecturer/PacketDetails";
 import AddMarking from "../pages/lecturer/AddMarking";
+import PreviousPackets from "../pages/lecturer/PreviousPackets";
 
 const AppRoutes = () => {
   return (
@@ -16,6 +17,7 @@ const AppRoutes = () => {
         <Route path="packets" element={<AssignedPackets />} />
         <Route path="packets/:packetId" element={<PacketDetails />} />
         <Route path="marking" element={<AddMarking />} />
+        <Route path="previous" element={<PreviousPackets />} />
       </Route>
     </Routes>
   );

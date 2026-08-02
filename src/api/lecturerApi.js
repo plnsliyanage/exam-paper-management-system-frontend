@@ -27,3 +27,13 @@ export const addMarkingScripts = async (markingData) => {
   return response.data;
 
 };
+
+export const getPreviousPackets = async () => {
+
+    const response = await api.get(
+        "/lecturer/packets/previous"
+    );
+
+    return response.data;
+
+};
