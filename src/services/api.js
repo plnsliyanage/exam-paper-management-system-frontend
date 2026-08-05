@@ -9,13 +9,31 @@ const api = axios.create({
   },
 });
 
+// Automatically attach JWT token to headers if present
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// --- AUTH ENDPOINTS ---
+export const authApi = {
+  login: (credentials) => api.post('/auth/signin', credentials),
+  signup: (userData) => api.post('/auth/signup', userData),
+};
+
 // --- LECTURER ENDPOINTS ---
 export const lecturerApi = {
   getDashboard: (lecturerId) => api.get(`/lecturer/${lecturerId}/dashboard`),
   getPackets: (lecturerId) => api.get(`/lecturer/${lecturerId}/packets`),
   getPacketDetails: (packetId) => api.get(`/lecturer/packets/${packetId}`),
   addMarkingScripts: (data) => api.post('/lecturer/marking', data),
-  getPreviousPackets: (lecturerId) => api.get(`/lecturer/${lecturerId}/packets/previous`),
+  getPreviousPackets: () => api.get(`/lecturer/packets/previous`),
   getMovementHistory: (packetId) => api.get(`/lecturer/packets/${packetId}/movements`),
   updateStatus: (packetId, data) => api.put(`/lecturer/packets/${packetId}/status`, data),
   completeTask: (packetId) => api.put(`/lecturer/tasks/${packetId}/complete`),
@@ -43,9 +61,10 @@ export const hodApi = {
   exportPdf: (deptId) => api.get(`/hod/department/${deptId}/report/export/pdf`, { responseType: 'blob' }),
 };
 
+// --- AR ENDPOINTS ---
 export const arApi = {
   getOverview: () => api.get('/ar/overview'),
-  getAllPackets: (params) => api.get('/ar/packets', { params }), // supports search/filters
+  getAllPackets: (params) => api.get('/ar/packets', { params }),
   getAttentionPackets: () => api.get('/ar/packets/attention'),
   updateStatus: (packetId, status, arUserId) => 
     api.put(`/ar/packets/${packetId}/status`, null, { params: { status, arUserId } }),

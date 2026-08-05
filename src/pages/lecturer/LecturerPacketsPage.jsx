@@ -1,25 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { lecturerApi } from '../../services/api';
-import PacketDetailModal from '../../components/PacketDetailModal';
-import MarkingEntryModal from '../../components/MarkingEntryModal';
-import { FileText, Search, Eye, Edit3, Check, Filter } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { lecturerApi } from "../../services/api";
+import PacketDetailModal from "../../components/PacketDetailModal";
+import MarkingEntryModal from "../../components/MarkingEntryModal";
 
-export default function LecturerPacketsPage({ lecturerId = 'LEC001' }) {
+import { FileText, Search, Eye, Edit3, Check } from "lucide-react";
+
+export default function LecturerPacketsPage({ lecturerId = "U1" }) {
   const [packets, setPackets] = useState([]);
+
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
   const [selectedPacketId, setSelectedPacketId] = useState(null);
+
   const [markingPacket, setMarkingPacket] = useState(null);
 
+  // SAME API AS DASHBOARD
   const loadPackets = async () => {
-    setLoading(true);
     try {
-      const res = await lecturerApi.getPackets(lecturerId);
-      setPackets(res.data || []);
-    } catch (err) {
-      console.error(err);
+      setLoading(true);
+
+      const response = await lecturerApi.getPackets(lecturerId);
+
+      console.log("Assigned Packets:", response.data);
+
+      setPackets(response.data || []);
+    } catch (error) {
+      console.error("Failed to load packets", error);
     } finally {
       setLoading(false);
     }
@@ -32,104 +42,268 @@ export default function LecturerPacketsPage({ lecturerId = 'LEC001' }) {
   const handleCompleteTask = async (packetId) => {
     try {
       await lecturerApi.completeTask(packetId);
+
       loadPackets();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const filteredPackets = packets.filter((p) => {
-    const matchesSearch = p.courseCode?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.courseName?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const filteredPackets = packets.filter((packet) => {
+    const searchMatch =
+      packet.courseCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      packet.courseName?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const statusMatch =
+      statusFilter === "ALL" || packet.status === statusFilter;
+
+    return searchMatch && statusMatch;
   });
 
+  if (loading) {
+    return (
+      <div className="p-8 text-slate-500">Loading Assigned Packets...</div>
+    );
+  }
+
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto text-xs">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Assigned Exam Packets</h1>
-          <p className="text-sm text-slate-500">Manage and filter all your current academic semester packets</p>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Assigned Exam Packets
+          </h1>
+
+          <p className="text-sm text-slate-500">
+            View and manage packets assigned to you
+          </p>
         </div>
 
-        {/* Search & Filter */}
-        <div className="flex gap-2 flex-wrap">
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Search course code or name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl outline-none shadow-sm focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
+        <div className="relative">
+          <Search
+            className="
+absolute
+left-3
+top-3
+w-4
+h-4
+text-slate-400
+"
+          />
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none font-semibold text-slate-600 shadow-sm"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="PREPARATION">Preparation</option>
-            <option value="IN_REVIEW">In Review</option>
-            <option value="PRINTING">Printing</option>
-            <option value="MARKING">Marking</option>
-            <option value="COMPLETED">Completed</option>
-          </select>
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search packets..."
+            className="
+pl-9
+pr-4
+py-2
+border
+rounded-xl
+"
+          />
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 className="font-bold text-slate-800 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-brand-600" /> Filtered Packets List
+      {/* Status Filter */}
+
+      <select
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value)}
+        className="
+border
+rounded-xl
+px-3
+py-2
+"
+      >
+        <option value="ALL">All Status</option>
+
+        <option value="PREPARATION">Preparation</option>
+
+        <option value="MARKING">Marking</option>
+
+        <option value="COMPLETED">Completed</option>
+      </select>
+
+      <div
+        className="
+bg-white
+border
+rounded-2xl
+p-6
+"
+      >
+        <div
+          className="
+flex
+justify-between
+border-b
+pb-3
+mb-4
+"
+        >
+          <h2
+            className="
+font-bold
+flex
+gap-2
+items-center
+"
+          >
+            <FileText className="w-5 h-5" />
+            Packets List
           </h2>
-          <span className="text-slate-400 font-semibold">{filteredPackets.length} Records Found</span>
+
+          <span className="text-slate-400">{filteredPackets.length} Items</span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filteredPackets.length > 0 ? (
             filteredPackets.map((packet) => (
-              <div key={packet.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+              <div
+                key={packet.packetId}
+                className="
+p-4
+border
+rounded-xl
+bg-slate-50
+flex
+justify-between
+items-center
+"
+              >
+                <div>
+                  <div className="flex gap-2">
+                    <span
+                      className="
+px-2
+py-1
+rounded
+bg-blue-50
+text-blue-700
+font-bold
+text-xs
+"
+                    >
                       {packet.courseCode}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold text-[11px]">
-                      {packet.status || 'PREPARATION'}
+
+                    <span
+                      className="
+px-2
+py-1
+rounded-full
+bg-slate-200
+text-xs
+"
+                    >
+                      {packet.status || "PREPARATION"}
                     </span>
                   </div>
-                  <h3 className="font-bold text-slate-800 text-sm">{packet.courseName}</h3>
-                  <p className="text-slate-400">Department: <span className="text-slate-600">{packet.department || 'N/A'}</span> | Deadline: {packet.deadline || 'N/A'}</p>
+
+                  <h3
+                    className="
+font-bold
+mt-2
+"
+                  >
+                    {packet.courseName}
+                  </h3>
+
+                  <p
+                    className="
+text-xs
+text-slate-500
+"
+                  >
+                    Department: {packet.departmentName || "N/A"}
+                    <br />
+                    Holder: {packet.currentHolderName || "Me"}
+                    <br />
+                    Deadline: {packet.deadline || "N/A"}
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setSelectedPacketId(packet.id)} className="p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition" title="View Details">
+                <div
+                  className="
+flex
+gap-2
+"
+                >
+                  <button
+                    onClick={() => setSelectedPacketId(packet.packetId)}
+                    className="
+p-2
+hover:bg-blue-100
+rounded
+"
+                  >
                     <Eye className="w-4 h-4" />
                   </button>
-                  <button onClick={() => setMarkingPacket(packet)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Log Scripts">
+
+                  <button
+                    onClick={() => setMarkingPacket(packet)}
+                    className="
+p-2
+hover:bg-green-100
+rounded
+"
+                  >
                     <Edit3 className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleCompleteTask(packet.id)} className="px-3 py-1.5 bg-slate-900 text-white rounded-lg font-semibold flex items-center gap-1 hover:bg-slate-800">
-                    <Check className="w-3 h-3" /> Complete
+
+                  <button
+                    onClick={() => handleCompleteTask(packet.packetId)}
+                    className="
+bg-slate-900
+text-white
+px-3
+py-2
+rounded-lg
+flex
+items-center
+gap-1
+text-xs
+"
+                  >
+                    <Check className="w-3 h-3" />
+                    Complete
                   </button>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-slate-400 text-center py-10">No packets match your criteria.</p>
+            <div
+              className="
+text-center
+text-slate-400
+py-10
+"
+            >
+              No Assigned Packets
+            </div>
           )}
         </div>
       </div>
 
       {selectedPacketId && (
-        <PacketDetailModal packetId={selectedPacketId} onClose={() => setSelectedPacketId(null)} onStatusUpdated={loadPackets} />
+        <PacketDetailModal
+          packetId={selectedPacketId}
+          onClose={() => setSelectedPacketId(null)}
+          onStatusUpdated={loadPackets}
+        />
       )}
+
       {markingPacket && (
-        <MarkingEntryModal packet={markingPacket} onClose={() => setMarkingPacket(null)} onSuccess={loadPackets} />
+        <MarkingEntryModal
+          packet={markingPacket}
+          onClose={() => setMarkingPacket(null)}
+          onSuccess={loadPackets}
+        />
       )}
     </div>
   );
