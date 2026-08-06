@@ -7,6 +7,8 @@ import "./index.css";
 import ARDashboard from "./pages/AR/Dashboard";
 import Packets from "./pages/Packets";
 import PacketDetail from "./pages/PacketDetail";
+import Workflow from "./pages/Workflow";
+import Reports from "./pages/Reports";
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -31,8 +33,8 @@ function AppRoutes() {
         <Route path="/packets" element={<Packets />} />
         <Route path="/packets/:id" element={<PacketDetail />} />
         <Route path="/packets" element={<div className="text-xl font-semibold">Packets</div>} />
-        <Route path="/workflow" element={<div className="text-xl font-semibold">Workflow</div>} />
-        <Route path="/reports" element={<div className="text-xl font-semibold">Reports</div>} />
+        <Route path="/workflow" element={<Workflow />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/notifications" element={<div className="text-xl font-semibold">Notifications</div>} />
         <Route path="/users" element={<div className="text-xl font-semibold">User Management</div>} />
         <Route path="/settings" element={<div className="text-xl font-semibold">Settings</div>} />
