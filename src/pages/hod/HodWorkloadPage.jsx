@@ -1,94 +1,104 @@
-import React, { useEffect, useState } from 'react';
-import { hodApi } from '../../services/api';
-import { BarChart3, AlertTriangle, Users } from 'lucide-react';
+import React from "react";
 
-export default function HodWorkloadPage({ deptId = 'CS' }) {
-  const [workloads, setWorkloads] = useState([]);
-  const [overdue, setOverdue] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      hodApi.getWorkload(deptId),
-      hodApi.getOverduePackets(deptId)
-    ])
-      .then(([workRes, overRes]) => {
-        setWorkloads(workRes.data || []);
-        setOverdue(overRes.data || []);
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  }, [deptId]);
-
-  if (loading) return <div className="p-8 text-slate-400">Loading department analytics...</div>;
+export default function HodWorkloadPage() {
+  const staffWorkload = [
+    {
+      name: "Dr. Alice Smith",
+      role: "Lecturer / Moderator",
+      assignedPackets: 4,
+      completedMarking: 3,
+      pending: 1,
+      workloadLevel: "Balanced",
+    },
+    {
+      name: "Dr. Charlie Brown",
+      role: "Lecturer",
+      assignedPackets: 6,
+      completedMarking: 2,
+      pending: 4,
+      workloadLevel: "High",
+    },
+    {
+      name: "Prof. Diana Prince",
+      role: "Lecturer",
+      assignedPackets: 3,
+      completedMarking: 3,
+      pending: 0,
+      workloadLevel: "Optimal",
+    },
+    {
+      name: "Prof. Bob Jones",
+      role: "Moderator",
+      assignedPackets: 5,
+      completedMarking: 4,
+      pending: 1,
+      workloadLevel: "Balanced",
+    },
+  ];
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Workload & Staff Performance</h1>
-        <p className="text-sm text-slate-500">Monitor lecturer packet assignments, progress metrics, and delay bottlenecks</p>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Lecturer & Moderator Workload & Performance
+        </h1>
+        <p className="text-sm text-gray-500">
+          Monitor marking progress, compare workload distribution, and view
+          staff statistics.
+        </p>
       </div>
 
-      {/* Overdue Items Alert Panel */}
-      {overdue.length > 0 && (
-        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
-          <div className="flex items-center gap-2 text-rose-800 font-bold text-sm">
-            <AlertTriangle className="w-5 h-5 text-rose-600" />
-            <span>Overdue Packets Requiring Intervention ({overdue.length})</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {overdue.map((pkt) => (
-              <div key={pkt.id} className="p-3 bg-white rounded border border-rose-200 text-xs">
-                <span className="font-bold text-slate-900 block">{pkt.courseCode}</span>
-                <span className="text-slate-500">Holder: {pkt.currentHolder || 'Unassigned'}</span>
-              </div>
-            ))}
-          </div>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-200 bg-gray-50 font-semibold text-gray-800 text-sm">
+          Staff Workload & Marking Progress Distribution
         </div>
-      )}
-
-      {/* Staff Workload Cards */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-brand-600" /> Lecturer Workload Summary
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {workloads.length > 0 ? (
-            workloads.map((staff, idx) => (
-              <div key={idx} className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
-                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-800 text-sm">{staff.lecturerName}</span>
-                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-medium">
-                    {staff.assignedPacketsCount} Packets
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 text-xs text-slate-600">
-                  <div className="flex justify-between">
-                    <span>Total Scripts Assigned:</span>
-                    <span className="font-semibold text-slate-900">{staff.totalScripts || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Marked Progress:</span>
-                    <span className="font-semibold text-emerald-600">{staff.completedScripts || 0}</span>
-                  </div>
-                </div>
-
-                {/* Simple Bar Visualizer */}
-                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-brand-600 h-2 rounded-full transition-all"
-                    style={{
-                      width: `${staff.totalScripts ? Math.min(100, (staff.completedScripts / staff.totalScripts) * 100) : 0}%`
-                    }}
-                  />
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-xs text-slate-400">No workload records found.</p>
-          )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase bg-gray-50/50">
+                <th className="py-3 px-4">Staff Member</th>
+                <th className="py-3 px-4">Role</th>
+                <th className="py-3 px-4">Assigned Packets</th>
+                <th className="py-3 px-4">Marking Completed</th>
+                <th className="py-3 px-4">Pending</th>
+                <th className="py-3 px-4">Workload Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm">
+              {staffWorkload.map((staff, idx) => (
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="py-3 px-4 font-medium text-gray-900">
+                    {staff.name}
+                  </td>
+                  <td className="py-3 px-4 text-xs text-gray-500">
+                    {staff.role}
+                  </td>
+                  <td className="py-3 px-4 font-bold text-blue-600">
+                    {staff.assignedPackets}
+                  </td>
+                  <td className="py-3 px-4 text-green-600 font-medium">
+                    {staff.completedMarking}
+                  </td>
+                  <td className="py-3 px-4 text-amber-600 font-medium">
+                    {staff.pending}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        staff.workloadLevel === "High"
+                          ? "bg-red-100 text-red-800"
+                          : staff.workloadLevel === "Balanced"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      {staff.workloadLevel}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
