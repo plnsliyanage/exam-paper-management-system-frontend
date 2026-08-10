@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -33,98 +33,60 @@ import ArPacketsPage from "./pages/ar/ArPacketsPage";
 import ArAuditLogsPage from "./pages/ar/ArAuditLogsPage";
 
 export default function App() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem("user");
-      }
-    }
-  }, []);
-
-  const roleKey = user ? user.role.toLowerCase() : "lecturer";
+  // Hardcode role to 'hod' for your testing workflow
+  const [user, setUser] = useState({ name: "Test HOD", role: "hod" });
+  const roleKey = "hod";
 
   return (
     <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginPage setUser={setUser} />} />
-        <Route path="/signup" element={<SignupPage />} />
+      <div className="flex min-h-screen bg-slate-50 font-sans antialiased text-slate-800">
+        <Sidebar currentRole={roleKey} />
+        <main className="flex-1 overflow-x-hidden">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage setUser={setUser} />} />
+            <Route path="/signup" element={<SignupPage />} />
 
-        {/* Protected Dashboard Routes */}
-        <Route
-          path="/*"
-          element={
-            !user ? (
-              <Navigate to="/login" replace />
-            ) : (
-              <div className="flex min-h-screen bg-slate-50 font-sans antialiased text-slate-800">
-                <Sidebar currentRole={roleKey} setRole={() => {}} />
-                <main className="flex-1 overflow-x-hidden">
-                  <Routes>
-                    {/* Lecturer Routes */}
-                    {/* Lecturer Routes */}
-                    <Route path="/lecturer" element={<LecturerDashboard />} />
-                    <Route
-                      path="/lecturer/packets"
-                      element={<LecturerPacketsPage />}
-                    />
-                    <Route
-                      path="/lecturer/previous"
-                      element={<LecturerPreviousRecordsPage />}
-                    />
-                    <Route
-                      path="/lecturer/calendar"
-                      element={<LecturerCalendarPage />}
-                    />
-                    <Route
-                      path="/lecturer/notifications"
-                      element={<LecturerNotificationsPage />}
-                    />
+            {/* Lecturer Routes */}
+            <Route path="/lecturer" element={<LecturerDashboard />} />
+            <Route path="/lecturer/packets" element={<LecturerPacketsPage />} />
+            <Route
+              path="/lecturer/previous"
+              element={<LecturerPreviousRecordsPage />}
+            />
+            <Route
+              path="/lecturer/calendar"
+              element={<LecturerCalendarPage />}
+            />
+            <Route
+              path="/lecturer/notifications"
+              element={<LecturerNotificationsPage />}
+            />
 
-                    {/* HOD Routes */}
-                    <Route path="/hod" element={<HodDepartmentView />} />
-                    <Route
-                      path="/hod/packets"
-                      element={<HodDepartmentPacketsPage />}
-                    />
-                    <Route path="/hod/workload" element={<HodWorkloadPage />} />
-                    <Route path="/hod/overdue" element={<HodOverduePage />} />
-                    <Route
-                      path="/hod/previous"
-                      element={<HodPreviousRecordsPage />}
-                    />
-                    <Route path="/hod/reports" element={<HodReportsPage />} />
+            {/* HOD Routes */}
+            <Route path="/hod" element={<HodDepartmentView />} />
+            <Route path="/hod/packets" element={<HodDepartmentPacketsPage />} />
+            <Route path="/hod/workload" element={<HodWorkloadPage />} />
+            <Route path="/hod/overdue" element={<HodOverduePage />} />
+            <Route path="/hod/previous" element={<HodPreviousRecordsPage />} />
+            <Route path="/hod/reports" element={<HodReportsPage />} />
 
-                    {/* AR Routes */}
-                    <Route path="/ar" element={<ArOverview />} />
-                    <Route path="/ar/packets" element={<ArPacketsPage />} />
-                    <Route
-                      path="/ar/printing"
-                      element={<ArUserAndPrintingManagement />}
-                    />
-                    <Route
-                      path="/ar/users"
-                      element={<ArUserAndPrintingManagement />}
-                    />
-                    <Route path="/ar/logs" element={<ArAuditLogsPage />} />
+            {/* AR Routes */}
+            <Route path="/ar" element={<ArOverview />} />
+            <Route path="/ar/packets" element={<ArPacketsPage />} />
+            <Route
+              path="/ar/printing"
+              element={<ArUserAndPrintingManagement />}
+            />
+            <Route path="/ar/users" element={<ArUserAndPrintingManagement />} />
+            <Route path="/ar/logs" element={<ArAuditLogsPage />} />
 
-                    {/* Catch-all redirect */}
-                    <Route
-                      path="*"
-                      element={<Navigate to={`/${roleKey}`} replace />}
-                    />
-                  </Routes>
-                </main>
-              </div>
-            )
-          }
-        />
-      </Routes>
+            {/* Default Landing / Catch-all */}
+            <Route path="/" element={<Navigate to="/hod" replace />} />
+            <Route path="*" element={<Navigate to="/hod" replace />} />
+          </Routes>
+        </main>
+      </div>
     </Router>
   );
 }
