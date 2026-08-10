@@ -29,12 +29,11 @@ export default function LecturerPreviousRecordsPage() {
   const [search, setSearch] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("ALL");
 
-  // Extract unique semesters dynamically from the records dataset
   const semesters = ["ALL", ...new Set(records.map((r) => r.semester))];
 
-  // Filter records based on search query and selected semester
   const filtered = records.filter((r) => {
     const matchesSearch =
+      r.packetId.toLowerCase().includes(search.toLowerCase()) ||
       r.courseCode.toLowerCase().includes(search.toLowerCase()) ||
       r.courseName.toLowerCase().includes(search.toLowerCase());
 
@@ -58,7 +57,6 @@ export default function LecturerPreviousRecordsPage() {
         </div>
       </header>
 
-      {/* Filters Section */}
       <div className="flex flex-col sm:flex-row justify-end gap-3">
         {/* Semester Filter Dropdown */}
         <div className="relative">
@@ -81,7 +79,7 @@ export default function LecturerPreviousRecordsPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <input
             type="text"
-            placeholder="Search archive..."
+            placeholder="Search by packet code or name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl outline-none"
@@ -127,7 +125,7 @@ export default function LecturerPreviousRecordsPage() {
             ))
           ) : (
             <div className="p-8 text-center text-slate-400">
-              No archived packets match your selected filters.
+              No packets match your search or semester filter.
             </div>
           )}
         </div>
