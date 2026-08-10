@@ -16,6 +16,7 @@ import LecturerDashboard from "./pages/lecturer/LecturerDashboard";
 import LecturerPacketsPage from "./pages/lecturer/LecturerPacketsPage";
 import LecturerPreviousRecordsPage from "./pages/lecturer/LecturerPreviousRecordsPage";
 import LecturerCalendarPage from "./pages/lecturer/LecturerCalendarPage";
+import LecturerNotificationsPage from "./pages/lecturer/LecturerNotificationsPage";
 
 // HOD Pages
 import HodDepartmentView from "./pages/hod/HodDepartmentView";
@@ -66,6 +67,7 @@ export default function App() {
                 <main className="flex-1 overflow-x-hidden">
                   <Routes>
                     {/* Lecturer Routes */}
+                    {/* Lecturer Routes */}
                     <Route path="/lecturer" element={<LecturerDashboard />} />
                     <Route
                       path="/lecturer/packets"
@@ -78,6 +80,10 @@ export default function App() {
                     <Route
                       path="/lecturer/calendar"
                       element={<LecturerCalendarPage />}
+                    />
+                    <Route
+                      path="/lecturer/notifications"
+                      element={<LecturerNotificationsPage />}
                     />
 
                     {/* HOD Routes */}
