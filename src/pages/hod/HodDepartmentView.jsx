@@ -7,6 +7,7 @@ import {
   Users,
   ArrowRight,
   ShieldAlert,
+  TrendingUp,
 } from "lucide-react";
 
 export default function HodDepartmentView({ navigateTo }) {
@@ -232,6 +233,110 @@ export default function HodDepartmentView({ navigateTo }) {
             >
               Access Previous Academic Records
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Semester Workload Structure Comparison Line Graph */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <TrendingUp className="text-blue-600" size={20} />
+              Semester Workload Comparison
+            </h2>
+            <p className="text-xs text-gray-500">
+              Comparing total assessment packets and processing volume across
+              recent academic terms.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-medium text-gray-600">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-blue-600 rounded-full inline-block"></span>
+              <span>Total Packets</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-green-500 rounded-full inline-block"></span>
+              <span>Completed</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-48 w-full pt-4 relative">
+          <svg className="w-full h-full overflow-visible" viewBox="0 0 600 160">
+            {/* Grid lines */}
+            <line
+              x1="0"
+              y1="0"
+              x2="600"
+              y2="0"
+              stroke="#f3f4f6"
+              strokeWidth="1"
+            />
+            <line
+              x1="0"
+              y1="40"
+              x2="600"
+              y2="40"
+              stroke="#f3f4f6"
+              strokeWidth="1"
+            />
+            <line
+              x1="0"
+              y1="80"
+              x2="600"
+              y2="80"
+              stroke="#f3f4f6"
+              strokeWidth="1"
+            />
+            <line
+              x1="0"
+              y1="120"
+              x2="600"
+              y2="120"
+              stroke="#f3f4f6"
+              strokeWidth="1"
+            />
+            <line
+              x1="0"
+              y1="160"
+              x2="600"
+              y2="160"
+              stroke="#e5e7eb"
+              strokeWidth="1"
+            />
+
+            {/* Total Packets Line */}
+            <path
+              d="M 50,70 Q 175,20 300,50 T 550,30"
+              fill="none"
+              stroke="#2563eb"
+              strokeWidth="3"
+            />
+            {/* Completed Packets Line */}
+            <path
+              d="M 50,110 Q 175,80 300,90 T 550,45"
+              fill="none"
+              stroke="#22c55e"
+              strokeWidth="3"
+            />
+
+            {/* Data Points - Total */}
+            <circle cx="50" cy="70" r="4" fill="#2563eb" />
+            <circle cx="300" cy="50" r="4" fill="#2563eb" />
+            <circle cx="550" cy="30" r="4" fill="#2563eb" />
+
+            {/* Data Points - Completed */}
+            <circle cx="50" cy="110" r="4" fill="#22c55e" />
+            <circle cx="300" cy="90" r="4" fill="#22c55e" />
+            <circle cx="550" cy="45" r="4" fill="#22c55e" />
+          </svg>
+
+          {/* X-Axis Labels */}
+          <div className="flex justify-between text-xs text-gray-500 px-2 mt-2 font-medium">
+            <span>2024/2025 Sem 2</span>
+            <span>2025/2026 Sem 1</span>
+            <span>2026/2027 Sem 1 (Current)</span>
           </div>
         </div>
       </div>

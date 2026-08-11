@@ -61,20 +61,4 @@ export const hodApi = {
   exportPdf: (deptId) => api.get(`/hod/department/${deptId}/report/export/pdf`, { responseType: 'blob' }),
 };
 
-// --- AR ENDPOINTS ---
-export const arApi = {
-  getOverview: () => api.get('/ar/overview'),
-  getAllPackets: (params) => api.get('/ar/packets', { params }),
-  getAttentionPackets: () => api.get('/ar/packets/attention'),
-  updateStatus: (packetId, status, arUserId) => 
-    api.put(`/ar/packets/${packetId}/status`, null, { params: { status, arUserId } }),
-  assignUser: (packetId, data, arUserId) => api.put(`/ar/packets/${packetId}/assign`, data, { params: { arUserId } }),
-  getApprovedForPrinting: () => api.get('/ar/printing/approved'),
-  schedulePrinting: (data, arUserId) => api.post('/ar/printing/schedule', data, { params: { arUserId } }),
-  getPrintingSchedules: () => api.get('/ar/printing/schedules'),
-  createUser: (data, arUserId) => api.post('/ar/users', data, { params: { arUserId } }),
-  getAuditLogs: () => api.get('/ar/logs'),
-  generateReport: (type, format) => api.get(`/ar/reports/generate`, { params: { type, format }, responseType: 'blob' }),
-};
-
 export default api;

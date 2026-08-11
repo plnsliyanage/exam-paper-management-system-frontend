@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Eye, Clock } from "lucide-react";
+import { Search, Eye, Clock, FileText } from "lucide-react";
 
 export default function HodDepartmentPacketsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +22,7 @@ export default function HodDepartmentPacketsPage() {
       currentHolder: "Prof. Bob Jones",
       lastUpdatedUser: "Dr. Alice Smith",
       lastUpdatedTime: "2026-08-05 14:20",
+      totalPapers: 45,
       isOverdue: false,
       history: [
         { stage: "Created", user: "Dr. Alice Smith", time: "2026-08-01 10:00" },
@@ -55,6 +56,7 @@ export default function HodDepartmentPacketsPage() {
       currentHolder: "Dr. Charlie Brown",
       lastUpdatedUser: "Exam Dept",
       lastUpdatedTime: "2026-07-28 09:15",
+      totalPapers: 120,
       isOverdue: true,
       history: [
         {
@@ -87,6 +89,7 @@ export default function HodDepartmentPacketsPage() {
       currentHolder: "Archive",
       lastUpdatedUser: "HOD",
       lastUpdatedTime: "2026-06-15 17:00",
+      totalPapers: 85,
       isOverdue: false,
       history: [
         {
@@ -211,7 +214,7 @@ export default function HodDepartmentPacketsPage() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
                 <th className="py-3 px-4">Packet ID</th>
-                <th className="py-3 px-4">Course</th>
+                <th className="py-3 px-4">Course & Papers</th>
                 <th className="py-3 px-4">Lecturer / Moderator</th>
                 <th className="py-3 px-4">Status & Holder</th>
                 <th className="py-3 px-4">Last Updated</th>
@@ -234,8 +237,13 @@ export default function HodDepartmentPacketsPage() {
                       <div className="font-medium text-gray-900">
                         {pkt.course}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {pkt.academicCycle}
+                      <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                        <span>{pkt.academicCycle}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 font-medium text-gray-700">
+                          <FileText size={12} className="text-gray-400" />
+                          {pkt.totalPapers} Papers
+                        </span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
@@ -336,6 +344,22 @@ export default function HodDepartmentPacketsPage() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <span className="text-xs text-gray-500 block">
+                      Total Papers to Mark
+                    </span>
+                    <span className="font-semibold text-blue-600 text-base">
+                      {activeModalPacket.totalPapers} Papers
+                    </span>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <span className="text-xs text-gray-500 block">
+                      Current Status
+                    </span>
+                    <span className="font-medium text-gray-800">
+                      {activeModalPacket.status}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <span className="text-xs text-gray-500 block">
                       Lecturer
                     </span>
                     <span className="font-medium text-gray-800">
@@ -352,14 +376,6 @@ export default function HodDepartmentPacketsPage() {
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <span className="text-xs text-gray-500 block">
-                      Current Status
-                    </span>
-                    <span className="font-medium text-gray-800">
-                      {activeModalPacket.status}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <span className="text-xs text-gray-500 block">
                       Current Holder
                     </span>
                     <span className="font-medium text-gray-800">
@@ -371,15 +387,8 @@ export default function HodDepartmentPacketsPage() {
                       Last Updated By
                     </span>
                     <span className="font-medium text-gray-800">
-                      {activeModalPacket.lastUpdatedUser}
-                    </span>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <span className="text-xs text-gray-500 block">
-                      Last Updated Time
-                    </span>
-                    <span className="font-medium text-gray-800">
-                      {activeModalPacket.lastUpdatedTime}
+                      {activeModalPacket.lastUpdatedUser} (
+                      {activeModalPacket.lastUpdatedTime})
                     </span>
                   </div>
                 </div>

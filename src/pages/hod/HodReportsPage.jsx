@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BarChart3, Download } from "lucide-react";
+import { BarChart3, Download, TrendingUp } from "lucide-react";
 
 export default function HodReportsPage() {
   const [reportType, setReportType] = useState("progress");
@@ -10,6 +10,20 @@ export default function HodReportsPage() {
       `Successfully exported ${reportType} report as ${format.toUpperCase()}!`,
     );
   };
+
+  // Mock data for department workflow progress per stage
+  const workflowStages = [
+    { stage: "Assigned", count: 48, percentage: 100, color: "bg-blue-500" },
+    {
+      stage: "In Progress",
+      count: 32,
+      percentage: 66.6,
+      color: "bg-amber-500",
+    },
+    { stage: "Moderation", count: 24, percentage: 50, color: "bg-purple-500" },
+    { stage: "Completed", count: 17, percentage: 35.4, color: "bg-green-500" },
+    { stage: "Overdue", count: 7, percentage: 14.6, color: "bg-red-500" },
+  ];
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -70,6 +84,7 @@ export default function HodReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Summary Statistics */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold text-gray-800">
             Summary Statistics ({academicCycle})
@@ -94,15 +109,42 @@ export default function HodReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center">
-          <BarChart3 className="text-blue-500 mb-3" size={48} />
-          <h3 className="text-md font-bold text-gray-800">
-            Visual Analytics Ready
-          </h3>
-          <p className="text-sm text-gray-500 max-w-sm mt-1">
-            Charts and visual analytics for marking progress and turnaround
-            times are compiled in the exported PDF/Excel report.
-          </p>
+        {/* Workflow Pipeline Graph / Visualizer */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <TrendingUp size={20} className="text-blue-500" />
+                Department Workflow Pipeline
+              </h2>
+              <span className="text-xs text-gray-400 font-medium">
+                {academicCycle}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Real-time distribution of examination packets across workflow
+              stages.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {workflowStages.map((item, idx) => (
+              <div key={idx} className="space-y-1">
+                <div className="flex justify-between text-xs font-medium text-gray-700">
+                  <span>{item.stage}</span>
+                  <span>
+                    {item.count} packets ({item.percentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className={`h-2.5 rounded-full ${item.color} transition-all duration-500`}
+                    style={{ width: `${item.percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
