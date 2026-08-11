@@ -21,7 +21,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-
 // --- LECTURER ENDPOINTS ---
 export const lecturerApi = {
   getDashboard: (lecturerId) => api.get(`/lecturer/${lecturerId}/dashboard`),

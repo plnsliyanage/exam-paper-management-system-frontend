@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PacketDetailModal from "../../components/PacketDetailModal";
 import MarkingEntryModal from "../../components/MarkingEntryModal";
+import { lecturerApi } from "../../services/api"; // Adjust path as needed
 import {
   CheckCircle2,
   Clock,
@@ -18,90 +19,102 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const MOCK_USER = {
-  id: "LEC-101",
-  name: "Dr. Samantha Perera",
-  department: "Department of Computer Science",
-  currentSemester: "2026-S1",
-};
-
-// Expanded mock data to handle different packet task types:
-// 'SET_PAPER' (Setting exam papers), 'MARK_SCRIPTS' (Marking exam scripts), 'MODERATION' (Checking/moderating someone else's work)
-const MOCK_ACTIVE_PACKETS = [
-  {
-    packetId: "PKT-2026-01",
-    courseCode: "CS1022",
-    courseName: "Data Structures and Algorithms",
-    taskType: "MARK_SCRIPTS", // to mark
-    status: "MARKING",
-    currentHolder: "Dr. Samantha Perera",
-    deadline: "2026-06-15",
-    semester: "2026-S1",
-    scriptsCount: 60,
-  },
-  {
-    packetId: "PKT-2026-02",
-    courseCode: "CS2032",
-    courseName: "Database Systems",
-    taskType: "MODERATION", // to check / moderate
-    status: "REVIEW",
-    currentHolder: "Dr. Samantha Perera",
-    deadline: "2026-06-20",
-    semester: "2026-S1",
-    scriptsCount: 60,
-  },
-  {
-    packetId: "PKT-2026-03",
-    courseCode: "CS3012",
-    courseName: "Software Engineering",
-    taskType: "SET_PAPER", // to set paper
-    status: "PAPER_SETTING",
-    currentHolder: "Dr. Samantha Perera",
-    deadline: "2026-06-10",
-    semester: "2026-S1",
-    scriptsCount: 1, // Usually 1 paper packet / draft structure
-  },
-];
-
 export default function LecturerDashboard() {
-  const [currentUser] = useState(MOCK_USER);
+  // Assuming logged-in user ID is stored in localStorage or auth context
+  const [currentUser, setCurrentUser] = useState({
+    id: "U1",
+    name: "Dr. Samantha Perera",
+    department: "Department of Computer Science",
+    currentSemester: "2026-S1",
+  });
+
   const [currentSemester] = useState(currentUser.currentSemester);
-  const [packets, setPackets] = useState(MOCK_ACTIVE_PACKETS);
+  const [packets, setPackets] = useState([]);
+  const [allPackets, setAllPackets] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [taskFilter, setTaskFilter] = useState("ALL"); // ALL, SET_PAPER, MARK_SCRIPTS, MODERATION
+  const [taskFilter, setTaskFilter] = useState("ALL");
+  const [dashboardStats, setDashboardStats] = useState({
+    totalActiveTasks: 0,
+    scriptsToMark: 0,
+    completedTasks: 0,
+    overdueItems: 0,
+    completionRate: 0,
+    paperSettingCount: 0,
+    scriptMarkingCount: 0,
+    moderationCount: 0,
+  });
 
   const [selectedPacketId, setSelectedPacketId] = useState(null);
   const [markingPacket, setMarkingPacket] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const currentSemesterPackets = MOCK_ACTIVE_PACKETS.filter(
-    (p) => p.semester === currentSemester,
-  );
+  // Fetch initial dashboard and packets data
+  useEffect(() => {
+    loadDashboardData();
+  }, [currentUser.id]);
 
-  const totalScripts = currentSemesterPackets
-    .filter((p) => p.taskType === "MARK_SCRIPTS")
-    .reduce((acc, curr) => acc + curr.scriptsCount, 0);
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      // Fetch assigned packets
+      const packetsRes = await lecturerApi.getPackets(currentUser.id);
+      setAllPackets(packetsRes.data);
+      setPackets(packetsRes.data);
+
+      // Fetch dashboard summaries/stats if endpoint is available
+      try {
+        const statsRes = await lecturerApi.getDashboard(currentUser.id);
+        if (statsRes.data) {
+          setDashboardStats(statsRes.data);
+        }
+      } catch (err) {
+        console.warn("Dashboard summary endpoint fallback calculation used.");
+        calculateFallbackStats(packetsRes.data);
+      }
+    } catch (error) {
+      console.error("Failed to load lecturer dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateFallbackStats = (data) => {
+    const scripts = data
+      .filter((p) => p.taskType === "MARK_SCRIPTS")
+      .reduce((acc, curr) => acc + (curr.scriptsCount || 0), 0);
+
+    setDashboardStats({
+      totalActiveTasks: data.length,
+      scriptsToMark: scripts,
+      completedTasks: 1, // Fallback or fetched from backend
+      overdueItems: 0,
+      completionRate: 75,
+      paperSettingCount: data.filter((p) => p.taskType === "SET_PAPER").length,
+      scriptMarkingCount: data.filter((p) => p.taskType === "MARK_SCRIPTS")
+        .length,
+      moderationCount: data.filter((p) => p.taskType === "MODERATION").length,
+    });
+  };
 
   // Filter logic incorporating both search text and task type filter tabs
   const handleFilterChange = (type) => {
     setTaskFilter(type);
-    applyFilters(searchQuery, type);
+    applyFilters(searchQuery, type, allPackets);
   };
 
   const handleSearch = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
-    applyFilters(val, taskFilter);
+    applyFilters(val, taskFilter, allPackets);
   };
 
-  const applyFilters = (query, type) => {
-    let filtered = currentSemesterPackets;
+  const applyFilters = (query, type, sourceData) => {
+    let filtered = sourceData;
 
-    // Filter by Task Type
     if (type !== "ALL") {
       filtered = filtered.filter((p) => p.taskType === type);
     }
 
-    // Filter by Search Query
     if (query.trim()) {
       filtered = filtered.filter(
         (p) =>
@@ -113,12 +126,18 @@ export default function LecturerDashboard() {
     setPackets(filtered);
   };
 
-  const handleCompleteTask = (packetId) => {
-    alert(`Task completed for packet: ${packetId}`);
-    setPackets((prev) => prev.filter((p) => p.packetId !== packetId));
+  const handleCompleteTask = async (packetId) => {
+    try {
+      await lecturerApi.completeTask(packetId);
+      alert(`Task completed for packet: ${packetId}`);
+      // Refresh data
+      loadDashboardData();
+    } catch (error) {
+      console.error("Error completing task:", error);
+      alert("Failed to complete task.");
+    }
   };
 
-  // Helper badge renderers for different workflow packet types
   const renderTaskBadge = (taskType) => {
     switch (taskType) {
       case "SET_PAPER":
@@ -143,6 +162,14 @@ export default function LecturerDashboard() {
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-xs text-slate-500">
+        Loading dashboard...
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto text-xs">
@@ -181,25 +208,25 @@ export default function LecturerDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total Active Tasks"
-          value={currentSemesterPackets.length}
+          value={dashboardStats.totalActiveTasks}
           icon={BookOpen}
           color="text-brand-600"
         />
         <MetricCard
           title="Scripts to Mark"
-          value={totalScripts}
+          value={dashboardStats.scriptsToMark}
           icon={Clock}
           color="text-amber-600"
         />
         <MetricCard
           title="Completed Tasks"
-          value={1}
+          value={dashboardStats.completedTasks}
           icon={CheckCircle2}
           color="text-emerald-600"
         />
         <MetricCard
           title="Overdue Items"
-          value={0}
+          value={dashboardStats.overdueItems}
           icon={AlertTriangle}
           color="text-rose-600"
         />
@@ -225,52 +252,25 @@ export default function LecturerDashboard() {
 
           {/* Task Type Filter Tabs */}
           <div className="flex flex-wrap gap-2 pt-1">
-            <button
-              onClick={() => handleFilterChange("ALL")}
-              className={`px-3 py-1 rounded-lg font-semibold transition-colors ${
-                taskFilter === "ALL"
-                  ? "bg-slate-900 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              All Tasks
-            </button>
-            <button
-              onClick={() => handleFilterChange("SET_PAPER")}
-              className={`px-3 py-1 rounded-lg font-semibold transition-colors ${
-                taskFilter === "SET_PAPER"
-                  ? "bg-purple-700 text-white"
-                  : "bg-purple-50 text-purple-700 hover:bg-purple-100"
-              }`}
-            >
-              Paper Setting
-            </button>
-            <button
-              onClick={() => handleFilterChange("MARK_SCRIPTS")}
-              className={`px-3 py-1 rounded-lg font-semibold transition-colors ${
-                taskFilter === "MARK_SCRIPTS"
-                  ? "bg-amber-600 text-white"
-                  : "bg-amber-50 text-amber-700 hover:bg-amber-100"
-              }`}
-            >
-              Script Marking
-            </button>
-            <button
-              onClick={() => handleFilterChange("MODERATION")}
-              className={`px-3 py-1 rounded-lg font-semibold transition-colors ${
-                taskFilter === "MODERATION"
-                  ? "bg-blue-600 text-white"
-                  : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-              }`}
-            >
-              Moderation / Checking
-            </button>
+            {["ALL", "SET_PAPER", "MARK_SCRIPTS", "MODERATION"].map((type) => (
+              <button
+                key={type}
+                onClick={() => handleFilterChange(type)}
+                className={`px-3 py-1 rounded-lg font-semibold transition-colors ${
+                  taskFilter === type
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {type === "ALL" ? "All Tasks" : type.replace("_", " ")}
+              </button>
+            ))}
           </div>
 
           <div className="space-y-3 pt-2">
             {packets.length === 0 ? (
               <p className="text-slate-400 text-center py-6">
-                No matching exam packets found for this filter.
+                No matching exam packets found.
               </p>
             ) : (
               packets.map((packet) => (
@@ -333,27 +333,35 @@ export default function LecturerDashboard() {
             <div>
               <div className="flex justify-between text-xs font-semibold mb-1">
                 <span>Overall Completion Rate</span>
-                <span className="text-brand-600">75%</span>
+                <span className="text-brand-600">
+                  {dashboardStats.completionRate}%
+                </span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-brand-600 rounded-full"
-                  style={{ width: "75%" }}
+                  style={{ width: `${dashboardStats.completionRate}%` }}
                 />
               </div>
             </div>
             <div className="pt-2 text-[11px] text-slate-500 space-y-1.5 border-t border-slate-100">
               <div className="flex justify-between">
                 <span>Paper Setting Tasks:</span>
-                <span className="font-bold text-slate-700">1 Active</span>
+                <span className="font-bold text-slate-700">
+                  {dashboardStats.paperSettingCount} Active
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Script Marking Tasks:</span>
-                <span className="font-bold text-slate-700">1 Active</span>
+                <span className="font-bold text-slate-700">
+                  {dashboardStats.scriptMarkingCount} Active
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Moderation / Checking Tasks:</span>
-                <span className="font-bold text-slate-700">1 Active</span>
+                <span className="font-bold text-slate-700">
+                  {dashboardStats.moderationCount} Active
+                </span>
               </div>
             </div>
           </div>
