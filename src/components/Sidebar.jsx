@@ -30,13 +30,6 @@ export default function Sidebar({ currentRole }) {
           { name: "Previous Records", path: "/hod/previous" },
           { name: "Reports", path: "/hod/reports" },
         ];
-      case "ar":
-        return [
-          { name: "Overview", path: "/ar" },
-          { name: "Packets", path: "/ar/packets" },
-          { name: "User & Printing", path: "/ar/printing" },
-          { name: "Audit Logs", path: "/ar/logs" },
-        ];
       default:
         return [];
     }

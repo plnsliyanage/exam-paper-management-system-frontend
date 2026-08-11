@@ -27,12 +27,6 @@ import HodOverduePage from "./pages/hod/HodOverduePage";
 import HodPreviousRecordsPage from "./pages/hod/HodPreviousRecordsPage";
 import HodReportsPage from "./pages/hod/HodReportsPage";
 
-// AR Pages
-import ArOverview from "./pages/ar/ArOverview";
-import ArUserAndPrintingManagement from "./pages/ar/ArUserAndPrintingManagement";
-import ArPacketsPage from "./pages/ar/ArPacketsPage";
-import ArAuditLogsPage from "./pages/ar/ArAuditLogsPage";
-
 // A sub-component to safely use useLocation inside Router
 function MainLayout() {
   const location = useLocation();
@@ -42,8 +36,6 @@ function MainLayout() {
   let roleKey = "lecturer";
   if (location.pathname.startsWith("/hod")) {
     roleKey = "hod";
-  } else if (location.pathname.startsWith("/ar")) {
-    roleKey = "ar";
   } else if (location.pathname.startsWith("/lecturer")) {
     roleKey = "lecturer";
   }
@@ -77,16 +69,6 @@ function MainLayout() {
           <Route path="/hod/overdue" element={<HodOverduePage />} />
           <Route path="/hod/previous" element={<HodPreviousRecordsPage />} />
           <Route path="/hod/reports" element={<HodReportsPage />} />
-
-          {/* AR Routes */}
-          <Route path="/ar" element={<ArOverview />} />
-          <Route path="/ar/packets" element={<ArPacketsPage />} />
-          <Route
-            path="/ar/printing"
-            element={<ArUserAndPrintingManagement />}
-          />
-          <Route path="/ar/users" element={<ArUserAndPrintingManagement />} />
-          <Route path="/ar/logs" element={<ArAuditLogsPage />} />
 
           {/* Default Landing / Catch-all */}
           <Route path="/" element={<Navigate to="/lecturer" replace />} />
