@@ -8,10 +8,6 @@ import {
 } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 
-// Auth Pages
-import LoginPage from "./pages/auth/LoginPage";
-import SignupPage from "./pages/auth/SignupPage";
-
 // Lecturer Pages
 import LecturerDashboard from "./pages/lecturer/LecturerDashboard";
 import LecturerPacketsPage from "./pages/lecturer/LecturerPacketsPage";
@@ -45,10 +41,6 @@ function MainLayout() {
       <Sidebar currentRole={roleKey} />
       <main className="flex-1 overflow-x-hidden">
         <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage setUser={setUser} />} />
-          <Route path="/signup" element={<SignupPage />} />
-
           {/* Lecturer Routes */}
           <Route path="/lecturer" element={<LecturerDashboard />} />
           <Route path="/lecturer/packets" element={<LecturerPacketsPage />} />

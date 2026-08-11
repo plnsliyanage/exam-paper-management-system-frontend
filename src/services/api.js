@@ -21,11 +21,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// --- AUTH ENDPOINTS ---
-export const authApi = {
-  login: (credentials) => api.post('/auth/signin', credentials),
-  signup: (userData) => api.post('/auth/signup', userData),
-};
 
 // --- LECTURER ENDPOINTS ---
 export const lecturerApi = {
