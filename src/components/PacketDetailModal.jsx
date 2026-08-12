@@ -113,6 +113,7 @@ export default function PacketDetailModal({
   );
 
   const [newComment, setNewComment] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const handleAddComment = (e) => {
     e.preventDefault();
@@ -124,6 +125,13 @@ export default function PacketDetailModal({
     ];
     setPacket({ ...packet, comments: updatedComments });
     setNewComment("");
+  };
+
+  const handleComplete = () => {
+    setIsCompleted(true);
+    if (onStatusUpdated) {
+      onStatusUpdated(packet.packetId);
+    }
   };
 
   return (
@@ -165,7 +173,7 @@ export default function PacketDetailModal({
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
               <span className="text-slate-400 block">Current Status</span>
               <span className="font-bold text-brand-600 mt-0.5 block">
-                {packet.status}
+                {isCompleted ? "COMPLETED" : packet.status}
               </span>
             </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -209,6 +217,17 @@ export default function PacketDetailModal({
                   </span>
                 </div>
               ))}
+              {isCompleted && (
+                <div className="flex justify-between items-center text-xs border-b border-slate-200/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-slate-900"></span>
+                    <span className="font-bold text-slate-700">Completed</span>
+                  </div>
+                  <span className="text-slate-500 font-medium">
+                    Holder: System (Just now)
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -261,7 +280,19 @@ export default function PacketDetailModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex justify-end p-4 border-t border-slate-100 bg-slate-50">
+        <div className="flex justify-between items-center p-4 border-t border-slate-100 bg-slate-50">
+          <button
+            onClick={handleComplete}
+            disabled={isCompleted}
+            className={`px-4 py-2 font-semibold rounded-xl text-white transition-colors ${
+              isCompleted
+                ? "bg-slate-900 cursor-not-allowed opacity-90"
+                : "bg-rose-600 hover:bg-rose-700"
+            }`}
+          >
+            {isCompleted ? "Completed" : "Complete"}
+          </button>
+
           <button
             onClick={onClose}
             className="px-4 py-2 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800"
