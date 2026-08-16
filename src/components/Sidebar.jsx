@@ -16,7 +16,7 @@ export default function Sidebar({ currentRole }) {
       case "lecturer":
         return [
           { name: "Dashboard", path: "/lecturer" },
-          { name: "Packets", path: "/lecturer/packets" },
+
           { name: "Previous Records", path: "/lecturer/previous" },
           { name: "Calendar", path: "/lecturer/calendar" },
           { name: "Notifications", path: "/lecturer/notifications" },

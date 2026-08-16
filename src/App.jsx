@@ -10,7 +10,7 @@ import Sidebar from "./components/Sidebar";
 
 // Lecturer Pages
 import LecturerDashboard from "./pages/lecturer/LecturerDashboard";
-import LecturerPacketsPage from "./pages/lecturer/LecturerPacketsPage";
+
 import LecturerPreviousRecordsPage from "./pages/lecturer/LecturerPreviousRecordsPage";
 import LecturerCalendarPage from "./pages/lecturer/LecturerCalendarPage";
 import LecturerNotificationsPage from "./pages/lecturer/LecturerNotificationsPage";
@@ -43,7 +43,7 @@ function MainLayout() {
         <Routes>
           {/* Lecturer Routes */}
           <Route path="/lecturer" element={<LecturerDashboard />} />
-          <Route path="/lecturer/packets" element={<LecturerPacketsPage />} />
+
           <Route
             path="/lecturer/previous"
             element={<LecturerPreviousRecordsPage />}
