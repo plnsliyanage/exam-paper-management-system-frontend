@@ -83,7 +83,7 @@ export const lecturerApi = {
   getPrintingSchedules: (lecturerId) =>
     api.get(`/lecturer/${lecturerId}/printing-schedules`),
 
-  // Notifications
+   // Notifications
   getNotifications: (userId) =>
     api.get(`/lecturer/${userId}/notifications`),
 };
