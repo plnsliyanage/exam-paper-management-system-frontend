@@ -50,199 +50,84 @@ api.interceptors.response.use(
 // ============================================================
 
 export const lecturerApi = {
-
-  // ----------------------------------------------------------
-  // Dashboard
-  // ----------------------------------------------------------
-
   getDashboard: (lecturerId) =>
-    api.get(`/lecturer/${lecturerId}/dashboard`),
-
-  // ----------------------------------------------------------
-  // Assigned packets
-  // ----------------------------------------------------------
+    api.get(`/lecturer/${encodeURIComponent(lecturerId)}/dashboard`),
 
   getPackets: (lecturerId) =>
-    api.get(`/lecturer/${lecturerId}/packets`),
-
-  // ----------------------------------------------------------
-  // Packet details
-  //
-  // Backend:
-  // GET /api/lecturer/packets/{packetId}
-  // ----------------------------------------------------------
+    api.get(`/lecturer/${encodeURIComponent(lecturerId)}/packets`),
 
   getPacketDetails: (packetId) =>
-    api.get(
-      `/lecturer/packets/${encodeURIComponent(packetId)}`
-    ),
-
-  // ----------------------------------------------------------
-  // Movement history
-  //
-  // IMPORTANT:
-  // Backend controller is:
-  //
-  // @RequestMapping("/api/lecturer")
-  // @GetMapping("/{packetId}/movements")
-  //
-  // Therefore:
-  // /api/lecturer/P1/movements
-  //
-  // NOT:
-  // /api/lecturer/packets/P1/movements
-  // ----------------------------------------------------------
+    api.get(`/lecturer/packets/${encodeURIComponent(packetId)}`),
 
   getMovementHistory: (packetId) =>
-    api.get(
-      `/lecturer/${encodeURIComponent(packetId)}/movements`
-    ),
-
-  // ----------------------------------------------------------
-  // Previous packets
-  // ----------------------------------------------------------
+    api.get(`/lecturer/${encodeURIComponent(packetId)}/movements`),
 
   getPreviousPackets: () =>
     api.get("/lecturer/packets/previous"),
 
-  // ----------------------------------------------------------
-  // Search packets
-  // ----------------------------------------------------------
-
   searchPackets: (keyword) =>
     api.get("/lecturer/packets/search", {
-      params: {
-        keyword,
-      },
+      params: { keyword },
     }),
-
-  // ----------------------------------------------------------
-  // Assigned packet count
-  // ----------------------------------------------------------
 
   getAssignedPacketCount: (lecturerId) =>
     api.get(
-      `/lecturer/${encodeURIComponent(
-        lecturerId
-      )}/assigned-packets/count`
+      `/lecturer/${encodeURIComponent(lecturerId)}/assigned-packets/count`
     ),
-
-  // ----------------------------------------------------------
-  // Marking
-  // ----------------------------------------------------------
 
   addMarkingScripts: (data) =>
     api.post("/lecturer/marking", data),
 
   getMarkingByPacketId: (packetId) =>
-    api.get(
-      `/lecturer/marking/${encodeURIComponent(packetId)}`
-    ),
-
-  // ----------------------------------------------------------
-  // Status
-  // ----------------------------------------------------------
+    api.get(`/lecturer/marking/${encodeURIComponent(packetId)}`),
 
   updateStatus: (packetId, data) =>
     api.put(
-      `/lecturer/packets/${encodeURIComponent(
-        packetId
-      )}/status`,
+      `/lecturer/packets/${encodeURIComponent(packetId)}/status`,
       data
     ),
 
-  // ----------------------------------------------------------
-  // Complete task
-  // ----------------------------------------------------------
-
   completeTask: (packetId) =>
     api.put(
-      `/lecturer/tasks/${encodeURIComponent(
-        packetId
-      )}/complete`
+      `/lecturer/tasks/${encodeURIComponent(packetId)}/complete`
     ),
-
-  // ----------------------------------------------------------
-  // Comments
-  // ----------------------------------------------------------
 
   addComment: (data) =>
     api.post("/lecturer/comments", data),
 
   getComments: (packetId) =>
-    api.get(
-      `/lecturer/comments/${encodeURIComponent(packetId)}`
-    ),
-
-  // ----------------------------------------------------------
-  // Workload
-  // ----------------------------------------------------------
+    api.get(`/lecturer/comments/${encodeURIComponent(packetId)}`),
 
   getWorkloadStats: (lecturerId) =>
     api.get(
-      `/lecturer/${encodeURIComponent(
-        lecturerId
-      )}/workload-statistics`
+      `/lecturer/${encodeURIComponent(lecturerId)}/workload-statistics`
     ),
-
-  // ----------------------------------------------------------
-  // Calendar
-  // ----------------------------------------------------------
 
   getDeadlineCalendar: (lecturerId) =>
     api.get(
-      `/lecturer/${encodeURIComponent(
-        lecturerId
-      )}/deadline-calendar`
+      `/lecturer/${encodeURIComponent(lecturerId)}/deadline-calendar`
     ),
-
-  // ----------------------------------------------------------
-  // Printing schedules
-  // ----------------------------------------------------------
 
   getPrintingSchedules: (lecturerId) =>
     api.get(
-      `/lecturer/${encodeURIComponent(
-        lecturerId
-      )}/printing-schedules`
+      `/lecturer/${encodeURIComponent(lecturerId)}/printing-schedules`
     ),
-
-    addComment: (data) =>
-  api.post("/lecturer/comments", data),
-
-getComments: (packetId) =>
-  api.get(
-    `/lecturer/comments/${encodeURIComponent(packetId)}`
-  ),
-
-  // ----------------------------------------------------------
-  // Notifications
-  // ----------------------------------------------------------
 
   getNotifications: (userId) =>
     api.get(
-      `/lecturer/${encodeURIComponent(
-        userId
-      )}/notifications`
+      `/lecturer/${encodeURIComponent(userId)}/notifications`
     ),
 
-  markNotificationAsRead: (
-    userId,
-    notificationId
-  ) =>
+  markNotificationAsRead: (userId, notificationId) =>
     api.put(
       `/lecturer/${encodeURIComponent(
         userId
-      )}/notifications/${encodeURIComponent(
-        notificationId
-      )}/read`
+      )}/notifications/${encodeURIComponent(notificationId)}/read`
     ),
 
   markAllNotificationsAsRead: (userId) =>
     api.put(
-      `/lecturer/${encodeURIComponent(
-        userId
-      )}/notifications/read-all`
+      `/lecturer/${encodeURIComponent(userId)}/notifications/read-all`
     ),
 };
 
@@ -251,15 +136,22 @@ getComments: (packetId) =>
 // ============================================================
 
 export const hodApi = {
+  // ----------------------------------------------------------
+  // ALL DEPARTMENT PACKETS
+  // GET /api/hod/department/{deptId}/packets
+  // ----------------------------------------------------------
 
   getDepartmentPackets: (deptId) =>
     api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/packets`
+      `/hod/department/${encodeURIComponent(deptId)}/packets`
     ),
 
-  searchPackets: (deptId, params) =>
+  // ----------------------------------------------------------
+  // SEARCH / FILTER
+  // GET /api/hod/department/{deptId}/packets/search
+  // ----------------------------------------------------------
+
+  searchPackets: (deptId, params = {}) =>
     api.get(
       `/hod/department/${encodeURIComponent(
         deptId
@@ -269,10 +161,32 @@ export const hodApi = {
       }
     ),
 
+  // ----------------------------------------------------------
+  // PACKET DETAILS
+  // GET /api/hod/packet/{packetId}
+  // ----------------------------------------------------------
+
   getPacketDetails: (packetId) =>
     api.get(
       `/hod/packet/${encodeURIComponent(packetId)}`
     ),
+
+  // ----------------------------------------------------------
+  // DEPARTMENT STATISTICS
+  // GET /api/hod/department/{deptId}/statistics
+  // ----------------------------------------------------------
+
+  getDepartmentStatistics: (deptId) =>
+    api.get(
+      `/hod/department/${encodeURIComponent(
+        deptId
+      )}/statistics`
+    ),
+
+  // ----------------------------------------------------------
+  // PREVIOUS RECORDS
+  // GET /api/hod/department/{deptId}/previous-records
+  // ----------------------------------------------------------
 
   getPreviousRecords: (deptId) =>
     api.get(
@@ -281,6 +195,11 @@ export const hodApi = {
       )}/previous-records`
     ),
 
+  // ----------------------------------------------------------
+  // OVERDUE PACKETS
+  // GET /api/hod/department/{deptId}/overdue
+  // ----------------------------------------------------------
+
   getOverduePackets: (deptId) =>
     api.get(
       `/hod/department/${encodeURIComponent(
@@ -288,12 +207,21 @@ export const hodApi = {
       )}/overdue`
     ),
 
+  // ----------------------------------------------------------
+  // WORKLOAD
+  // GET /api/hod/department/{deptId}/workload
+  // ----------------------------------------------------------
+
   getWorkload: (deptId) =>
     api.get(
       `/hod/department/${encodeURIComponent(
         deptId
       )}/workload`
     ),
+
+  // ----------------------------------------------------------
+  // COMMENTS
+  // ----------------------------------------------------------
 
   addComment: (data) =>
     api.post("/hod/comment", data),
@@ -303,33 +231,6 @@ export const hodApi = {
       `/hod/packet/${encodeURIComponent(
         packetId
       )}/comments`
-    ),
-
-  getReport: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/report`
-    ),
-
-  exportExcel: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/report/export/excel`,
-      {
-        responseType: "blob",
-      }
-    ),
-
-  exportPdf: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/report/export/pdf`,
-      {
-        responseType: "blob",
-      }
     ),
 };
 

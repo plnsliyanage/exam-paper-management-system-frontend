@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   FileText,
   Clock,
@@ -9,64 +9,111 @@ import {
   ShieldAlert,
   TrendingUp,
 } from "lucide-react";
+import { hodApi } from "../../services/api"; // Adjust the path to your api file if needed
 
-export default function HodDepartmentView({ navigateTo }) {
-  const stats = [
+export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
+  const [stats, setStats] = useState([
     {
       title: "Total Packets",
-      value: "48",
+      value: "0",
       icon: FileText,
       color: "text-blue-600 bg-blue-50",
     },
     {
       title: "In Progress",
-      value: "24",
+      value: "0",
       icon: Clock,
       color: "text-amber-600 bg-amber-50",
     },
     {
       title: "Overdue / Delayed",
-      value: "7",
+      value: "0",
       icon: AlertTriangle,
       color: "text-red-600 bg-red-50",
     },
     {
       title: "Completed",
-      value: "17",
+      value: "0",
       icon: CheckCircle2,
       color: "text-green-600 bg-green-50",
     },
-  ];
+  ]);
 
-  const recentPackets = [
-    {
-      id: "PKT-2026-012",
-      course: "Advanced Software Engineering",
-      lecturer: "Dr. Alice Smith",
-      moderator: "Prof. Bob Jones",
-      status: "Pending Moderation",
-      holder: "Prof. Bob Jones",
-      overdue: false,
-    },
-    {
-      id: "PKT-2026-011",
-      course: "Database Management Systems",
-      lecturer: "Dr. Charlie Brown",
-      moderator: "Dr. Alice Smith",
-      status: "Marking in Progress",
-      holder: "Dr. Charlie Brown",
-      overdue: true,
-    },
-    {
-      id: "PKT-2026-010",
-      course: "Data Structures & Algorithms",
-      lecturer: "Prof. Diana Prince",
-      moderator: "Dr. Evans",
-      status: "Completed",
-      holder: "Archived",
-      overdue: false,
-    },
-  ];
+  const [recentPackets, setRecentPackets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDepartmentData();
+  }, [deptId]);
+
+  const fetchDepartmentData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch aggregated stats and department packets in parallel
+      const [statsRes, packetsRes] = await Promise.all([
+        hodApi.getDepartmentStatistics(deptId),
+        hodApi.getDepartmentPackets(deptId),
+      ]);
+
+      const data = statsRes.data;
+
+      // Update metrics state with backend response
+      setStats([
+        {
+          title: "Total Packets",
+          value: data.totalPackets.toString(),
+          icon: FileText,
+          color: "text-blue-600 bg-blue-50",
+        },
+        {
+          title: "In Progress",
+          value: data.inProgressPackets.toString(),
+          icon: Clock,
+          color: "text-amber-600 bg-amber-50",
+        },
+        {
+          title: "Overdue / Delayed",
+          value: data.overduePackets.toString(),
+          icon: AlertTriangle,
+          color: "text-red-600 bg-red-50",
+        },
+        {
+          title: "Completed",
+          value: data.completedPackets.toString(),
+          icon: CheckCircle2,
+          color: "text-green-600 bg-green-50",
+        },
+      ]);
+
+      // Set top 3 recent packets for the table
+      setRecentPackets(packetsRes.data.slice(0, 3));
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch department dashboard data:", err);
+      setError("Failed to load department data from server.");
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-screen">
+        <p className="text-gray-500 text-sm font-medium animate-pulse">
+          Loading Dashboard...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-screen">
+        <p className="text-red-600 text-sm font-medium">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -138,45 +185,57 @@ export default function HodDepartmentView({ navigateTo }) {
               <thead>
                 <tr className="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
                   <th className="py-3 px-3">Packet ID & Course</th>
-                  <th className="py-3 px-3">Lecturer / Moderator</th>
+                  <th className="py-3 px-3">Cycle</th>
                   <th className="py-3 px-3">Status</th>
                   <th className="py-3 px-3">Current Holder</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
-                {recentPackets.map((pkt) => (
-                  <tr key={pkt.id} className="hover:bg-gray-50">
-                    <td className="py-3 px-3">
-                      <div className="font-medium text-gray-900">{pkt.id}</div>
-                      <div className="text-xs text-gray-500">{pkt.course}</div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="text-gray-800">{pkt.lecturer}</div>
-                      <div className="text-xs text-gray-500">
-                        Mod: {pkt.moderator}
-                      </div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          pkt.status === "Completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        {pkt.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-gray-600 text-xs">
-                      {pkt.holder}
-                      {pkt.overdue && (
-                        <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">
-                          Overdue
-                        </span>
-                      )}
+                {recentPackets.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      className="py-4 text-center text-gray-500 text-xs"
+                    >
+                      No packets found for this department.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  recentPackets.map((pkt) => (
+                    <tr key={pkt.packetId} className="hover:bg-gray-50">
+                      <td className="py-3 px-3">
+                        <div className="font-medium text-gray-900">
+                          {pkt.packetId}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {pkt.courseName} ({pkt.courseCode})
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-gray-600 text-xs">
+                        {pkt.cycleId}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            pkt.status === "Completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {pkt.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-gray-600 text-xs">
+                        {pkt.currentHolderName}
+                        {pkt.isOverdue && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">
+                            Overdue
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -196,7 +255,7 @@ export default function HodDepartmentView({ navigateTo }) {
                   <ShieldAlert className="text-red-600" size={20} />
                   <div>
                     <p className="text-sm font-semibold text-red-900">
-                      7 Overdue Packets
+                      Overdue Packets
                     </p>
                     <p className="text-xs text-red-700">
                       Action needed to clear delays
@@ -264,7 +323,6 @@ export default function HodDepartmentView({ navigateTo }) {
 
         <div className="h-48 w-full pt-4 relative">
           <svg className="w-full h-full overflow-visible" viewBox="0 0 600 160">
-            {/* Grid lines */}
             <line
               x1="0"
               y1="0"
@@ -321,18 +379,15 @@ export default function HodDepartmentView({ navigateTo }) {
               strokeWidth="3"
             />
 
-            {/* Data Points - Total */}
             <circle cx="50" cy="70" r="4" fill="#2563eb" />
             <circle cx="300" cy="50" r="4" fill="#2563eb" />
             <circle cx="550" cy="30" r="4" fill="#2563eb" />
 
-            {/* Data Points - Completed */}
             <circle cx="50" cy="110" r="4" fill="#22c55e" />
             <circle cx="300" cy="90" r="4" fill="#22c55e" />
             <circle cx="550" cy="45" r="4" fill="#22c55e" />
           </svg>
 
-          {/* X-Axis Labels */}
           <div className="flex justify-between text-xs text-gray-500 px-2 mt-2 font-medium">
             <span>2024/2025 Sem 2</span>
             <span>2025/2026 Sem 1</span>
