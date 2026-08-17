@@ -28,13 +28,15 @@ export default function LecturerCalendarPage() {
   const [deadlineError, setDeadlineError] = useState("");
 
   // ============================================================
-  // PRINTING SLOTS
+  // PRINTING SCHEDULES FROM BACKEND
   // ============================================================
-  // These are kept as frontend state for now.
-  // If you want printing slots from the database too,
-  // we can connect getPrintingSchedules() to this section.
 
   const [slots, setSlots] = useState([]);
+
+  const [loadingPrintingSchedules, setLoadingPrintingSchedules] =
+    useState(true);
+
+  const [printingScheduleError, setPrintingScheduleError] = useState("");
 
   const [selectedSlotId, setSelectedSlotId] = useState(null);
 
@@ -63,20 +65,6 @@ export default function LecturerCalendarPage() {
           await lecturerApi.getDeadlineCalendar(currentLecturerId);
 
         console.log("Backend deadline response:", response.data);
-
-        /*
-         * Backend response example:
-         *
-         * [
-         *   {
-         *     packetId: "P3",
-         *     courseCode: "CS2042",
-         *     courseName: "Database Systems",
-         *     deadline: "2026-08-20",
-         *     status: "PENDING"
-         *   }
-         * ]
-         */
 
         const backendEvents = response.data.map((item) => ({
           id: item.packetId,
@@ -114,6 +102,82 @@ export default function LecturerCalendarPage() {
   }, []);
 
   // ============================================================
+  // LOAD PRINTING SCHEDULES FROM BACKEND
+  // ============================================================
+
+  useEffect(() => {
+    const fetchPrintingSchedules = async () => {
+      try {
+        setLoadingPrintingSchedules(true);
+
+        setPrintingScheduleError("");
+
+        console.log(
+          "Loading printing schedules for lecturer:",
+          currentLecturerId,
+        );
+
+        const response =
+          await lecturerApi.getPrintingSchedules(currentLecturerId);
+
+        console.log("Backend printing schedules response:", response.data);
+
+        if (!Array.isArray(response.data)) {
+          setSlots([]);
+
+          return;
+        }
+
+        // ======================================================
+        // CONVERT BACKEND DATA TO FRONTEND SLOT FORMAT
+        // ======================================================
+
+        const backendSlots = response.data.map((item, index) => {
+          const backendStatus = item.status
+            ? item.status.toUpperCase()
+            : "AVAILABLE";
+
+          return {
+            // Create unique frontend ID
+            id: `${item.packetId}-${index}`,
+
+            packetId: item.packetId,
+
+            courseCode: item.courseCode,
+
+            courseName: item.courseName,
+
+            // Your current DTO gives deadline,
+            // so use it as the displayed schedule date.
+            date: item.deadline || "Date not available",
+
+            // Current DTO does not contain a time.
+            time: "Printing Schedule",
+
+            status: backendStatus,
+
+            bookedBy: backendStatus === "BOOKED" ? "Reserved" : null,
+          };
+        });
+
+        setSlots(backendSlots);
+      } catch (err) {
+        console.error("Error loading printing schedules:", err);
+
+        setPrintingScheduleError(
+          "Unable to load printing schedules from the server.",
+        );
+
+        setSlots([]);
+      } finally {
+        setLoadingPrintingSchedules(false);
+      }
+    };
+
+    fetchPrintingSchedules();
+  }, []);
+
+  // ============================================================
   // BOOK PRINTING SLOT
   // ============================================================
 
@@ -125,7 +189,7 @@ export default function LecturerCalendarPage() {
     setSuccessMessage("");
 
     if (!selectedSlotId) {
-      setError("Please select an available time slot.");
+      setError("Please select an available printing schedule.");
 
       return;
     }
@@ -155,7 +219,9 @@ export default function LecturerCalendarPage() {
     );
 
     setSuccessMessage(
-      `Successfully booked slot for ${courseCode.trim().toUpperCase()}!`,
+      `Successfully booked printing schedule for ${courseCode
+        .trim()
+        .toUpperCase()}!`,
     );
 
     setSelectedSlotId(null);
@@ -191,6 +257,26 @@ export default function LecturerCalendarPage() {
     }
 
     if (status && status.toUpperCase() === "OVERDUE") {
+      return "bg-rose-100 text-rose-700";
+    }
+
+    return "bg-amber-100 text-amber-700";
+  };
+
+  // ============================================================
+  // PRINTING STATUS STYLE
+  // ============================================================
+
+  const getPrintingStatusStyle = (status) => {
+    if (status === "BOOKED" || status === "RESERVED") {
+      return "bg-slate-200 text-slate-600";
+    }
+
+    if (status === "COMPLETED") {
+      return "bg-emerald-100 text-emerald-700";
+    }
+
+    if (status === "CANCELLED") {
       return "bg-rose-100 text-rose-700";
     }
 
@@ -282,27 +368,19 @@ export default function LecturerCalendarPage() {
                 key={event.id}
                 className="p-4 border border-slate-100 rounded-xl bg-slate-50 flex justify-between items-start"
               >
-                {/* LEFT SIDE */}
-
                 <div className="flex items-start gap-3">
                   <div className="p-2.5 rounded-xl bg-brand-50 text-brand-600">
                     <Clock className="w-5 h-5" />
                   </div>
 
                   <div>
-                    {/* COURSE CODE */}
-
                     <h4 className="font-bold text-slate-800 text-sm">
                       {event.courseCode}
                     </h4>
 
-                    {/* COURSE NAME */}
-
                     <p className="text-slate-500 text-xs mt-1">
                       {event.courseName}
                     </p>
-
-                    {/* DEADLINE */}
 
                     <p className="text-slate-400 text-xs mt-2">
                       Deadline:{" "}
@@ -310,8 +388,6 @@ export default function LecturerCalendarPage() {
                         {formatDate(event.date)}
                       </span>
                     </p>
-
-                    {/* PACKET */}
 
                     <p className="text-slate-400 text-xs mt-1">
                       Packet:{" "}
@@ -321,8 +397,6 @@ export default function LecturerCalendarPage() {
                     </p>
                   </div>
                 </div>
-
-                {/* STATUS */}
 
                 <span
                   className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${getStatusStyle(
@@ -339,10 +413,13 @@ export default function LecturerCalendarPage() {
 
       {/* ======================================================
           PRINTING SCHEDULE
+          CONNECTED TO BACKEND
       ====================================================== */}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* PRINTING SLOTS */}
+        {/* ==================================================
+            PRINTING SLOTS
+        ================================================== */}
 
         <div className="md:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -351,28 +428,60 @@ export default function LecturerCalendarPage() {
           </h3>
 
           <p className="text-slate-500">
-            Choose an open printing slot below. Once a slot is reserved by any
-            lecturer, it becomes unavailable for others.
+            Printing schedules assigned to your packets are loaded from the
+            backend.
           </p>
 
-          <form onSubmit={handleBookSlot} className="space-y-4 pt-2">
-            {/* COURSE CODE */}
+          {/* ==================================================
+              LOADING PRINTING SCHEDULES
+          ================================================== */}
 
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Enter Course Code for Reservation:
-              </label>
+          {loadingPrintingSchedules && (
+            <div className="flex flex-col items-center justify-center py-10 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin mb-2" />
 
-              <input
-                type="text"
-                placeholder="e.g. CS1022"
-                value={courseCode}
-                onChange={(e) => setCourseCode(e.target.value)}
-                className="w-full md:w-64 px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none text-slate-700 font-medium"
-              />
+              <p>Loading printing schedules...</p>
             </div>
+          )}
 
-            {/* ERROR */}
+          {/* ==================================================
+              PRINTING ERROR
+          ================================================== */}
+
+          {!loadingPrintingSchedules && printingScheduleError && (
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+
+              {printingScheduleError}
+            </div>
+          )}
+
+          <form onSubmit={handleBookSlot} className="space-y-4 pt-2">
+            {/* ==================================================
+                COURSE CODE
+            ================================================== */}
+
+            {!loadingPrintingSchedules &&
+              !printingScheduleError &&
+              slots.length > 0 && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Enter Course Code for Reservation:
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="e.g. CS1022"
+                    value={courseCode}
+                    onChange={(e) => setCourseCode(e.target.value)}
+                    className="w-full md:w-64 px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none text-slate-700 font-medium"
+                  />
+                </div>
+              )}
+
+            {/* ==================================================
+                ERROR
+            ================================================== */}
 
             {error && (
               <p className="text-rose-600 font-medium flex items-center gap-1">
@@ -382,104 +491,140 @@ export default function LecturerCalendarPage() {
               </p>
             )}
 
-            {/* PRINTING SLOTS */}
+            {/* ==================================================
+                PRINTING SCHEDULES
+            ================================================== */}
 
-            <div className="space-y-3">
-              {slots.length === 0 ? (
+            {!loadingPrintingSchedules &&
+              !printingScheduleError &&
+              slots.length === 0 && (
                 <div className="py-8 text-center text-slate-400">
-                  No printing schedules available.
+                  <Printer className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+
+                  <p>No printing schedules available.</p>
                 </div>
-              ) : (
-                slots.map((slot) => {
-                  const isBooked = slot.status === "BOOKED";
+              )}
 
-                  const isSelected = selectedSlotId === slot.id;
+            {!loadingPrintingSchedules &&
+              !printingScheduleError &&
+              slots.length > 0 && (
+                <div className="space-y-3">
+                  {slots.map((slot) => {
+                    const isBooked =
+                      slot.status === "BOOKED" || slot.status === "RESERVED";
 
-                  return (
-                    <div
-                      key={slot.id}
-                      onClick={() => {
-                        if (!isBooked) {
-                          setSelectedSlotId(slot.id);
+                    const isSelected = selectedSlotId === slot.id;
 
-                          setError("");
-                        }
-                      }}
-                      className={`p-4 border rounded-xl flex justify-between items-center transition-all ${
-                        isBooked
-                          ? "bg-slate-100 border-slate-200 opacity-75 cursor-not-allowed"
-                          : isSelected
-                            ? "bg-brand-50 border-brand-500 shadow-sm cursor-pointer"
-                            : "bg-slate-50 border-slate-100 hover:border-slate-300 cursor-pointer"
-                      }`}
-                    >
-                      {/* SLOT INFORMATION */}
+                    return (
+                      <div
+                        key={slot.id}
+                        onClick={() => {
+                          if (!isBooked) {
+                            setSelectedSlotId(slot.id);
 
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-2.5 rounded-xl ${
-                            isBooked
-                              ? "bg-slate-200 text-slate-500"
-                              : "bg-amber-50 text-amber-600"
-                          }`}
-                        >
-                          <Clock className="w-5 h-5" />
+                            setError("");
+                          }
+                        }}
+                        className={`p-4 border rounded-xl flex justify-between items-center transition-all ${
+                          isBooked
+                            ? "bg-slate-100 border-slate-200 opacity-75 cursor-not-allowed"
+                            : isSelected
+                              ? "bg-brand-50 border-brand-500 shadow-sm cursor-pointer"
+                              : "bg-slate-50 border-slate-100 hover:border-slate-300 cursor-pointer"
+                        }`}
+                      >
+                        {/* SLOT INFORMATION */}
+
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`p-2.5 rounded-xl ${
+                              isBooked
+                                ? "bg-slate-200 text-slate-500"
+                                : "bg-amber-50 text-amber-600"
+                            }`}
+                          >
+                            <Clock className="w-5 h-5" />
+                          </div>
+
+                          <div>
+                            <h4 className="font-bold text-slate-800 text-sm">
+                              {slot.courseCode}
+                            </h4>
+
+                            <p className="text-slate-500 text-xs mt-1">
+                              {slot.courseName}
+                            </p>
+
+                            <p className="text-slate-400 text-xs mt-1">
+                              Packet:{" "}
+                              <span className="font-medium text-slate-600">
+                                {slot.packetId}
+                              </span>
+                            </p>
+
+                            <p className="text-slate-400 text-xs mt-1">
+                              Date:{" "}
+                              <span className="font-medium text-slate-600">
+                                {formatDate(slot.date)}
+                              </span>
+                            </p>
+                          </div>
                         </div>
+
+                        {/* SLOT STATUS */}
 
                         <div>
-                          <h4 className="font-bold text-slate-800 text-sm">
-                            {slot.date} ({slot.time})
-                          </h4>
+                          {isBooked ? (
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${getPrintingStatusStyle(
+                                slot.status,
+                              )}`}
+                            >
+                              {slot.status}
+                            </span>
+                          ) : (
+                            <label
+                              className="flex items-center gap-2 cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="radio"
+                                name="printingSlot"
+                                checked={isSelected}
+                                onChange={() => {
+                                  setSelectedSlotId(slot.id);
 
-                          <p className="text-slate-400 text-xs">
-                            {isBooked
-                              ? `Reserved by ${slot.bookedBy} (${slot.courseCode})`
-                              : "Available Printing Session"}
-                          </p>
+                                  setError("");
+                                }}
+                                className="accent-brand-600 cursor-pointer"
+                              />
+
+                              <span className="font-bold text-slate-700">
+                                Select Schedule
+                              </span>
+                            </label>
+                          )}
                         </div>
                       </div>
-
-                      {/* SLOT STATUS */}
-
-                      <div>
-                        {isBooked ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">
-                            BOOKED
-                          </span>
-                        ) : (
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="printingSlot"
-                              checked={isSelected}
-                              onChange={() => {
-                                setSelectedSlotId(slot.id);
-
-                                setError("");
-                              }}
-                              className="accent-brand-600 cursor-pointer"
-                            />
-
-                            <span className="font-bold text-slate-700">
-                              Select Slot
-                            </span>
-                          </label>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
-            </div>
 
-            {/* BOOK */}
+            {/* ==================================================
+                BOOK
+            ================================================== */}
 
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition-colors shadow-sm"
-            >
-              Confirm & Book Selected Slot
-            </button>
+            {!loadingPrintingSchedules &&
+              !printingScheduleError &&
+              slots.length > 0 && (
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition-colors shadow-sm"
+                >
+                  Confirm & Book Selected Schedule
+                </button>
+              )}
           </form>
         </div>
 
@@ -495,8 +640,8 @@ export default function LecturerCalendarPage() {
 
           <p className="text-slate-500 leading-relaxed">
             Printing center operations run strictly according to office
-            schedules. Once you select an available slot, it becomes immediately
-            locked to prevent overlapping bookings from other lecturers.
+            schedules. Once you select an available schedule, it becomes
+            immediately locked in this page to prevent overlapping bookings.
           </p>
         </div>
       </div>

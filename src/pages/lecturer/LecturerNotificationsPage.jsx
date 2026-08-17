@@ -1,14 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { Bell, CheckCheck, Loader2, RefreshCw } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  Loader2,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { lecturerApi } from "../../services/api";
 
 export default function LecturerNotificationsPage() {
-  // Temporary user ID until login/authentication is implemented
+  // =========================================================
+  // TEMPORARY USER ID
+  // Until login/authentication is implemented
+  // =========================================================
   const USER_ID = "U1";
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Currently expanded notification
+  const [expandedNotificationId, setExpandedNotificationId] = useState(null);
+
+  // Used while marking all as read
+  const [markingAsRead, setMarkingAsRead] = useState(false);
 
   // =========================================================
   // LOAD NOTIFICATIONS
@@ -37,8 +53,11 @@ export default function LecturerNotificationsPage() {
         status: notification.status,
         createdAt: notification.createdAt,
 
-        // Backend status should be READ or UNREAD
-        read: notification.status === "READ",
+        // Handles:
+        // Read
+        // READ
+        // read
+        read: notification.status?.toString().toLowerCase() === "read",
       }));
 
       setNotifications(formattedNotifications);
@@ -47,6 +66,7 @@ export default function LecturerNotificationsPage() {
 
       if (err.response) {
         console.error("Backend response:", err.response.data);
+
         console.error("Status:", err.response.status);
       } else if (err.request) {
         console.error("No response received from backend.");
@@ -110,16 +130,104 @@ export default function LecturerNotificationsPage() {
   };
 
   // =========================================================
+  // MARK ONE NOTIFICATION AS READ
+  // =========================================================
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      console.log(`Marking notification ${notificationId} as read`);
+
+      // Update database
+      await lecturerApi.markNotificationAsRead(USER_ID, notificationId);
+
+      console.log(`Notification ${notificationId} marked as read`);
+
+      // Update UI immediately
+      setNotifications((previousNotifications) =>
+        previousNotifications.map((notification) =>
+          notification.id === notificationId
+            ? {
+                ...notification,
+                read: true,
+                status: "Read",
+              }
+            : notification,
+        ),
+      );
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+
+      if (err.response) {
+        console.error("Backend response:", err.response.data);
+
+        console.error("Status:", err.response.status);
+      }
+
+      // We don't stop the user from viewing
+      // the notification if the API fails.
+    }
+  };
+
+  // =========================================================
   // MARK ALL AS READ
   // =========================================================
-  const markAllAsRead = () => {
-    setNotifications((previousNotifications) =>
-      previousNotifications.map((notification) => ({
-        ...notification,
-        read: true,
-        status: "READ",
-      })),
+  const markAllAsRead = async () => {
+    try {
+      setMarkingAsRead(true);
+      setError("");
+
+      console.log(`Marking all notifications as read for ${USER_ID}`);
+
+      // Update DATABASE
+      await lecturerApi.markAllNotificationsAsRead(USER_ID);
+
+      console.log("All notifications marked as read successfully.");
+
+      // Update React state
+      setNotifications((previousNotifications) =>
+        previousNotifications.map((notification) => ({
+          ...notification,
+          read: true,
+          status: "Read",
+        })),
+      );
+    } catch (err) {
+      console.error("Error marking notifications as read:", err);
+
+      if (err.response) {
+        console.error("Backend response:", err.response.data);
+
+        console.error("Status:", err.response.status);
+      } else if (err.request) {
+        console.error("No response received from backend.");
+      }
+
+      setError("Unable to mark notifications as read.");
+    } finally {
+      setMarkingAsRead(false);
+    }
+  };
+
+  // =========================================================
+  // EXPAND / COLLAPSE NOTIFICATION
+  // =========================================================
+  const toggleNotification = async (notificationId) => {
+    const selectedNotification = notifications.find(
+      (notification) => notification.id === notificationId,
     );
+
+    // Toggle open/close
+    setExpandedNotificationId((currentId) =>
+      currentId === notificationId ? null : notificationId,
+    );
+
+    // =======================================================
+    // IMPORTANT:
+    // If notification is unread, mark it as read
+    // when the user clicks it.
+    // =======================================================
+    if (selectedNotification && !selectedNotification.read) {
+      await markNotificationAsRead(notificationId);
+    }
   };
 
   // =========================================================
@@ -129,6 +237,9 @@ export default function LecturerNotificationsPage() {
     (notification) => !notification.read,
   ).length;
 
+  // =========================================================
+  // UI
+  // =========================================================
   return (
     <div className="min-h-full bg-slate-50 p-6 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -160,22 +271,30 @@ export default function LecturerNotificationsPage() {
             </p>
           </div>
 
-          {/* MARK ALL AS READ */}
+          {/* =================================================
+              MARK ALL AS READ
+          ================================================== */}
           <button
             type="button"
             onClick={markAllAsRead}
-            disabled={unreadCount === 0 || loading}
+            disabled={unreadCount === 0 || loading || markingAsRead}
             className={`px-4 py-2 rounded-xl border font-semibold
               flex items-center justify-center gap-2 transition
               ${
-                unreadCount === 0 || loading
+                unreadCount === 0 || loading || markingAsRead
                   ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               }`}
           >
-            <CheckCheck className="w-4 h-4" />
-            Mark all as read
-            {unreadCount > 0 && (
+            {markingAsRead ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CheckCheck className="w-4 h-4" />
+            )}
+
+            {markingAsRead ? "Marking..." : "Mark all as read"}
+
+            {unreadCount > 0 && !markingAsRead && (
               <span className="bg-brand-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                 {unreadCount}
               </span>
@@ -216,7 +335,10 @@ export default function LecturerNotificationsPage() {
 
               <button
                 type="button"
-                onClick={fetchNotifications}
+                onClick={() => {
+                  setError("");
+                  fetchNotifications();
+                }}
                 className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-xl
                            flex items-center gap-2 hover:bg-brand-700 transition"
               >
@@ -264,92 +386,150 @@ export default function LecturerNotificationsPage() {
         ====================================================== */}
         {!loading && !error && notifications.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            {notifications.map((notification, index) => (
-              <div
-                key={notification.id || index}
-                className={`
-                    p-4 md:p-5
-                    flex items-start gap-4
-                    transition
-                    border-b border-slate-100
-                    last:border-b-0
-                    ${notification.read ? "bg-white" : "bg-brand-50/40"}
-                  `}
-              >
-                {/* =================================================
-                      NOTIFICATION ICON
-                  ================================================== */}
-                <div
-                  className={`
-                      flex-shrink-0
-                      p-2.5
-                      rounded-xl
-                      ${
-                        notification.read
-                          ? "bg-slate-100 text-slate-500"
-                          : "bg-brand-50 text-brand-600"
-                      }
-                    `}
-                >
-                  <Bell className="w-5 h-5" />
-                </div>
+            {notifications.map((notification, index) => {
+              const isExpanded = expandedNotificationId === notification.id;
 
-                {/* =================================================
-                      NOTIFICATION CONTENT
-                  ================================================== */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <p
-                      className={`
-                          text-sm leading-6
+              return (
+                <div
+                  key={notification.id || index}
+                  onClick={() => toggleNotification(notification.id)}
+                  className={`
+                        p-4 md:p-5
+                        flex items-start gap-4
+                        transition
+                        border-b border-slate-100
+                        last:border-b-0
+                        cursor-pointer
+                        hover:bg-slate-50
+                        ${notification.read ? "bg-white" : "bg-brand-50/40"}
+                      `}
+                >
+                  {/* =================================================
+                          NOTIFICATION ICON
+                      ================================================== */}
+                  <div
+                    className={`
+                          flex-shrink-0
+                          p-2.5
+                          rounded-xl
                           ${
                             notification.read
-                              ? "font-normal text-slate-700"
-                              : "font-semibold text-slate-900"
+                              ? "bg-slate-100 text-slate-500"
+                              : "bg-brand-50 text-brand-600"
                           }
                         `}
-                    >
-                      {notification.message}
-                    </p>
-
-                    {/* UNREAD DOT */}
-                    {!notification.read && (
-                      <span
-                        className="flex-shrink-0
-                                     w-2.5 h-2.5
-                                     rounded-full
-                                     bg-brand-600
-                                     mt-2"
-                      />
-                    )}
+                  >
+                    <Bell className="w-5 h-5" />
                   </div>
 
                   {/* =================================================
-                        TYPE + TIME
-                    ================================================== */}
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {notification.type && (
-                      <span
-                        className="text-[10px]
-                                     uppercase
-                                     tracking-wide
-                                     font-semibold
-                                     px-2 py-1
-                                     rounded-md
-                                     bg-slate-100
-                                     text-slate-500"
-                      >
-                        {notification.type}
-                      </span>
-                    )}
+                          NOTIFICATION CONTENT
+                      ================================================== */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        {/* ONE LINE */}
+                        {!isExpanded && (
+                          <p
+                            className={`
+                                  text-sm
+                                  leading-6
+                                  truncate
+                                  ${
+                                    notification.read
+                                      ? "font-normal text-slate-700"
+                                      : "font-semibold text-slate-900"
+                                  }
+                                `}
+                          >
+                            {notification.message}
+                          </p>
+                        )}
 
-                    <span className="text-[11px] text-slate-400">
-                      {formatTimestamp(notification.createdAt)}
-                    </span>
+                        {/* FULL MESSAGE */}
+                        {isExpanded && (
+                          <p
+                            className={`
+                                  text-sm
+                                  leading-6
+                                  ${
+                                    notification.read
+                                      ? "font-normal text-slate-700"
+                                      : "font-semibold text-slate-900"
+                                  }
+                                `}
+                          >
+                            {notification.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* =================================================
+                              RIGHT SIDE
+                          ================================================== */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* BLUE DOT */}
+                        {!notification.read && (
+                          <span
+                            className="
+                                  w-2.5
+                                  h-2.5
+                                  rounded-full
+                                  bg-brand-600
+                                "
+                          />
+                        )}
+
+                        {/* EXPAND ICON */}
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-slate-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* =================================================
+                            TYPE + TIME
+                        ================================================== */}
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      {notification.type && (
+                        <span
+                          className="
+                                text-[10px]
+                                uppercase
+                                tracking-wide
+                                font-semibold
+                                px-2 py-1
+                                rounded-md
+                                bg-slate-100
+                                text-slate-500
+                              "
+                        >
+                          {notification.type}
+                        </span>
+                      )}
+
+                      <span className="text-[11px] text-slate-400">
+                        {formatTimestamp(notification.createdAt)}
+                      </span>
+
+                      {!isExpanded && (
+                        <span className="text-[10px] text-brand-600 font-medium">
+                          View details
+                        </span>
+                      )}
+
+                      {isExpanded && (
+                        <span className="text-[10px] text-slate-400">
+                          Click to collapse
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -362,14 +542,14 @@ export default function LecturerNotificationsPage() {
               type="button"
               onClick={fetchNotifications}
               className="px-4 py-2
-                         bg-white
-                         border border-slate-200
-                         rounded-xl
-                         text-sm font-medium
-                         text-slate-600
-                         hover:bg-slate-50
-                         flex items-center gap-2
-                         transition"
+                           bg-white
+                           border border-slate-200
+                           rounded-xl
+                           text-sm font-medium
+                           text-slate-600
+                           hover:bg-slate-50
+                           flex items-center gap-2
+                           transition"
             >
               <RefreshCw className="w-4 h-4" />
               Refresh notifications
