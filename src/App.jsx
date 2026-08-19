@@ -10,6 +10,7 @@ import PacketDetail from "./pages/PacketDetail";
 import Workflow from "./pages/Workflow";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
+import UserManagement from "./pages/AR/UserManagement";
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -37,7 +38,7 @@ function AppRoutes() {
         <Route path="/workflow" element={<Workflow />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/users" element={<div className="text-xl font-semibold">User Management</div>} />
+        <Route path="/users" element={<UserManagement />} />
         <Route path="/settings" element={<div className="text-xl font-semibold">Settings</div>} />
       </Route>
 
