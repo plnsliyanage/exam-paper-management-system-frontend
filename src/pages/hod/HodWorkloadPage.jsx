@@ -1,622 +1,465 @@
-import React, { useEffect, useState } from "react";
-import { BarChart3, TrendingUp, Loader2, RefreshCw } from "lucide-react";
-
-import { hodApi } from "../../services/api";
+import React, { useState } from "react";
+import { Users, AlertTriangle, Bell, Send, CheckCircle2 } from "lucide-react";
 
 export default function HodWorkloadPage() {
-  const [reportType, setReportType] = useState("progress");
-
-  const [academicCycle, setAcademicCycle] = useState("2026/2027 Sem 1");
-
-  const [workloadData, setWorkloadData] = useState([]);
-
-  const [statistics, setStatistics] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [error, setError] = useState("");
-
   // ============================================================
-  // DEPARTMENT ID
+  // SAMPLE LECTURER DATA
   // ============================================================
 
-  const departmentId =
-    localStorage.getItem("departmentId") ||
-    localStorage.getItem("deptId") ||
-    "D1";
+  const [lecturers] = useState([
+    {
+      id: "U1",
+      name: "Dr. Samantha Perera",
+      paperSetting: 1,
+      moderating: 1,
+      marking: 2,
+      secondMarking: 1,
+      completed: 2,
+      overdue: 0,
+    },
+    {
+      id: "U2",
+      name: "Dr. Kasun Fernando",
+      paperSetting: 2,
+      moderating: 1,
+      marking: 2,
+      secondMarking: 0,
+      completed: 1,
+      overdue: 1,
+    },
+    {
+      id: "U3",
+      name: "Prof. Nimal Silva",
+      paperSetting: 1,
+      moderating: 1,
+      marking: 1,
+      secondMarking: 1,
+      completed: 2,
+      overdue: 0,
+    },
+    {
+      id: "U4",
+      name: "Dr. Anjali Perera",
+      paperSetting: 1,
+      moderating: 1,
+      marking: 2,
+      secondMarking: 1,
+      completed: 0,
+      overdue: 1,
+    },
+  ]);
 
   // ============================================================
-  // LOAD DATA
+  // SAMPLE PREVIOUS NOTIFICATIONS
   // ============================================================
 
-  const loadWorkloadData = async () => {
-    try {
-      setError("");
-
-      const [workloadResponse, statisticsResponse] = await Promise.all([
-        hodApi.getWorkload(departmentId),
-        hodApi.getDepartmentStatistics(departmentId),
-      ]);
-
-      console.log("HOD WORKLOAD RESPONSE:", workloadResponse.data);
-
-      console.log("HOD STATISTICS RESPONSE:", statisticsResponse.data);
-
-      setWorkloadData(
-        Array.isArray(workloadResponse.data) ? workloadResponse.data : [],
-      );
-
-      setStatistics(statisticsResponse.data || null);
-    } catch (err) {
-      console.error("HOD WORKLOAD ERROR:", err);
-
-      setError(err.response?.data?.message || "Failed to load workload data.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      lecturerId: "U2",
+      lecturerName: "Dr. Kasun Fernando",
+      message: "Please complete the pending marking work before the deadline.",
+      date: "2026-08-20",
+    },
+    {
+      id: 2,
+      lecturerId: "U4",
+      lecturerName: "Dr. Anjali Perera",
+      message:
+        "Your assigned paper requires attention. Please check the packet.",
+      date: "2026-08-19",
+    },
+  ]);
 
   // ============================================================
-  // INITIAL LOAD
+  // NOTIFICATION STATES
   // ============================================================
 
-  useEffect(() => {
-    loadWorkloadData();
-  }, [departmentId]);
+  const [selectedLecturer, setSelectedLecturer] = useState("");
+
+  const [notificationMessage, setNotificationMessage] = useState("");
+
+  const [sending, setSending] = useState(false);
+
+  const [successMessage, setSuccessMessage] = useState("");
 
   // ============================================================
-  // REFRESH
+  // TOTAL WORKLOAD
   // ============================================================
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadWorkloadData();
-  };
-
-  // ============================================================
-  // STATISTICS HELPERS
-  // ============================================================
-
-  const getStatistic = (...keys) => {
-    if (!statistics) {
-      return 0;
-    }
-
-    for (const key of keys) {
-      if (statistics[key] !== undefined && statistics[key] !== null) {
-        return Number(statistics[key]) || 0;
-      }
-    }
-
-    return 0;
-  };
-
-  const totalAssigned = getStatistic(
-    "totalAssignedPackets",
-    "totalPackets",
-    "total",
-    "assignedPackets",
-  );
-
-  const completed = getStatistic(
-    "completedPackets",
-    "completed",
-    "completedCount",
-  );
-
-  const inProgress = getStatistic(
-    "inProgressPackets",
-    "inProgress",
-    "inProgressCount",
-  );
-
-  const overdue = getStatistic("overduePackets", "overdue", "overdueCount");
-
-  // ============================================================
-  // PERCENTAGE
-  // ============================================================
-
-  const percentage = (value) => {
-    if (totalAssigned === 0) {
-      return 0;
-    }
-
-    return Number(((value / totalAssigned) * 100).toFixed(1));
-  };
-
-  const completedPercentage = percentage(completed);
-
-  const inProgressPercentage = percentage(inProgress);
-
-  const overduePercentage = percentage(overdue);
-
-  // ============================================================
-  // LECTURER NAME
-  // ============================================================
-
-  const getLecturerName = (lecturer) => {
+  const getTotalWorkload = (lecturer) => {
     return (
-      lecturer.lecturerName ||
-      lecturer.name ||
-      lecturer.fullName ||
-      lecturer.userName ||
-      lecturer.username ||
-      lecturer.lecturer ||
-      lecturer.lecturerName ||
-      "Unknown Lecturer"
+      lecturer.paperSetting +
+      lecturer.moderating +
+      lecturer.marking +
+      lecturer.secondMarking +
+      lecturer.completed
     );
   };
 
   // ============================================================
-  // LECTURER WORKLOAD VALUE
+  // SEND NOTIFICATION
   // ============================================================
 
-  const getWorkloadValue = (lecturer) => {
-    return Number(
-      lecturer.totalPackets ??
-        lecturer.assignedPackets ??
-        lecturer.packetCount ??
-        lecturer.totalAssigned ??
-        lecturer.workload ??
-        lecturer.count ??
-        lecturer.total ??
-        0,
-    );
-  };
+  const handleSendNotification = () => {
+    if (!selectedLecturer) {
+      alert("Please select a lecturer.");
+      return;
+    }
 
-  // ============================================================
-  // LECTURER COMPLETED VALUE
-  // ============================================================
+    if (!notificationMessage.trim()) {
+      alert("Please enter a notification message.");
+      return;
+    }
 
-  const getCompletedValue = (lecturer) => {
-    return Number(
-      lecturer.completedPackets ??
-        lecturer.completed ??
-        lecturer.completedCount ??
-        0,
-    );
-  };
+    const lecturer = lecturers.find((item) => item.id === selectedLecturer);
 
-  // ============================================================
-  // CREATE GRAPH DATA
-  // ============================================================
+    if (!lecturer) return;
 
-  const colors = [
-    "#2563eb",
-    "#16a34a",
-    "#d97706",
-    "#9333ea",
-    "#dc2626",
-    "#0891b2",
-    "#db2777",
-    "#65a30d",
-  ];
+    setSending(true);
+    setSuccessMessage("");
 
-  const chartData = {
-    weeks: ["Week 2", "Week 4", "Week 6", "Week 8", "Week 10"],
-
-    lecturers: workloadData.map((lecturer, index) => {
-      const assigned = getWorkloadValue(lecturer);
-
-      const completed = getCompletedValue(lecturer);
-
-      /*
-       * Current backend workload endpoint
-       * gives workload information rather than
-       * historical weekly progress.
-       *
-       * Therefore we create a current progress
-       * trajectory from the lecturer's workload
-       * response rather than using fake lecturer
-       * names.
-       */
-
-      const currentProgress =
-        assigned > 0
-          ? Math.min(100, Math.round((completed / assigned) * 100))
-          : 0;
-
-      const data = [
-        Math.max(0, Math.round(currentProgress * 0.2)),
-        Math.max(0, Math.round(currentProgress * 0.4)),
-        Math.max(0, Math.round(currentProgress * 0.6)),
-        Math.max(0, Math.round(currentProgress * 0.8)),
-        currentProgress,
-      ];
-
-      return {
-        name: getLecturerName(lecturer),
-
-        color: colors[index % colors.length],
-
-        data,
+    setTimeout(() => {
+      const newNotification = {
+        id: Date.now(),
+        lecturerId: lecturer.id,
+        lecturerName: lecturer.name,
+        message: notificationMessage,
+        date: new Date().toISOString().split("T")[0],
       };
-    }),
+
+      setNotifications((previous) => [newNotification, ...previous]);
+
+      setNotificationMessage("");
+      setSelectedLecturer("");
+      setSending(false);
+
+      setSuccessMessage(`Notification sent to ${lecturer.name}`);
+
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+    }, 700);
   };
 
   // ============================================================
-  // WORKFLOW STAGES
-  // ============================================================
-
-  const workflowStages = [
-    {
-      stage: "Assigned",
-      count: totalAssigned,
-      percentage: 100,
-      color: "bg-blue-500",
-    },
-
-    {
-      stage: "In Progress",
-      count: inProgress,
-      percentage: inProgressPercentage,
-      color: "bg-amber-500",
-    },
-
-    {
-      stage: "Completed",
-      count: completed,
-      percentage: completedPercentage,
-      color: "bg-green-500",
-    },
-
-    {
-      stage: "Overdue",
-      count: overdue,
-      percentage: overduePercentage,
-      color: "bg-red-500",
-    },
-  ];
-
-  // ============================================================
-  // LOADING
-  // ============================================================
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2
-            size={40}
-            className="animate-spin text-blue-600 mx-auto mb-3"
-          />
-
-          <p className="text-gray-600">Loading workload data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================
-  // ERROR
-  // ============================================================
-
-  if (error) {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="bg-white rounded-xl border border-red-200 p-8 text-center">
-          <h2 className="text-xl font-bold text-red-600">
-            Failed to Load Workload
-          </h2>
-
-          <p className="text-sm text-gray-500 mt-2">{error}</p>
-
-          <button
-            onClick={loadWorkloadData}
-            className="mt-5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================
-  // MAIN UI
+  // UI
   // ============================================================
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* ======================================================
-          HEADER
+          LECTURER WORKLOAD
       ====================================================== */}
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Department Workload & Analytics
-          </h1>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {/* HEADER */}
 
-          <p className="text-sm text-gray-500">
-            Analyze lecturer workload and department marking progress.
-          </p>
-        </div>
+        <div className="p-5 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <Users size={20} className="text-blue-600" />
 
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2"
-        >
-          <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-          Refresh
-        </button>
-      </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Lecturer Workload
+              </h2>
 
-      {/* ======================================================
-          FILTERS
-      ====================================================== */}
-
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap gap-4 items-center">
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
-            Report Type
-          </label>
-
-          <select
-            value={reportType}
-            onChange={(e) => setReportType(e.target.value)}
-            className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="progress">Progress Report</option>
-
-            <option value="delay">Delay & Bottleneck Report</option>
-
-            <option value="workload">Workload Distribution Report</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
-            Academic Cycle
-          </label>
-
-          <select
-            value={academicCycle}
-            onChange={(e) => setAcademicCycle(e.target.value)}
-            className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="2026/2027 Sem 1">2026/2027 Sem 1</option>
-
-            <option value="2025/2026 Sem 2">2025/2026 Sem 2</option>
-          </select>
-        </div>
-      </div>
-
-      {/* ======================================================
-          SUMMARY + ANALYTICS
-      ====================================================== */}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* SUMMARY */}
-
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Summary Statistics ({academicCycle})
-          </h2>
-
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg text-sm">
-              <span className="text-gray-600">Total Assigned Packets</span>
-
-              <span className="font-bold text-gray-900">{totalAssigned}</span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg text-sm">
-              <span className="text-gray-600">Completed Packets</span>
-
-              <span className="font-bold text-green-600">
-                {completed} ({completedPercentage}%)
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg text-sm">
-              <span className="text-gray-600">In Progress / Moderation</span>
-
-              <span className="font-bold text-amber-600">
-                {inProgress} ({inProgressPercentage}%)
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg text-sm">
-              <span className="text-gray-600">Overdue Packets</span>
-
-              <span className="font-bold text-red-600">
-                {overdue} ({overduePercentage}%)
-              </span>
+              <p className="text-xs text-gray-500 mt-1">
+                Packet assignment and workflow status by lecturer
+              </p>
             </div>
           </div>
         </div>
 
-        {/* ANALYTICS */}
+        {/* TABLE */}
 
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center">
-          <BarChart3 className="text-blue-500 mb-3" size={48} />
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                  Lecturer
+                </th>
 
-          <h3 className="text-md font-bold text-gray-800">
-            Lecturer Workload Analytics
-          </h3>
+                <th className="text-center px-4 py-3 font-semibold text-blue-600">
+                  Setting
+                </th>
 
-          <p className="text-sm text-gray-500 max-w-sm mt-1">
-            Workload and completion information is loaded directly from the
-            department backend.
-          </p>
-        </div>
-      </div>
+                <th className="text-center px-4 py-3 font-semibold text-purple-600">
+                  Moderating
+                </th>
 
-      {/* ======================================================
-          LECTURER PROGRESS GRAPH
-      ====================================================== */}
+                <th className="text-center px-4 py-3 font-semibold text-amber-600">
+                  Marking
+                </th>
 
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <TrendingUp className="text-blue-600" size={20} />
-              Lecturer Progress Velocity Over Time
-            </h2>
+                <th className="text-center px-4 py-3 font-semibold text-orange-600">
+                  2nd Marking
+                </th>
 
-            <p className="text-xs text-gray-500">
-              Comparing completion percentage trajectories among department
-              lecturers.
-            </p>
-          </div>
+                <th className="text-center px-4 py-3 font-semibold text-green-600">
+                  Completed
+                </th>
 
-          {/* LEGEND */}
+                <th className="text-center px-4 py-3 font-semibold text-red-600">
+                  Overdue
+                </th>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs">
-            {chartData.lecturers.map((lec) => (
-              <div key={lec.name} className="flex items-center gap-1.5">
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{
-                    backgroundColor: lec.color,
-                  }}
-                />
+                <th className="text-center px-4 py-3 font-semibold text-gray-600">
+                  Total
+                </th>
+              </tr>
+            </thead>
 
-                <span className="font-medium text-gray-700">{lec.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+            <tbody>
+              {lecturers.map((lecturer) => (
+                <tr
+                  key={lecturer.id}
+                  className="border-b border-gray-100 hover:bg-gray-50"
+                >
+                  {/* LECTURER */}
 
-        {/* ====================================================
-            NO DATA
-        ==================================================== */}
+                  <td className="px-5 py-4">
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        {lecturer.name}
+                      </p>
 
-        {chartData.lecturers.length === 0 ? (
-          <div className="py-12 text-center">
-            <BarChart3 size={40} className="mx-auto text-gray-300 mb-3" />
+                      <p className="text-xs text-gray-400">{lecturer.id}</p>
+                    </div>
+                  </td>
 
-            <p className="text-sm text-gray-500">
-              No lecturer workload data available.
-            </p>
-          </div>
-        ) : (
-          /* ==================================================
-             SVG GRAPH
-             ================================================== */
+                  {/* SETTING */}
 
-          <div className="relative w-full overflow-x-auto pt-4 pb-2">
-            <svg className="w-full h-64 min-w-[500px]" viewBox="0 0 600 200">
-              {/* GRID */}
+                  <td className="text-center px-4 py-4">
+                    <StatusNumber value={lecturer.paperSetting} type="blue" />
+                  </td>
 
-              {[0, 50, 100, 150].map((y, i) => (
-                <line
-                  key={i}
-                  x1="40"
-                  y1={y}
-                  x2="580"
-                  y2={y}
-                  stroke="#e5e7eb"
-                  strokeDasharray="4 4"
-                />
-              ))}
+                  {/* MODERATING */}
 
-              {/* Y AXIS */}
+                  <td className="text-center px-4 py-4">
+                    <StatusNumber value={lecturer.moderating} type="purple" />
+                  </td>
 
-              <text x="30" y="15" fill="#9ca3af" fontSize="10" textAnchor="end">
-                100%
-              </text>
+                  {/* MARKING */}
 
-              <text x="30" y="65" fill="#9ca3af" fontSize="10" textAnchor="end">
-                75%
-              </text>
+                  <td className="text-center px-4 py-4">
+                    <StatusNumber value={lecturer.marking} type="amber" />
+                  </td>
 
-              <text
-                x="30"
-                y="115"
-                fill="#9ca3af"
-                fontSize="10"
-                textAnchor="end"
-              >
-                50%
-              </text>
+                  {/* SECOND MARKING */}
 
-              <text
-                x="30"
-                y="165"
-                fill="#9ca3af"
-                fontSize="10"
-                textAnchor="end"
-              >
-                25%
-              </text>
-
-              {/* X AXIS */}
-
-              {chartData.weeks.map((week, idx) => {
-                const xCoord = 60 + idx * 125;
-
-                return (
-                  <text
-                    key={week}
-                    x={xCoord}
-                    y="185"
-                    fill="#6b7280"
-                    fontSize="11"
-                    textAnchor="middle"
-                  >
-                    {week}
-                  </text>
-                );
-              })}
-
-              {/* LECTURER LINES */}
-
-              {chartData.lecturers.map((lec) => {
-                const points = lec.data
-                  .map((value, idx) => {
-                    const x = 60 + idx * 125;
-
-                    const y = 150 - (Number(value) / 100) * 130;
-
-                    return `${x},${y}`;
-                  })
-                  .join(" ");
-
-                return (
-                  <g key={lec.name}>
-                    {/* LINE */}
-
-                    <polyline
-                      fill="none"
-                      stroke={lec.color}
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      points={points}
+                  <td className="text-center px-4 py-4">
+                    <StatusNumber
+                      value={lecturer.secondMarking}
+                      type="orange"
                     />
+                  </td>
 
-                    {/* POINTS */}
+                  {/* COMPLETED */}
 
-                    {lec.data.map((value, idx) => {
-                      const x = 60 + idx * 125;
+                  <td className="text-center px-4 py-4">
+                    <StatusNumber value={lecturer.completed} type="green" />
+                  </td>
 
-                      const y = 150 - (Number(value) / 100) * 130;
+                  {/* OVERDUE */}
 
-                      return (
-                        <circle
-                          key={idx}
-                          cx={x}
-                          cy={y}
-                          r="4"
-                          fill="#ffffff"
-                          stroke={lec.color}
-                          strokeWidth="2"
-                        />
-                      );
-                    })}
-                  </g>
-                );
-              })}
-            </svg>
+                  <td className="text-center px-4 py-4">
+                    {lecturer.overdue > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
+                        <AlertTriangle size={14} />
+
+                        {lecturer.overdue}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">0</span>
+                    )}
+                  </td>
+
+                  {/* TOTAL */}
+
+                  <td className="text-center px-4 py-4">
+                    <span className="font-bold text-gray-800">
+                      {getTotalWorkload(lecturer)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ======================================================
+          SEND NOTIFICATION
+      ====================================================== */}
+
+      <div className="bg-white border border-gray-200 rounded-xl mt-6">
+        {/* NOTIFICATION HEADER */}
+
+        <div className="p-5 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
+              <Bell size={19} className="text-blue-600" />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Send Notification
+              </h2>
+
+              <p className="text-xs text-gray-500 mt-1">
+                Send a notification to a lecturer about their workload
+              </p>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* FORM */}
+
+        <div className="p-5">
+          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr_auto] gap-4 items-end">
+            {/* SELECT LECTURER */}
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-2">
+                Select Lecturer
+              </label>
+
+              <select
+                value={selectedLecturer}
+                onChange={(e) => setSelectedLecturer(e.target.value)}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+              >
+                <option value="">Select a lecturer</option>
+
+                {lecturers.map((lecturer) => (
+                  <option key={lecturer.id} value={lecturer.id}>
+                    {lecturer.name} ({lecturer.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* MESSAGE */}
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-2">
+                Notification
+              </label>
+
+              <input
+                type="text"
+                value={notificationMessage}
+                onChange={(e) => setNotificationMessage(e.target.value)}
+                placeholder="Enter notification message..."
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+              />
+            </div>
+
+            {/* SEND BUTTON */}
+
+            <button
+              onClick={handleSendNotification}
+              disabled={sending}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Send size={16} />
+
+              {sending ? "Sending..." : "Send"}
+            </button>
+          </div>
+
+          {/* SUCCESS MESSAGE */}
+
+          {successMessage && (
+            <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
+              <CheckCircle2 size={16} />
+
+              {successMessage}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ======================================================
+          SENT NOTIFICATIONS
+      ====================================================== */}
+
+      <div className="bg-white border border-gray-200 rounded-xl mt-6">
+        <div className="p-5 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <Bell size={19} className="text-gray-600" />
+
+            <div>
+              <h2 className="text-base font-semibold text-gray-800">
+                Recent Notifications
+              </h2>
+
+              <p className="text-xs text-gray-500 mt-1">
+                Notifications sent to lecturers
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          {notifications.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-400">
+              No notifications sent yet.
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className="px-5 py-4 border-b border-gray-100 last:border-b-0"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">
+                      {notification.lecturerName}
+                    </p>
+
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {notification.lecturerId} • {notification.date}
+                    </p>
+
+                    <p className="text-sm text-gray-600 mt-2">
+                      {notification.message}
+                    </p>
+                  </div>
+
+                  <span className="text-xs text-green-600 font-medium whitespace-nowrap">
+                    Sent
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
+  );
+}
+
+// ============================================================
+// STATUS NUMBER COMPONENT
+// ============================================================
+
+function StatusNumber({ value, type }) {
+  const styles = {
+    blue: "bg-blue-50 text-blue-700",
+    purple: "bg-purple-50 text-purple-700",
+    amber: "bg-amber-50 text-amber-700",
+    orange: "bg-orange-50 text-orange-700",
+    green: "bg-green-50 text-green-700",
+  };
+
+  return (
+    <span
+      className={`inline-flex min-w-[30px] justify-center px-2 py-1 rounded-md font-semibold ${styles[type]}`}
+    >
+      {value}
+    </span>
   );
 }

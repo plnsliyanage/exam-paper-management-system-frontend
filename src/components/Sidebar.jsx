@@ -26,8 +26,7 @@ export default function Sidebar({ currentRole }) {
           { name: "Department View", path: "/hod" },
           { name: "Packets", path: "/hod/packets" },
           { name: "Workload", path: "/hod/workload" },
-          { name: "Overdue", path: "/hod/overdue" },
-          { name: "Previous Records", path: "/hod/previous" },
+
           { name: "Reports", path: "/hod/reports" },
         ];
       default:

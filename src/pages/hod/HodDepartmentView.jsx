@@ -7,113 +7,158 @@ import {
   Users,
   ArrowRight,
   ShieldAlert,
-  TrendingUp,
+  Layers,
+  Edit,
+  CheckSquare,
+  Award,
 } from "lucide-react";
-import { hodApi } from "../../services/api"; // Adjust the path to your api file if needed
 
 export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
+  const [loading, setLoading] = useState(true);
+  const [showAllPackets, setShowAllPackets] = useState(false);
+
+  // Top Summary Cards
   const [stats, setStats] = useState([
     {
       title: "Total Packets",
-      value: "0",
+      value: "68",
       icon: FileText,
       color: "text-blue-600 bg-blue-50",
     },
     {
       title: "In Progress",
-      value: "0",
+      value: "20",
       icon: Clock,
       color: "text-amber-600 bg-amber-50",
     },
     {
       title: "Overdue / Delayed",
-      value: "0",
+      value: "6",
       icon: AlertTriangle,
       color: "text-red-600 bg-red-50",
     },
     {
       title: "Completed",
-      value: "0",
+      value: "42",
       icon: CheckCircle2,
       color: "text-green-600 bg-green-50",
     },
   ]);
 
-  const [recentPackets, setRecentPackets] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Stage Breakdown Data mapping directly to the 4 workflow steps
+  const [stageBreakdown, setStageBreakdown] = useState([
+    {
+      stageName: "Paper Setting",
+      icon: Edit,
+      inProgress: 4,
+      overdue: 1,
+      completed: 15,
+    },
+    {
+      stageName: "Paper Marking",
+      icon: FileText,
+      inProgress: 8,
+      overdue: 3,
+      completed: 14,
+    },
+    {
+      stageName: "Paper Moderation",
+      icon: CheckSquare,
+      inProgress: 3,
+      overdue: 2,
+      completed: 8,
+    },
+    {
+      stageName: "Second Marking",
+      icon: Award,
+      inProgress: 5,
+      overdue: 0,
+      completed: 5,
+    },
+  ]);
+
+  // Full dummy dataset for department packets with matching stage types
+  const [allPackets] = useState([
+    {
+      packetId: "PKT-2026-101",
+      courseName: "Data Structures & Algorithms",
+      courseCode: "CS2101",
+      cycleId: "Sem 1 - Midterm",
+      stage: "Paper Setting",
+      status: "In Progress",
+      currentHolderName: "Dr. Alan Turing",
+      isOverdue: false,
+    },
+    {
+      packetId: "PKT-2026-102",
+      courseName: "Database Management Systems",
+      courseCode: "CS2102",
+      cycleId: "Sem 1 - Midterm",
+      stage: "Paper Marking",
+      status: "In Progress",
+      currentHolderName: "Prof. Grace Hopper",
+      isOverdue: true,
+    },
+    {
+      packetId: "PKT-2026-103",
+      courseName: "Operating Systems",
+      courseCode: "CS3101",
+      cycleId: "Sem 1 - Finals",
+      stage: "Paper Moderation",
+      status: "In Progress",
+      currentHolderName: "Dr. Linus Torvalds",
+      isOverdue: true,
+    },
+    {
+      packetId: "PKT-2026-104",
+      courseName: "Software Engineering",
+      courseCode: "CS3102",
+      cycleId: "Sem 1 - Finals",
+      stage: "Second Marking",
+      status: "In Progress",
+      currentHolderName: "Dr. Margaret Hamilton",
+      isOverdue: false,
+    },
+    {
+      packetId: "PKT-2026-105",
+      courseName: "Artificial Intelligence",
+      courseCode: "CS4101",
+      cycleId: "Sem 1 - Finals",
+      stage: "Paper Marking",
+      status: "Completed",
+      currentHolderName: "Prof. John McCarthy",
+      isOverdue: false,
+    },
+    {
+      packetId: "PKT-2026-106",
+      courseName: "Computer Networks",
+      courseCode: "CS3201",
+      cycleId: "Sem 1 - Midterm",
+      stage: "Paper Setting",
+      status: "Completed",
+      currentHolderName: "Dr. Vint Cerf",
+      isOverdue: false,
+    },
+  ]);
 
   useEffect(() => {
-    fetchDepartmentData();
+    // Simulate minor async loading effect for robust component mounting
+    const timer = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(timer);
   }, [deptId]);
-
-  const fetchDepartmentData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch aggregated stats and department packets in parallel
-      const [statsRes, packetsRes] = await Promise.all([
-        hodApi.getDepartmentStatistics(deptId),
-        hodApi.getDepartmentPackets(deptId),
-      ]);
-
-      const data = statsRes.data;
-
-      // Update metrics state with backend response
-      setStats([
-        {
-          title: "Total Packets",
-          value: data.totalPackets.toString(),
-          icon: FileText,
-          color: "text-blue-600 bg-blue-50",
-        },
-        {
-          title: "In Progress",
-          value: data.inProgressPackets.toString(),
-          icon: Clock,
-          color: "text-amber-600 bg-amber-50",
-        },
-        {
-          title: "Overdue / Delayed",
-          value: data.overduePackets.toString(),
-          icon: AlertTriangle,
-          color: "text-red-600 bg-red-50",
-        },
-        {
-          title: "Completed",
-          value: data.completedPackets.toString(),
-          icon: CheckCircle2,
-          color: "text-green-600 bg-green-50",
-        },
-      ]);
-
-      // Set top 3 recent packets for the table
-      setRecentPackets(packetsRes.data.slice(0, 3));
-      setLoading(false);
-    } catch (err) {
-      console.error("Failed to fetch department dashboard data:", err);
-      setError("Failed to load department data from server.");
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
       <div className="p-6 flex justify-center items-center min-h-screen">
         <p className="text-gray-500 text-sm font-medium animate-pulse">
-          Loading Dashboard...
+          Loading Department Dashboard...
         </p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-6 flex justify-center items-center min-h-screen">
-        <p className="text-red-600 text-sm font-medium">{error}</p>
-      </div>
-    );
-  }
+  // Display top 3 items or all items based on toggle state
+  const displayedPackets = showAllPackets ? allPackets : allPackets.slice(0, 3);
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -123,8 +168,8 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
             Head of Department Dashboard
           </h1>
           <p className="text-sm text-gray-500">
-            Monitor department packets, workload distribution, and staff
-            performance.
+            Monitor department packets, lifecycle progression across all 4
+            stages, and staff performance.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -143,6 +188,7 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
         </div>
       </div>
 
+      {/* Top 4 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -167,80 +213,203 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Recent Department Packets
+      {/* Main Workflow Stage Matrix (Paper Setting, Marking, Moderation, Second Marking) */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Layers className="text-blue-600" size={20} />
+              Academic Workflow Stage Matrix
             </h2>
-            <button
-              onClick={() => navigateTo("packets")}
-              className="text-sm text-blue-600 hover:underline font-medium"
-            >
-              View All
-            </button>
+            <p className="text-xs text-gray-500">
+              Detailed tracking of In Progress, Overdue/Delayed, and Completed
+              phases across all 4 key assessment stages.
+            </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
-                  <th className="py-3 px-3">Packet ID & Course</th>
-                  <th className="py-3 px-3">Cycle</th>
-                  <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Current Holder</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {recentPackets.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="py-4 text-center text-gray-500 text-xs"
-                    >
-                      No packets found for this department.
-                    </td>
-                  </tr>
-                ) : (
-                  recentPackets.map((pkt) => (
-                    <tr key={pkt.packetId} className="hover:bg-gray-50">
-                      <td className="py-3 px-3">
-                        <div className="font-medium text-gray-900">
-                          {pkt.packetId}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {pkt.courseName} ({pkt.courseCode})
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 text-gray-600 text-xs">
-                        {pkt.cycleId}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            pkt.status === "Completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {pkt.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-gray-600 text-xs">
-                        {pkt.currentHolderName}
-                        {pkt.isOverdue && (
-                          <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">
-                            Overdue
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="flex items-center gap-3 text-xs font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> In
+              Progress
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>{" "}
+              Overdue
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>{" "}
+              Completed
+            </span>
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {stageBreakdown.map((stage, index) => {
+            const StageIcon = stage.icon || FileText;
+            const totalStagePackets =
+              stage.inProgress + stage.overdue + stage.completed;
+            const completionRate =
+              totalStagePackets > 0
+                ? Math.round((stage.completed / totalStagePackets) * 100)
+                : 0;
+
+            return (
+              <div
+                key={index}
+                className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col justify-between hover:shadow-md transition-shadow"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+                        <StageIcon size={16} />
+                      </div>
+                      {stage.stageName}
+                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-white border border-gray-200 rounded text-gray-600">
+                      Total: {totalStagePackets}
+                    </span>
+                  </div>
+
+                  {/* Phase Sub-metrics */}
+                  <div className="space-y-2 mt-4">
+                    <div className="flex items-center justify-between text-xs bg-white p-2 rounded border border-gray-100">
+                      <span className="text-gray-600 flex items-center gap-1.5 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>{" "}
+                        In Progress
+                      </span>
+                      <span className="font-bold text-amber-700">
+                        {stage.inProgress}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs bg-white p-2 rounded border border-gray-100">
+                      <span className="text-gray-600 flex items-center gap-1.5 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span>{" "}
+                        Overdue / Delayed
+                      </span>
+                      <span
+                        className={`font-bold ${stage.overdue > 0 ? "text-red-600 bg-red-50 px-1.5 py-0.5 rounded" : "text-gray-700"}`}
+                      >
+                        {stage.overdue}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs bg-white p-2 rounded border border-gray-100">
+                      <span className="text-gray-600 flex items-center gap-1.5 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span>{" "}
+                        Completed
+                      </span>
+                      <span className="font-bold text-green-700">
+                        {stage.completed}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mini Progress Bar */}
+                <div className="mt-4 pt-3 border-t border-gray-200">
+                  <div className="flex justify-between text-[11px] text-gray-500 mb-1 font-medium">
+                    <span>Stage Progress</span>
+                    <span>{completionRate}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-green-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${completionRate}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Packets Section with Working "View All" Toggle */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {showAllPackets
+                  ? "All Department Packets"
+                  : "Recent Department Packets"}
+              </h2>
+              <button
+                onClick={() => setShowAllPackets(!showAllPackets)}
+                className="text-sm text-blue-600 hover:underline font-medium"
+              >
+                {showAllPackets ? "Show Less" : "View All"}
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+                    <th className="py-3 px-3">Packet ID & Course</th>
+                    <th className="py-3 px-3">Stage</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3">Current Holder</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {displayedPackets.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        className="py-4 text-center text-gray-500 text-xs"
+                      >
+                        No packets found for this department.
+                      </td>
+                    </tr>
+                  ) : (
+                    displayedPackets.map((pkt) => (
+                      <tr key={pkt.packetId} className="hover:bg-gray-50">
+                        <td className="py-3 px-3">
+                          <div className="font-medium text-gray-900">
+                            {pkt.packetId}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {pkt.courseName} ({pkt.courseCode})
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
+                            {pkt.stage}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              pkt.status === "Completed"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {pkt.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-gray-600 text-xs">
+                          {pkt.currentHolderName}
+                          {pkt.isOverdue && (
+                            <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">
+                              Overdue
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="mt-4 text-xs text-gray-400 text-right">
+            Showing {displayedPackets.length} of {allPackets.length} packets
+          </div>
+        </div>
+
+        {/* Attention Required Card */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-3">
@@ -292,106 +461,6 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
             >
               Access Previous Academic Records
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Semester Workload Structure Comparison Line Graph */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <TrendingUp className="text-blue-600" size={20} />
-              Semester Workload Comparison
-            </h2>
-            <p className="text-xs text-gray-500">
-              Comparing total assessment packets and processing volume across
-              recent academic terms.
-            </p>
-          </div>
-          <div className="flex items-center gap-4 text-xs font-medium text-gray-600">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-blue-600 rounded-full inline-block"></span>
-              <span>Total Packets</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-green-500 rounded-full inline-block"></span>
-              <span>Completed</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="h-48 w-full pt-4 relative">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 600 160">
-            <line
-              x1="0"
-              y1="0"
-              x2="600"
-              y2="0"
-              stroke="#f3f4f6"
-              strokeWidth="1"
-            />
-            <line
-              x1="0"
-              y1="40"
-              x2="600"
-              y2="40"
-              stroke="#f3f4f6"
-              strokeWidth="1"
-            />
-            <line
-              x1="0"
-              y1="80"
-              x2="600"
-              y2="80"
-              stroke="#f3f4f6"
-              strokeWidth="1"
-            />
-            <line
-              x1="0"
-              y1="120"
-              x2="600"
-              y2="120"
-              stroke="#f3f4f6"
-              strokeWidth="1"
-            />
-            <line
-              x1="0"
-              y1="160"
-              x2="600"
-              y2="160"
-              stroke="#e5e7eb"
-              strokeWidth="1"
-            />
-
-            {/* Total Packets Line */}
-            <path
-              d="M 50,70 Q 175,20 300,50 T 550,30"
-              fill="none"
-              stroke="#2563eb"
-              strokeWidth="3"
-            />
-            {/* Completed Packets Line */}
-            <path
-              d="M 50,110 Q 175,80 300,90 T 550,45"
-              fill="none"
-              stroke="#22c55e"
-              strokeWidth="3"
-            />
-
-            <circle cx="50" cy="70" r="4" fill="#2563eb" />
-            <circle cx="300" cy="50" r="4" fill="#2563eb" />
-            <circle cx="550" cy="30" r="4" fill="#2563eb" />
-
-            <circle cx="50" cy="110" r="4" fill="#22c55e" />
-            <circle cx="300" cy="90" r="4" fill="#22c55e" />
-            <circle cx="550" cy="45" r="4" fill="#22c55e" />
-          </svg>
-
-          <div className="flex justify-between text-xs text-gray-500 px-2 mt-2 font-medium">
-            <span>2024/2025 Sem 2</span>
-            <span>2025/2026 Sem 1</span>
-            <span>2026/2027 Sem 1 (Current)</span>
           </div>
         </div>
       </div>
