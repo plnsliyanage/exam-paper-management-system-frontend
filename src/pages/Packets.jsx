@@ -71,9 +71,31 @@ export default function Packets() {
   }, [search, statusFilter, packets]);
 
   const statusTabs = [
-    "ALL", "DRAFT", "PENDING", "UNDER_MODERATION",
-    "APPROVED", "PRINTING_QUEUE", "COMPLETED", "DELAYED",
+    "ALL",
+    "DRAFT",
+    "PENDING",
+    "UNDER_MODERATION",
+    "APPROVED",
+    "PRINTING_QUEUE",
+    "COMPLETED",
+    "DELAYED",
   ];
+
+  const handleExportCSV = () => {
+    const token = localStorage.getItem("token");
+    window.open(`http://localhost:8080/api/packets/export/csv`, "_blank");
+  };
+
+  const handleDelete = async (packetId) => {
+    if (!confirm("Are you sure you want to delete this packet?")) return;
+    const numericId = parseInt(packetId.split("-")[2]);
+    try {
+      await axiosInstance.delete(`/packets/${numericId}`);
+      setPackets((prev) => prev.filter((p) => p.packetId !== packetId));
+    } catch (err) {
+      alert("Failed to delete packet.");
+    }
+  };
 
   const countFor = (s) =>
     s === "ALL" ? packets.length : packets.filter((p) => p.status === s).length;
@@ -94,11 +116,9 @@ export default function Packets() {
 
   return (
     <div className="space-y-4">
-
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-
           {/* Search */}
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 w-72">
             <span className="text-gray-400 text-sm">🔍</span>
@@ -119,18 +139,26 @@ export default function Packets() {
           >
             <option value="ALL">All Status</option>
             {statusTabs.slice(1).map((s) => (
-              <option key={s} value={s}>{statusLabels[s]}</option>
+              <option key={s} value={s}>
+                {statusLabels[s]}
+              </option>
             ))}
           </select>
 
           {/* Export button */}
-          <button className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+          >
             ⬇ Export
           </button>
         </div>
 
         {/* Add Packet */}
-        <button className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition">
+        <button
+          onClick={() => navigate("/packets/add")}
+          className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition"
+        >
           + Add Packet
         </button>
       </div>
@@ -157,8 +185,20 @@ export default function Packets() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
-              {["Packet ID", "Course", "Lecturer", "Moderator", "Deadline", "Status", "Priority", "Actions"].map((h) => (
-                <th key={h} className="text-left text-xs font-semibold text-gray-400 px-5 py-4 uppercase tracking-wide">
+              {[
+                "Packet ID",
+                "Course",
+                "Lecturer",
+                "Moderator",
+                "Deadline",
+                "Status",
+                "Priority",
+                "Actions",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="text-left text-xs font-semibold text-gray-400 px-5 py-4 uppercase tracking-wide"
+                >
                   {h}
                 </th>
               ))}
@@ -167,47 +207,69 @@ export default function Packets() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center text-gray-400 text-sm py-12">
+                <td
+                  colSpan={8}
+                  className="text-center text-gray-400 text-sm py-12"
+                >
                   No packets found.
                 </td>
               </tr>
             ) : (
               filtered.map((p, index) => (
-                <tr key={index} className="border-b border-gray-50 hover:bg-gray-50 transition">
-
+                <tr
+                  key={index}
+                  className="border-b border-gray-50 hover:bg-gray-50 transition"
+                >
                   <td className="px-5 py-4 text-sm font-semibold text-[#7c4dff]">
                     {p.packetId}
                   </td>
 
                   <td className="px-5 py-4">
-                    <p className="text-sm font-medium text-gray-800">{p.courseCode}</p>
+                    <p className="text-sm font-medium text-gray-800">
+                      {p.courseCode}
+                    </p>
                     <p className="text-xs text-gray-400">{p.courseName}</p>
                   </td>
 
-                  <td className="px-5 py-4 text-sm text-gray-600">{p.lecturerName}</td>
+                  <td className="px-5 py-4 text-sm text-gray-600">
+                    {p.lecturerName}
+                  </td>
 
-                  <td className="px-5 py-4 text-sm text-gray-600">{p.moderatorName}</td>
-
-                  <td className="px-5 py-4">
-                    <p className={`text-sm font-medium ${p.overdue ? "text-red-500" : "text-gray-700"}`}>
-                      {p.deadline
-                        ? new Date(p.deadline).toLocaleDateString("en-GB", {
-                            day: "2-digit", month: "short", year: "numeric",
-                          })
-                        : "—"}
-                    </p>
-                    {p.overdue && <p className="text-xs text-red-400">Overdue</p>}
+                  <td className="px-5 py-4 text-sm text-gray-600">
+                    {p.moderatorName}
                   </td>
 
                   <td className="px-5 py-4">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[p.status] || "bg-gray-100 text-gray-500"}`}>
+                    <p
+                      className={`text-sm font-medium ${p.overdue ? "text-red-500" : "text-gray-700"}`}
+                    >
+                      {p.deadline
+                        ? new Date(p.deadline).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—"}
+                    </p>
+                    {p.overdue && (
+                      <p className="text-xs text-red-400">Overdue</p>
+                    )}
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <span
+                      className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[p.status] || "bg-gray-100 text-gray-500"}`}
+                    >
                       {statusLabels[p.status] || p.status}
                     </span>
                   </td>
 
                   <td className="px-5 py-4">
-                    <span className={`text-sm font-semibold ${priorityColors[p.priority]}`}>
-                      ● {p.priority.charAt(0) + p.priority.slice(1).toLowerCase()}
+                    <span
+                      className={`text-sm font-semibold ${priorityColors[p.priority]}`}
+                    >
+                      ●{" "}
+                      {p.priority.charAt(0) + p.priority.slice(1).toLowerCase()}
                     </span>
                   </td>
 
@@ -222,15 +284,23 @@ export default function Packets() {
                       >
                         👁
                       </button>
-                      <button className="text-gray-400 hover:text-gray-600 text-lg">
+                      <button
+                        onClick={() => {
+                          const numericId = parseInt(p.packetId.split("-")[2]);
+                          navigate(`/packets/edit/${numericId}`);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 text-lg"
+                      >
                         ✏️
                       </button>
-                      <button className="text-red-400 hover:text-red-600 text-lg">
+                      <button
+                        onClick={() => handleDelete(p.packetId)}
+                        className="text-red-400 hover:text-red-600 text-lg"
+                      >
                         🗑
                       </button>
                     </div>
                   </td>
-
                 </tr>
               ))
             )}
