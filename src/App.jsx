@@ -11,6 +11,7 @@ import Workflow from "./pages/Workflow";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import UserManagement from "./pages/AR/UserManagement";
+import AddPacket from "./pages/AR/AddPacket";
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -22,7 +23,6 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      
 
       <Route
         element={
@@ -34,12 +34,17 @@ function AppRoutes() {
         <Route path="/dashboard" element={<ARDashboard />} />
         <Route path="/packets" element={<Packets />} />
         <Route path="/packets/:id" element={<PacketDetail />} />
-        <Route path="/packets" element={<div className="text-xl font-semibold">Packets</div>} />
+        
+        <Route path="/packets/add" element={<AddPacket />} />
+        <Route path="/packets/edit/:id" element={<AddPacket />} />
         <Route path="/workflow" element={<Workflow />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/users" element={<UserManagement />} />
-        <Route path="/settings" element={<div className="text-xl font-semibold">Settings</div>} />
+        <Route
+          path="/settings"
+          element={<div className="text-xl font-semibold">Settings</div>}
+        />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" />} />

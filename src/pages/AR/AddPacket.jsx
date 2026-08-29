@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axiosInstance from "../api/axiosInstance";
+import axiosInstance from "../axiosInstance../api/axiosInstance";
 
 export default function AddPacket() {
   const { id } = useParams(); // if editing
