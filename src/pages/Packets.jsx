@@ -81,9 +81,23 @@ export default function Packets() {
     "DELAYED",
   ];
 
-  const handleExportCSV = () => {
-    const token = localStorage.getItem("token");
-    window.open(`http://localhost:8080/api/packets/export/csv`, "_blank");
+  const handleExportCSV = async () => {
+    try {
+      const res = await axiosInstance.get("/packets/export/csv", {
+        responseType: "blob",
+      });
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "packets.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to export CSV.");
+    }
   };
 
   const handleDelete = async (packetId) => {
