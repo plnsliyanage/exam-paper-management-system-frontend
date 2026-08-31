@@ -35,6 +35,17 @@ export default function Workflow() {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+
+  const filteredPackets = packets.filter((p) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      p.packetId.toLowerCase().includes(q) ||
+      p.courseCode.toLowerCase().includes(q) ||
+      p.courseName.toLowerCase().includes(q)
+    );
+  });
 
   useEffect(() => {
     const fetch = async () => {
@@ -61,9 +72,7 @@ export default function Workflow() {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h2 className="text-sm font-semibold text-gray-700 mb-6">Exam Paper Workflow</h2>
         <div className="flex items-start justify-between relative">
-          {/* connector line */}
           <div className="absolute top-5 left-0 right-0 h-px bg-gray-200 z-0 mx-10" />
-
           {(selected?.stages || []).map((stage, i) => {
             const colors = STAGE_COLORS[stage.stageName] || STAGE_COLORS.Draft;
             return (
@@ -82,9 +91,7 @@ export default function Workflow() {
                   {stage.stageName}
                 </p>
                 <p className="text-xs text-gray-400 text-center mt-0.5 max-w-16">
-                  {stage.completed ? "" :
-                   stage.current ? stage.actor :
-                   stage.actor}
+                  {stage.actor}
                 </p>
               </div>
             );
@@ -97,37 +104,66 @@ export default function Workflow() {
 
         {/* Left — packet list */}
         <div className="w-80 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-y-auto">
-          <div className="p-4 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-700">Active Packets</h3>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {packets.map((p, i) => (
-              <div
-                key={i}
-                onClick={() => setSelected(p)}
-                className={`p-4 cursor-pointer hover:bg-gray-50 transition ${
-                  selected?.packetId === p.packetId ? "bg-blue-50 border-l-4 border-[#7c4dff]" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs text-gray-400">{p.packetId}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[p.status] || "bg-gray-100 text-gray-500"}`}>
-                    {STATUS_LABELS[p.status] || p.status}
-                  </span>
-                </div>
-                <p className="text-sm font-semibold text-gray-800">{p.courseCode}</p>
-                <p className="text-xs text-gray-400 mb-2">{p.courseName}</p>
 
-                {/* Progress bar */}
-                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div
-                    className="h-1.5 rounded-full bg-[#7c4dff] transition-all"
-                    style={{ width: `${(p.currentStage / p.totalStages) * 100}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-1">Stage {p.currentStage} of {p.totalStages}</p>
+          {/* Header + search */}
+          <div className="p-4 border-b border-gray-100 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Active Packets</h3>
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+              <span className="text-gray-400 text-sm">🔍</span>
+              <input
+                type="text"
+                placeholder="Search by ID or course..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent text-sm outline-none text-gray-600 w-full"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="text-gray-400 hover:text-gray-600 text-xs"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Packet list */}
+          <div className="divide-y divide-gray-50">
+            {filteredPackets.length === 0 ? (
+              <div className="text-center py-8 px-4">
+                <p className="text-2xl mb-2">🔍</p>
+                <p className="text-sm text-gray-400">No packets match "{search}"</p>
               </div>
-            ))}
+            ) : (
+              filteredPackets.map((p, i) => (
+                <div
+                  key={i}
+                  onClick={() => setSelected(p)}
+                  className={`p-4 cursor-pointer hover:bg-gray-50 transition ${
+                    selected?.packetId === p.packetId ? "bg-blue-50 border-l-4 border-[#7c4dff]" : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-400">{p.packetId}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[p.status] || "bg-gray-100 text-gray-500"}`}>
+                      {STATUS_LABELS[p.status] || p.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-800">{p.courseCode}</p>
+                  <p className="text-xs text-gray-400 mb-2">{p.courseName}</p>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div
+                      className="h-1.5 rounded-full bg-[#7c4dff] transition-all"
+                      style={{ width: `${(p.currentStage / p.totalStages) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Stage {p.currentStage} of {p.totalStages}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
