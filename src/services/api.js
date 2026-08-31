@@ -18,7 +18,7 @@ api.interceptors.request.use(
     const token = localStorage.getItem("token");
 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = "Bearer " + token;
     }
 
     return config;
@@ -50,85 +50,83 @@ api.interceptors.response.use(
 // ============================================================
 
 export const lecturerApi = {
+  // Dashboard
   getDashboard: (lecturerId) =>
-    api.get(`/lecturer/${encodeURIComponent(lecturerId)}/dashboard`),
+    api.get(`/lecturer/${lecturerId}/dashboard`),
 
+  // Assigned packets
   getPackets: (lecturerId) =>
-    api.get(`/lecturer/${encodeURIComponent(lecturerId)}/packets`),
+    api.get(`/lecturer/${lecturerId}/packets`),
 
+  // Packet details
   getPacketDetails: (packetId) =>
-    api.get(`/lecturer/packets/${encodeURIComponent(packetId)}`),
+    api.get(`/lecturer/packets/${packetId}`),
 
+  // Movement history
   getMovementHistory: (packetId) =>
-    api.get(`/lecturer/${encodeURIComponent(packetId)}/movements`),
+    api.get(`/lecturer/${packetId}/movements`),
 
+  // Previous packets
   getPreviousPackets: () =>
     api.get("/lecturer/packets/previous"),
 
+  // Search packets
   searchPackets: (keyword) =>
     api.get("/lecturer/packets/search", {
       params: { keyword },
     }),
 
+  // Assigned packet count
   getAssignedPacketCount: (lecturerId) =>
-    api.get(
-      `/lecturer/${encodeURIComponent(lecturerId)}/assigned-packets/count`
-    ),
+    api.get(`/lecturer/${lecturerId}/assigned-packets/count`),
 
+  // Add marking scripts
   addMarkingScripts: (data) =>
     api.post("/lecturer/marking", data),
 
+  // Get marking by packet
   getMarkingByPacketId: (packetId) =>
-    api.get(`/lecturer/marking/${encodeURIComponent(packetId)}`),
+    api.get(`/lecturer/marking/${packetId}`),
 
+  // Update packet status
   updateStatus: (packetId, data) =>
-    api.put(
-      `/lecturer/packets/${encodeURIComponent(packetId)}/status`,
-      data
-    ),
+    api.put(`/lecturer/packets/${packetId}/status`, data),
 
+  // Complete task
   completeTask: (packetId) =>
-    api.put(
-      `/lecturer/tasks/${encodeURIComponent(packetId)}/complete`
-    ),
+    api.put(`/lecturer/tasks/${packetId}/complete`),
 
+  // Add comment
   addComment: (data) =>
     api.post("/lecturer/comments", data),
 
+  // Get comments
   getComments: (packetId) =>
-    api.get(`/lecturer/comments/${encodeURIComponent(packetId)}`),
+    api.get(`/lecturer/comments/${packetId}`),
 
+  // Workload statistics
   getWorkloadStats: (lecturerId) =>
-    api.get(
-      `/lecturer/${encodeURIComponent(lecturerId)}/workload-statistics`
-    ),
+    api.get(`/lecturer/${lecturerId}/workload-statistics`),
 
+  // Deadline calendar
   getDeadlineCalendar: (lecturerId) =>
-    api.get(
-      `/lecturer/${encodeURIComponent(lecturerId)}/deadline-calendar`
-    ),
+    api.get(`/lecturer/${lecturerId}/deadline-calendar`),
 
+  // Printing schedules
   getPrintingSchedules: (lecturerId) =>
-    api.get(
-      `/lecturer/${encodeURIComponent(lecturerId)}/printing-schedules`
-    ),
+    api.get(`/lecturer/${lecturerId}/printing-schedules`),
 
+  // Notifications
   getNotifications: (userId) =>
-    api.get(
-      `/lecturer/${encodeURIComponent(userId)}/notifications`
-    ),
+    api.get(`/lecturer/${userId}/notifications`),
 
+  // Mark notification as read
   markNotificationAsRead: (userId, notificationId) =>
-    api.put(
-      `/lecturer/${encodeURIComponent(
-        userId
-      )}/notifications/${encodeURIComponent(notificationId)}/read`
-    ),
+    api.put(`/lecturer/${userId}/notifications/${notificationId}/read`),
 
+  // Mark all notifications as read
   markAllNotificationsAsRead: (userId) =>
-    api.put(
-      `/lecturer/${encodeURIComponent(userId)}/notifications/read-all`
-    ),
+    api.put(`/lecturer/${userId}/notifications/read-all`),
 };
 
 // ============================================================
@@ -136,102 +134,73 @@ export const lecturerApi = {
 // ============================================================
 
 export const hodApi = {
-  // ----------------------------------------------------------
-  // ALL DEPARTMENT PACKETS
-  // GET /api/hod/department/{deptId}/packets
-  // ----------------------------------------------------------
-
+  // All Department Packets
   getDepartmentPackets: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(deptId)}/packets`
-    ),
+    api.get(`/hod/department/${deptId}/packets`),
 
-  // ----------------------------------------------------------
-  // SEARCH / FILTER
-  // GET /api/hod/department/{deptId}/packets/search
-  // ----------------------------------------------------------
-
-  searchPackets: (deptId, params = {}) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/packets/search`,
-      {
-        params,
-      }
-    ),
-
-  // ----------------------------------------------------------
-  // PACKET DETAILS
-  // GET /api/hod/packet/{packetId}
-  // ----------------------------------------------------------
-
-  getPacketDetails: (packetId) =>
-    api.get(
-      `/hod/packet/${encodeURIComponent(packetId)}`
-    ),
-
-  // ----------------------------------------------------------
-  // DEPARTMENT STATISTICS
-  // GET /api/hod/department/{deptId}/statistics
-  // ----------------------------------------------------------
-
+  // Department Statistics
   getDepartmentStatistics: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/statistics`
-    ),
+    api.get(`/hod/department/${deptId}/statistics`),
 
-  // ----------------------------------------------------------
-  // PREVIOUS RECORDS
-  // GET /api/hod/department/{deptId}/previous-records
-  // ----------------------------------------------------------
+  // Search / Filter Packets
+  searchPackets: (deptId, { query, status, cycleId, lecturerId } = {}) =>
+    api.get(`/hod/department/${deptId}/packets/search`, {
+      params: {
+        query,
+        status,
+        cycleId,
+        lecturerId,
+      },
+    }),
 
-  getPreviousRecords: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/previous-records`
-    ),
+  // Packet Details
+  getPacketDetails: (packetId) =>
+    api.get(`/hod/packet/${packetId}`),
 
-  // ----------------------------------------------------------
-  // OVERDUE PACKETS
-  // GET /api/hod/department/{deptId}/overdue
-  // ----------------------------------------------------------
-
-  getOverduePackets: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/overdue`
-    ),
-
-  // ----------------------------------------------------------
-  // WORKLOAD
-  // GET /api/hod/department/{deptId}/workload
-  // ----------------------------------------------------------
-
-  getWorkload: (deptId) =>
-    api.get(
-      `/hod/department/${encodeURIComponent(
-        deptId
-      )}/workload`
-    ),
-
-  // ----------------------------------------------------------
-  // COMMENTS
-  // ----------------------------------------------------------
-
-  addComment: (data) =>
-    api.post("/hod/comment", data),
+  // Comments
+  getPacketComments: (packetId) =>
+    api.get(`/hod/packet/${packetId}/comments`),
 
   getComments: (packetId) =>
+    api.get(`/hod/packet/${packetId}/comments`),
+
+  // Add Comment
+  addComment: (payload) =>
+    api.post("/hod/comment", payload),
+
+  // Workload
+  getDepartmentWorkload: (deptId) =>
+    api.get(`/hod/department/${deptId}/workload`),
+
+  getWorkload: (deptId) =>
+    api.get(`/hod/department/${deptId}/workload`),
+
+  // Overdue Packets
+  getOverduePackets: (deptId) =>
+    api.get(`/hod/department/${deptId}/overdue`),
+
+  // Previous Cycle Records
+  getPreviousRecords: (deptId) =>
+    api.get(`/hod/department/${deptId}/previous-records`),
+
+  // Department Report
+  getDepartmentReport: (deptId) =>
+    api.get(`/hod/department/${deptId}/report`),
+
+  // Export Report
+  exportReport: (deptId, format) =>
     api.get(
-      `/hod/packet/${encodeURIComponent(
-        packetId
-      )}/comments`
+      `/hod/department/${deptId}/report/export/${
+        format === "excel" ? "excel" : "pdf"
+      }`,
+      {
+        responseType: "blob",
+      }
     ),
 };
+
+// ============================================================
+// DEFAULT API
+// ============================================================
 
 export default api;

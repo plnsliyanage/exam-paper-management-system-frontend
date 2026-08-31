@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FileText,
   Clock,
@@ -12,140 +13,103 @@ import {
   CheckSquare,
   Award,
 } from "lucide-react";
+import { hodApi } from "../../services/api";
 
-export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
+const STAGE_META = [
+  { key: "Paper Setting", icon: Edit },
+  { key: "Paper Marking", icon: FileText },
+  { key: "Paper Moderation", icon: CheckSquare },
+  { key: "Second Marking", icon: Award },
+];
+
+export default function HodDepartmentView({ deptId = "D1" }) {
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showAllPackets, setShowAllPackets] = useState(false);
 
-  // Top Summary Cards
-  const [stats, setStats] = useState([
-    {
-      title: "Total Packets",
-      value: "68",
-      icon: FileText,
-      color: "text-blue-600 bg-blue-50",
-    },
-    {
-      title: "In Progress",
-      value: "20",
-      icon: Clock,
-      color: "text-amber-600 bg-amber-50",
-    },
-    {
-      title: "Overdue / Delayed",
-      value: "6",
-      icon: AlertTriangle,
-      color: "text-red-600 bg-red-50",
-    },
-    {
-      title: "Completed",
-      value: "42",
-      icon: CheckCircle2,
-      color: "text-green-600 bg-green-50",
-    },
-  ]);
+  const [stats, setStats] = useState(null);
+  const [packets, setPackets] = useState([]);
 
-  // Stage Breakdown Data mapping directly to the 4 workflow steps
-  const [stageBreakdown, setStageBreakdown] = useState([
-    {
-      stageName: "Paper Setting",
-      icon: Edit,
-      inProgress: 4,
-      overdue: 1,
-      completed: 15,
-    },
-    {
-      stageName: "Paper Marking",
-      icon: FileText,
-      inProgress: 8,
-      overdue: 3,
-      completed: 14,
-    },
-    {
-      stageName: "Paper Moderation",
-      icon: CheckSquare,
-      inProgress: 3,
-      overdue: 2,
-      completed: 8,
-    },
-    {
-      stageName: "Second Marking",
-      icon: Award,
-      inProgress: 5,
-      overdue: 0,
-      completed: 5,
-    },
-  ]);
-
-  // Full dummy dataset for department packets with matching stage types
-  const [allPackets] = useState([
-    {
-      packetId: "PKT-2026-101",
-      courseName: "Data Structures & Algorithms",
-      courseCode: "CS2101",
-      cycleId: "Sem 1 - Midterm",
-      stage: "Paper Setting",
-      status: "In Progress",
-      currentHolderName: "Dr. Alan Turing",
-      isOverdue: false,
-    },
-    {
-      packetId: "PKT-2026-102",
-      courseName: "Database Management Systems",
-      courseCode: "CS2102",
-      cycleId: "Sem 1 - Midterm",
-      stage: "Paper Marking",
-      status: "In Progress",
-      currentHolderName: "Prof. Grace Hopper",
-      isOverdue: true,
-    },
-    {
-      packetId: "PKT-2026-103",
-      courseName: "Operating Systems",
-      courseCode: "CS3101",
-      cycleId: "Sem 1 - Finals",
-      stage: "Paper Moderation",
-      status: "In Progress",
-      currentHolderName: "Dr. Linus Torvalds",
-      isOverdue: true,
-    },
-    {
-      packetId: "PKT-2026-104",
-      courseName: "Software Engineering",
-      courseCode: "CS3102",
-      cycleId: "Sem 1 - Finals",
-      stage: "Second Marking",
-      status: "In Progress",
-      currentHolderName: "Dr. Margaret Hamilton",
-      isOverdue: false,
-    },
-    {
-      packetId: "PKT-2026-105",
-      courseName: "Artificial Intelligence",
-      courseCode: "CS4101",
-      cycleId: "Sem 1 - Finals",
-      stage: "Paper Marking",
-      status: "Completed",
-      currentHolderName: "Prof. John McCarthy",
-      isOverdue: false,
-    },
-    {
-      packetId: "PKT-2026-106",
-      courseName: "Computer Networks",
-      courseCode: "CS3201",
-      cycleId: "Sem 1 - Midterm",
-      stage: "Paper Setting",
-      status: "Completed",
-      currentHolderName: "Dr. Vint Cerf",
-      isOverdue: false,
-    },
-  ]);
+  const navigateTo = (target) => navigate(`/hod/${target}`);
 
   useEffect(() => {
-    // Simulate minor async loading effect for robust component mounting
-    const timer = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(timer);
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    Promise.all([
+      hodApi.getDepartmentStatistics(deptId),
+      hodApi.getDepartmentPackets(deptId),
+    ])
+      .then(([statsData, packetsData]) => {
+        if (!isMounted) return;
+        setStats(statsData);
+
+        // Ensure we always store an array. If packetsData is wrapped like { data: [...] }, adjust to packetsData.data
+        const safePackets = Array.isArray(packetsData)
+          ? packetsData
+          : packetsData?.packets || packetsData?.data || [];
+        setPackets(safePackets);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        setError(err?.message || "Failed to load department dashboard.");
+      })
+      .finally(() => isMounted && setLoading(false));
+
+    return () => {
+      isMounted = false;
+    };
   }, [deptId]);
+
+  // Build the top 4 summary cards from live stats
+  const summaryCards = useMemo(() => {
+    if (!stats) return [];
+    return [
+      {
+        title: "Total Packets",
+        value: stats.totalPackets,
+        icon: FileText,
+        color: "text-blue-600 bg-blue-50",
+      },
+      {
+        title: "In Progress",
+        value: stats.inProgressPackets,
+        icon: Clock,
+        color: "text-amber-600 bg-amber-50",
+      },
+      {
+        title: "Overdue / Delayed",
+        value: stats.overduePackets,
+        icon: AlertTriangle,
+        color: "text-red-600 bg-red-50",
+      },
+      {
+        title: "Completed",
+        value: stats.completedPackets,
+        icon: CheckCircle2,
+        color: "text-green-600 bg-green-50",
+      },
+    ];
+  }, [stats]);
+
+  // Group live packets into the 4 workflow stages safely
+  const stageBreakdown = useMemo(() => {
+    const list = Array.isArray(packets) ? packets : [];
+    return STAGE_META.map(({ key, icon }) => {
+      const stagePackets = list.filter((p) => p.status === key);
+      const overdue = stagePackets.filter((p) => p.isOverdue).length;
+      const inProgress = stagePackets.length - overdue;
+      return { stageName: key, icon, inProgress, overdue, completed: 0 };
+    });
+  }, [packets]);
+
+  const safePacketsList = Array.isArray(packets) ? packets : [];
+  const displayedPackets = showAllPackets
+    ? safePacketsList
+    : safePacketsList.slice(0, 3);
 
   if (loading) {
     return (
@@ -157,8 +121,13 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
     );
   }
 
-  // Display top 3 items or all items based on toggle state
-  const displayedPackets = showAllPackets ? allPackets : allPackets.slice(0, 3);
+  if (error) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-screen">
+        <p className="text-red-500 text-sm font-medium">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -190,7 +159,7 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
 
       {/* Top 4 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
+        {summaryCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <div
@@ -213,7 +182,7 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
         })}
       </div>
 
-      {/* Main Workflow Stage Matrix (Paper Setting, Marking, Moderation, Second Marking) */}
+      {/* Main Workflow Stage Matrix */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
           <div>
@@ -222,8 +191,8 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
               Academic Workflow Stage Matrix
             </h2>
             <p className="text-xs text-gray-500">
-              Detailed tracking of In Progress, Overdue/Delayed, and Completed
-              phases across all 4 key assessment stages.
+              Live tracking of In Progress and Overdue/Delayed packets across
+              all 4 key assessment stages.
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
@@ -245,12 +214,11 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {stageBreakdown.map((stage, index) => {
             const StageIcon = stage.icon || FileText;
-            const totalStagePackets =
-              stage.inProgress + stage.overdue + stage.completed;
-            const completionRate =
+            const totalStagePackets = stage.inProgress + stage.overdue;
+            const onTrackRate =
               totalStagePackets > 0
-                ? Math.round((stage.completed / totalStagePackets) * 100)
-                : 0;
+                ? Math.round((stage.inProgress / totalStagePackets) * 100)
+                : 100;
 
             return (
               <div
@@ -270,7 +238,6 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
                     </span>
                   </div>
 
-                  {/* Phase Sub-metrics */}
                   <div className="space-y-2 mt-4">
                     <div className="flex items-center justify-between text-xs bg-white p-2 rounded border border-gray-100">
                       <span className="text-gray-600 flex items-center gap-1.5 font-medium">
@@ -293,29 +260,18 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
                         {stage.overdue}
                       </span>
                     </div>
-
-                    <div className="flex items-center justify-between text-xs bg-white p-2 rounded border border-gray-100">
-                      <span className="text-gray-600 flex items-center gap-1.5 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>{" "}
-                        Completed
-                      </span>
-                      <span className="font-bold text-green-700">
-                        {stage.completed}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Mini Progress Bar */}
                 <div className="mt-4 pt-3 border-t border-gray-200">
                   <div className="flex justify-between text-[11px] text-gray-500 mb-1 font-medium">
-                    <span>Stage Progress</span>
-                    <span>{completionRate}%</span>
+                    <span>On-track Rate</span>
+                    <span>{onTrackRate}%</span>
                   </div>
                   <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                     <div
                       className="bg-green-500 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${completionRate}%` }}
+                      style={{ width: `${onTrackRate}%` }}
                     ></div>
                   </div>
                 </div>
@@ -326,7 +282,7 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Packets Section with Working "View All" Toggle */}
+        {/* Recent Packets */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -375,7 +331,7 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
                         </td>
                         <td className="py-3 px-3">
                           <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-medium">
-                            {pkt.stage}
+                            {pkt.status}
                           </span>
                         </td>
                         <td className="py-3 px-3">
@@ -386,7 +342,9 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
                                 : "bg-amber-100 text-amber-800"
                             }`}
                           >
-                            {pkt.status}
+                            {pkt.status === "Completed"
+                              ? "Completed"
+                              : "In Progress"}
                           </span>
                         </td>
                         <td className="py-3 px-3 text-gray-600 text-xs">
@@ -405,11 +363,12 @@ export default function HodDepartmentView({ navigateTo, deptId = "D1" }) {
             </div>
           </div>
           <div className="mt-4 text-xs text-gray-400 text-right">
-            Showing {displayedPackets.length} of {allPackets.length} packets
+            Showing {displayedPackets.length} of {safePacketsList.length}{" "}
+            packets
           </div>
         </div>
 
-        {/* Attention Required Card */}
+        {/* Attention Required */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-3">

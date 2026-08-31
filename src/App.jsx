@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,7 +10,6 @@ import Sidebar from "./components/Sidebar";
 
 // Lecturer Pages
 import LecturerDashboard from "./pages/lecturer/LecturerDashboard";
-
 import LecturerPreviousRecordsPage from "./pages/lecturer/LecturerPreviousRecordsPage";
 import LecturerCalendarPage from "./pages/lecturer/LecturerCalendarPage";
 import LecturerNotificationsPage from "./pages/lecturer/LecturerNotificationsPage";
@@ -19,21 +18,19 @@ import LecturerNotificationsPage from "./pages/lecturer/LecturerNotificationsPag
 import HodDepartmentView from "./pages/hod/HodDepartmentView";
 import HodDepartmentPacketsPage from "./pages/hod/HodDepartmentPacketsPage";
 import HodWorkloadPage from "./pages/hod/HodWorkloadPage";
+import HodReportsPage from "./pages/hod/HodReportsPage";
+// Reachable from buttons inside HodDepartmentView ("Overdue Packets" /
+// "Access Previous Academic Records") but intentionally left out of the
+// sidebar, which only lists the 4 required HOD items.
 import HodOverduePage from "./pages/hod/HodOverduePage";
 import HodPreviousRecordsPage from "./pages/hod/HodPreviousRecordsPage";
-import HodReportsPage from "./pages/hod/HodReportsPage";
 
-// A sub-component to safely use useLocation inside Router
 function MainLayout() {
   const location = useLocation();
-  const [user, setUser] = useState({ name: "Mock User", role: "lecturer" });
 
-  // Automatically switch sidebar role based on what URL you are currently visiting!
   let roleKey = "lecturer";
   if (location.pathname.startsWith("/hod")) {
     roleKey = "hod";
-  } else if (location.pathname.startsWith("/lecturer")) {
-    roleKey = "lecturer";
   }
 
   return (
@@ -43,7 +40,6 @@ function MainLayout() {
         <Routes>
           {/* Lecturer Routes */}
           <Route path="/lecturer" element={<LecturerDashboard />} />
-
           <Route
             path="/lecturer/previous"
             element={<LecturerPreviousRecordsPage />}
@@ -54,17 +50,19 @@ function MainLayout() {
             element={<LecturerNotificationsPage />}
           />
 
-          {/* HOD Routes */}
+          {/* HOD Routes - the 4 sidebar items */}
           <Route path="/hod" element={<HodDepartmentView />} />
           <Route path="/hod/packets" element={<HodDepartmentPacketsPage />} />
           <Route path="/hod/workload" element={<HodWorkloadPage />} />
-          <Route path="/hod/overdue" element={<HodOverduePage />} />
-          <Route path="/hod/previous" element={<HodPreviousRecordsPage />} />
           <Route path="/hod/reports" element={<HodReportsPage />} />
 
+          {/* HOD Routes - reachable via in-page buttons, not the sidebar */}
+          <Route path="/hod/overdue" element={<HodOverduePage />} />
+          <Route path="/hod/previous" element={<HodPreviousRecordsPage />} />
+
           {/* Default Landing / Catch-all */}
-          <Route path="/" element={<Navigate to="/lecturer" replace />} />
-          <Route path="*" element={<Navigate to="/lecturer" replace />} />
+          <Route path="/" element={<Navigate to="/hod" replace />} />
+          <Route path="*" element={<Navigate to="/hod" replace />} />
         </Routes>
       </main>
     </div>
