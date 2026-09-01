@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import DashboardLayout from "./components/DashboardLayout";
 import "./index.css";
 import ARDashboard from "./pages/AR/Dashboard";
+import ModeratorDashboard from "./pages/Moderator/Dashboard";
 import Packets from "./pages/Packets";
 import PacketDetail from "./pages/PacketDetail";
 import Workflow from "./pages/Workflow";
@@ -12,10 +13,20 @@ import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 import UserManagement from "./pages/AR/UserManagement";
 import AddPacket from "./pages/AR/AddPacket";
+import AddUser from "./pages/AR/AddUser";
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
   return token ? children : <Navigate to="/login" />;
+}
+
+function RoleBasedDashboard() {
+  const { getRole } = useAuth();
+  const role = getRole();
+  if (role === "ROLE_MODERATOR") {
+    return <ModeratorDashboard />;
+  }
+  return <ARDashboard />;
 }
 
 function AppRoutes() {
@@ -31,16 +42,19 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/dashboard" element={<ARDashboard />} />
+        <Route path="/dashboard" element={<RoleBasedDashboard />} />
+
         <Route path="/packets" element={<Packets />} />
         <Route path="/packets/:id" element={<PacketDetail />} />
-        
+
         <Route path="/packets/add" element={<AddPacket />} />
         <Route path="/packets/edit/:id" element={<AddPacket />} />
         <Route path="/workflow" element={<Workflow />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/users" element={<UserManagement />} />
+        <Route path="/users/add" element={<AddUser />} />
+        <Route path="/users/edit/:id" element={<AddUser />} />
         <Route
           path="/settings"
           element={<div className="text-xl font-semibold">Settings</div>}

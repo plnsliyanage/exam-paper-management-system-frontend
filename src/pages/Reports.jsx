@@ -40,7 +40,43 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [semester, setSemester] = useState("ALL");
-  
+  const [exporting, setExporting] = useState(null); // 'pdf' | 'excel' | null
+  const [exportError, setExportError] = useState("");
+
+  const handleExport = async (type) => {
+    if (exporting) return;
+    setExporting(type);
+    setExportError("");
+    try {
+      const res = await axiosInstance.get(`/reports/export/${type}?semester=${semester}`, {
+        responseType: "blob",
+      });
+
+      const extension = type === "pdf" ? "pdf" : "xlsx";
+      const mimeType =
+        type === "pdf"
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+      const blob = new Blob([res.data], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `exam-report-${semester.toLowerCase()}.${extension}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(`Export ${type} failed:`, err);
+      setExportError(`Failed to export ${type.toUpperCase()}. Please try again.`);
+    } finally {
+      setExporting(null);
+    }
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -101,6 +137,18 @@ export default function Reports() {
 
   return (
     <div className="space-y-4">
+      {exportError && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center justify-between">
+          <span>{exportError}</span>
+          <button
+            onClick={() => setExportError("")}
+            className="text-red-500 hover:text-red-700 font-bold ml-4"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -124,26 +172,76 @@ export default function Reports() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() =>
-              window.open(
-                "http://localhost:8080/api/reports/export/pdf",
-                "_blank",
-              )
-            }
-            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            onClick={() => handleExport("pdf")}
+            disabled={exporting !== null}
+            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
-            ⬇ Export PDF
+            {exporting === "pdf" ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 text-gray-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
+                <span>Exporting PDF...</span>
+              </>
+            ) : (
+              <>
+                <span>⬇</span>
+                <span>Export PDF</span>
+              </>
+            )}
           </button>
           <button
-            onClick={() =>
-              window.open(
-                "http://localhost:8080/api/reports/export/excel",
-                "_blank",
-              )
-            }
-            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            onClick={() => handleExport("excel")}
+            disabled={exporting !== null}
+            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
-            ⬇ Export Excel
+            {exporting === "excel" ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 text-gray-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
+                <span>Exporting Excel...</span>
+              </>
+            ) : (
+              <>
+                <span>⬇</span>
+                <span>Export Excel</span>
+              </>
+            )}
           </button>
         </div>
       </div>

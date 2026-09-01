@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const statusColors = {
   PENDING: "bg-blue-100 text-blue-700",
@@ -35,6 +36,10 @@ export default function Packets() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { getRole } = useAuth();
+  const role = getRole();
+  const isModerator = role === "ROLE_MODERATOR";
+  const isAdmin = role === "ROLE_ADMIN";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,7 +69,7 @@ export default function Packets() {
           p.packetId.toLowerCase().includes(q) ||
           p.courseCode.toLowerCase().includes(q) ||
           p.courseName.toLowerCase().includes(q) ||
-          p.lecturerName.toLowerCase().includes(q),
+          p.lecturerName.toLowerCase().includes(q)
       );
     }
     setFiltered(result);
@@ -114,9 +119,14 @@ export default function Packets() {
   const countFor = (s) =>
     s === "ALL" ? packets.length : packets.filter((p) => p.status === s).length;
 
+  const tableHeaders = isModerator
+    ? ["Packet ID", "Course", "Lecturer", "Deadline", "Status", "Priority"]
+    : ["Packet ID", "Course", "Lecturer", "Moderator", "Deadline", "Status", "Priority", "Actions"];
+
   if (loading)
     return (
       <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7c4dff] mr-3"></div>
         Loading packets...
       </div>
     );
@@ -168,13 +178,15 @@ export default function Packets() {
           </button>
         </div>
 
-        {/* Add Packet */}
-        <button
-          onClick={() => navigate("/packets/add")}
-          className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition"
-        >
-          + Add Packet
-        </button>
+        {/* Add Packet (Only for Admin) */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate("/packets/add")}
+            className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition"
+          >
+            + Add Packet
+          </button>
+        )}
       </div>
 
       {/* Status tabs */}
@@ -199,16 +211,7 @@ export default function Packets() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
-              {[
-                "Packet ID",
-                "Course",
-                "Lecturer",
-                "Moderator",
-                "Deadline",
-                "Status",
-                "Priority",
-                "Actions",
-              ].map((h) => (
+              {tableHeaders.map((h) => (
                 <th
                   key={h}
                   className="text-left text-xs font-semibold text-gray-400 px-5 py-4 uppercase tracking-wide"
@@ -222,101 +225,123 @@ export default function Packets() {
             {filtered.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={tableHeaders.length}
                   className="text-center text-gray-400 text-sm py-12"
                 >
                   No packets found.
                 </td>
               </tr>
             ) : (
-              filtered.map((p, index) => (
-                <tr
-                  key={index}
-                  className="border-b border-gray-50 hover:bg-gray-50 transition"
-                >
-                  <td className="px-5 py-4 text-sm font-semibold text-[#7c4dff]">
-                    {p.packetId}
-                  </td>
+              filtered.map((p, index) => {
+                const numericId = parseInt(p.packetId.split("-")[2]);
+                return (
+                  <tr
+                    key={index}
+                    onClick={() => {
+                      if (isModerator) {
+                        navigate(`/packets/${numericId}`);
+                      }
+                    }}
+                    className={`border-b border-gray-50 transition ${
+                      isModerator
+                        ? "hover:bg-purple-50/40 cursor-pointer"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <td className="px-5 py-4 text-sm font-semibold text-[#7c4dff]">
+                      {p.packetId}
+                    </td>
 
-                  <td className="px-5 py-4">
-                    <p className="text-sm font-medium text-gray-800">
-                      {p.courseCode}
-                    </p>
-                    <p className="text-xs text-gray-400">{p.courseName}</p>
-                  </td>
+                    <td className="px-5 py-4">
+                      <p className="text-sm font-medium text-gray-800">
+                        {p.courseCode}
+                      </p>
+                      <p className="text-xs text-gray-400">{p.courseName}</p>
+                    </td>
 
-                  <td className="px-5 py-4 text-sm text-gray-600">
-                    {p.lecturerName}
-                  </td>
+                    <td className="px-5 py-4 text-sm text-gray-600">
+                      {p.lecturerName}
+                    </td>
 
-                  <td className="px-5 py-4 text-sm text-gray-600">
-                    {p.moderatorName}
-                  </td>
-
-                  <td className="px-5 py-4">
-                    <p
-                      className={`text-sm font-medium ${p.overdue ? "text-red-500" : "text-gray-700"}`}
-                    >
-                      {p.deadline
-                        ? new Date(p.deadline).toLocaleDateString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "—"}
-                    </p>
-                    {p.overdue && (
-                      <p className="text-xs text-red-400">Overdue</p>
+                    {!isModerator && (
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {p.moderatorName}
+                      </td>
                     )}
-                  </td>
 
-                  <td className="px-5 py-4">
-                    <span
-                      className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[p.status] || "bg-gray-100 text-gray-500"}`}
-                    >
-                      {statusLabels[p.status] || p.status}
-                    </span>
-                  </td>
+                    <td className="px-5 py-4">
+                      <p
+                        className={`text-sm font-medium ${
+                          p.overdue ? "text-red-500" : "text-gray-700"
+                        }`}
+                      >
+                        {p.deadline
+                          ? new Date(p.deadline).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </p>
+                      {p.overdue && (
+                        <p className="text-xs text-red-400">Overdue</p>
+                      )}
+                    </td>
 
-                  <td className="px-5 py-4">
-                    <span
-                      className={`text-sm font-semibold ${priorityColors[p.priority]}`}
-                    >
-                      ●{" "}
-                      {p.priority.charAt(0) + p.priority.slice(1).toLowerCase()}
-                    </span>
-                  </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                          statusColors[p.status] || "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {statusLabels[p.status] || p.status}
+                      </span>
+                    </td>
 
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => {
-                          const numericId = parseInt(p.packetId.split("-")[2]);
-                          navigate(`/packets/${numericId}`);
-                        }}
-                        className="text-blue-400 hover:text-blue-600 text-lg"
+                    <td className="px-5 py-4">
+                      <span
+                        className={`text-sm font-semibold ${priorityColors[p.priority]}`}
                       >
-                        👁
-                      </button>
-                      <button
-                        onClick={() => {
-                          const numericId = parseInt(p.packetId.split("-")[2]);
-                          navigate(`/packets/edit/${numericId}`);
-                        }}
-                        className="text-gray-400 hover:text-gray-600 text-lg"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.packetId)}
-                        className="text-red-400 hover:text-red-600 text-lg"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                        ● {p.priority.charAt(0) + p.priority.slice(1).toLowerCase()}
+                      </span>
+                    </td>
+
+                    {!isModerator && (
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/packets/${numericId}`);
+                            }}
+                            className="text-blue-400 hover:text-blue-600 text-lg"
+                          >
+                            👁
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/packets/edit/${numericId}`);
+                            }}
+                            className="text-gray-400 hover:text-gray-600 text-lg"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(p.packetId);
+                            }}
+                            className="text-red-400 hover:text-red-600 text-lg"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -324,3 +349,4 @@ export default function Packets() {
     </div>
   );
 }
+

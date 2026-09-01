@@ -30,6 +30,15 @@ const STATUS_LABELS = {
   DELAYED: "Delayed",
 };
 
+const DEFAULT_STAGES = [
+  { stageName: "Draft", actor: "Paper being prepared", completed: false, current: false },
+  { stageName: "Submitted", actor: "Awaiting moderation", completed: false, current: false },
+  { stageName: "Moderation", actor: "Being reviewed", completed: false, current: false },
+  { stageName: "Approved", actor: "All checks cleared", completed: false, current: false },
+  { stageName: "Printing", actor: "In print queue", completed: false, current: false },
+  { stageName: "Completed", actor: "Delivered", completed: false, current: false },
+];
+
 export default function Workflow() {
   const [packets, setPackets] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -62,35 +71,57 @@ export default function Workflow() {
     fetch();
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-gray-400 text-sm">Loading workflow...</div>;
-  if (error) return <div className="flex items-center justify-center h-64 text-red-400 text-sm">{error}</div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7c4dff] mr-3"></div>
+        Loading workflow...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="flex items-center justify-center h-64 text-red-400 text-sm">
+        {error}
+      </div>
+    );
+
+  const displayStages = selected?.stages && selected.stages.length > 0 ? selected.stages : DEFAULT_STAGES;
 
   return (
     <div className="space-y-4">
-
       {/* Top — workflow stages diagram */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h2 className="text-sm font-semibold text-gray-700 mb-6">Exam Paper Workflow</h2>
         <div className="flex items-start justify-between relative">
           <div className="absolute top-5 left-0 right-0 h-px bg-gray-200 z-0 mx-10" />
-          {(selected?.stages || []).map((stage, i) => {
+          {displayStages.map((stage, i) => {
             const colors = STAGE_COLORS[stage.stageName] || STAGE_COLORS.Draft;
             return (
               <div key={i} className="flex flex-col items-center z-10 flex-1">
-                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-bold bg-white ${
-                  stage.completed ? "border-gray-400 bg-gray-100 text-gray-500" :
-                  stage.current ? colors.circle :
-                  "border-gray-200 text-gray-300"
-                }`}>
+                <div
+                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-bold bg-white ${
+                    stage.completed
+                      ? "border-gray-400 bg-gray-100 text-gray-500"
+                      : stage.current
+                      ? colors.circle
+                      : "border-gray-200 text-gray-300"
+                  }`}
+                >
                   {i + 1}
                 </div>
-                <p className={`text-xs font-semibold mt-2 ${
-                  stage.current ? colors.label :
-                  stage.completed ? "text-gray-400" : "text-gray-300"
-                }`}>
+                <p
+                  className={`text-xs font-semibold mt-2 ${
+                    stage.current
+                      ? colors.label
+                      : stage.completed
+                      ? "text-gray-500"
+                      : "text-gray-400"
+                  }`}
+                >
                   {stage.stageName}
                 </p>
-                <p className="text-xs text-gray-400 text-center mt-0.5 max-w-16">
+                <p className="text-xs text-gray-400 text-center mt-0.5 max-w-20">
                   {stage.actor}
                 </p>
               </div>
@@ -98,6 +129,7 @@ export default function Workflow() {
           })}
         </div>
       </div>
+
 
       {/* Bottom — active packets + detail */}
       <div className="flex gap-4 h-[calc(100vh-320px)]">
@@ -168,7 +200,7 @@ export default function Workflow() {
         </div>
 
         {/* Right — stage detail */}
-        {selected && (
+        {selected ? (
           <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-y-auto">
             <div className="p-6 border-b border-gray-100 flex items-start justify-between">
               <div>
@@ -239,8 +271,13 @@ export default function Workflow() {
               </div>
             </div>
           </div>
+        ) : (
+          <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center text-gray-400">
+            <p className="text-sm font-semibold text-gray-700">No Packet Selected</p>
+            <p className="text-xs text-gray-400 mt-1">Select a packet from the left list to view its workflow stage progress.</p>
+          </div>
         )}
       </div>
     </div>
   );
-}
+}

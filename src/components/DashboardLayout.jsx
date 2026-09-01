@@ -44,6 +44,11 @@ export default function DashboardLayout() {
       .catch(() => {});
   }, []);
 
+  const subtitle =
+    location.pathname === "/dashboard" && role === "ROLE_MODERATOR"
+      ? "Moderator review workspace — Semester 2, 2026"
+      : page.sub;
+
   return (
     <div className="flex min-h-screen bg-[#f1f5f9]">
       {/* Sidebar */}
@@ -58,8 +63,9 @@ export default function DashboardLayout() {
             <h1 className="text-lg font-semibold text-gray-800">
               {page.title}
             </h1>
-            <p className="text-xs text-gray-400">{page.sub}</p>
+            <p className="text-xs text-gray-400">{subtitle}</p>
           </div>
+
 
           {/* Right side actions */}
           <div className="flex items-center gap-4">

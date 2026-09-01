@@ -108,8 +108,8 @@ export default function PacketDetail() {
       setPacket(res.data);
       setSuccessMsg(
         action === "APPROVE" ? "Packet approved successfully." :
-        action === "RETURN" ? "Packet returned for revision." :
-        "Packet rejected."
+          action === "RETURN" ? "Packet returned for revision." :
+            "Packet rejected."
       );
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err) {
@@ -281,11 +281,10 @@ export default function PacketDetail() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`text-sm py-4 mr-6 transition ${
-                    activeTab === tab.key
+                  className={`text-sm py-4 mr-6 transition ${activeTab === tab.key
                       ? "font-medium text-[#7c4dff] border-b-2 border-[#7c4dff]"
                       : "text-gray-400 hover:text-gray-600"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -418,8 +417,8 @@ export default function PacketDetail() {
                       {attachments.map((a) => {
                         const icon =
                           a.fileType?.includes("pdf") ? "📄" :
-                          a.fileType?.includes("word") || a.fileType?.includes("document") ? "📝" :
-                          a.fileType?.includes("image") ? "🖼" : "📎";
+                            a.fileType?.includes("word") || a.fileType?.includes("document") ? "📝" :
+                              a.fileType?.includes("image") ? "🖼" : "📎";
                         return (
                           <div key={a.id} className="flex items-center gap-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition">
                             <span className="text-2xl">{icon}</span>
@@ -436,7 +435,7 @@ export default function PacketDetail() {
                                 rel="noreferrer"
                                 className="text-[#7c4dff] hover:underline text-sm font-medium"
                               >
-                              
+
                                 Download
                               </a>
                               <button
@@ -616,11 +615,10 @@ export default function PacketDetail() {
               <button
                 onClick={() => handleAction(noteModal, note)}
                 disabled={!!actionLoading}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 transition ${
-                  noteModal === "RETURN"
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 transition ${noteModal === "RETURN"
                     ? "bg-yellow-500 hover:bg-yellow-600"
                     : "bg-red-500 hover:bg-red-600"
-                }`}
+                  }`}
               >
                 {actionLoading ? "Processing..." : noteModal === "RETURN" ? "Return" : "Reject"}
               </button>
