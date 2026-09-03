@@ -1,8 +1,8 @@
 import Sidebar from "./Sidebar";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MdSearch, MdNotifications } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axiosInstance from "../api/axiosInstance"; 
 
 const pageTitles = {
@@ -21,6 +21,7 @@ const pageTitles = {
 export default function DashboardLayout() {
   const { getUsername, getRole } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const page = pageTitles[location.pathname] || { title: "Dashboard", sub: "" };
 
   const roleLabels = {
@@ -37,12 +38,30 @@ export default function DashboardLayout() {
 
   const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
+  const fetchUnreadCount = useCallback(() => {
+    if (!username) return;
     axiosInstance
       .get("/notifications/unread-count")
-      .then((res) => setUnreadCount(res.data.count))
+      .then((res) => {
+        if (res.data && typeof res.data.count === "number") {
+          setUnreadCount(res.data.count);
+        }
+      })
       .catch(() => {});
-  }, []);
+  }, [username]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+
+    const handleUpdate = () => fetchUnreadCount();
+    window.addEventListener("notificationsUpdated", handleUpdate);
+    const interval = setInterval(fetchUnreadCount, 15000);
+
+    return () => {
+      window.removeEventListener("notificationsUpdated", handleUpdate);
+      clearInterval(interval);
+    };
+  }, [fetchUnreadCount, location.pathname]);
 
   const subtitle =
     location.pathname === "/dashboard" && role === "ROLE_MODERATOR"
@@ -50,14 +69,14 @@ export default function DashboardLayout() {
       : page.sub;
 
   return (
-    <div className="flex min-h-screen bg-[#f1f5f9]">
+    <div className="flex h-screen overflow-hidden bg-[#f1f5f9]">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Right side */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-10">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10">
           {/* Page title */}
           <div>
             <h1 className="text-lg font-semibold text-gray-800">
@@ -80,12 +99,18 @@ export default function DashboardLayout() {
             </div>
 
             {/* Notifications */}
-            <div className="relative cursor-pointer">
-              <MdNotifications size={22} className="text-gray-500" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#7c4dff] text-white text-[9px] rounded-full flex items-center justify-center font-bold">
-                {unreadCount > 0 ? unreadCount : ""}
-              </span>
-            </div>
+            <button
+              onClick={() => navigate("/notifications")}
+              className="relative p-2 rounded-lg text-gray-500 hover:text-[#7c4dff] hover:bg-gray-100 transition cursor-pointer"
+              title="Notifications"
+            >
+              <MdNotifications size={22} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#7c4dff] text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm pointer-events-none">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
 
             {/* User avatar */}
             <div className="flex items-center gap-2 cursor-pointer">
@@ -103,7 +128,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>
