@@ -45,6 +45,7 @@ export default function Notifications() {
       setLoading(true);
       const res = await axiosInstance.get("/notifications");
       setNotifications(res.data);
+      window.dispatchEvent(new Event("notificationsUpdated"));
     } catch (err) {
       setError("Failed to load notifications.");
     } finally {
@@ -56,6 +57,7 @@ export default function Notifications() {
     try {
       await axiosInstance.put("/notifications/mark-all-read");
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      window.dispatchEvent(new Event("notificationsUpdated"));
     } catch (err) {
       console.error("Failed to mark all as read:", err);
     }
@@ -67,6 +69,7 @@ export default function Notifications() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
       );
+      window.dispatchEvent(new Event("notificationsUpdated"));
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
     }
@@ -76,6 +79,7 @@ export default function Notifications() {
     try {
       await axiosInstance.delete(`/notifications/${id}`);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
+      window.dispatchEvent(new Event("notificationsUpdated"));
     } catch (err) {
       console.error("Failed to delete notification:", err);
     }

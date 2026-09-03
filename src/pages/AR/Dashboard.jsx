@@ -11,7 +11,6 @@ const summaryCards = [
   { key: "totalPackets", label: "Total Packets", color: "bg-blue-50", icon: "📄", trend: "+12%", trendUp: true },
   { key: "pending", label: "Pending", color: "bg-yellow-50", icon: "🕐", trend: "+5%", trendUp: true },
   { key: "approved", label: "Approved", color: "bg-green-50", icon: "✅", trend: "+18%", trendUp: true },
-  { key: "delayed", label: "Delayed", color: "bg-red-50", icon: "⚠️", trend: "-3%", trendUp: false },
   { key: "printingQueue", label: "Printing Queue", color: "bg-purple-50", icon: "🖨️", trend: "+7%", trendUp: true },
 ];
 
@@ -57,7 +56,7 @@ export default function Dashboard() {
     <div className="space-y-6">
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryCards.map((card) => (
           <div key={card.key} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-start justify-between mb-3">

@@ -9,18 +9,23 @@ export default function Register() {
   const [role, setRole] = useState("ROLE_USER");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
     try {
       await register(username, fullName, password, role);
       setSuccess(true);
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
-      setError("Registration failed. Try a different username.");
+      const msg = err.response?.data?.message || (typeof err.response?.data === "string" ? err.response?.data : null) || "Registration failed. Try a different username.";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -35,10 +40,10 @@ export default function Register() {
         </h1>
 
         {error && (
-          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          <p className="text-red-500 text-sm mb-4 text-center bg-red-50 p-2.5 rounded-lg border border-red-100">{error}</p>
         )}
         {success && (
-          <p className="text-green-600 text-sm mb-4 text-center">
+          <p className="text-green-600 text-sm mb-4 text-center bg-green-50 p-2.5 rounded-lg border border-green-100">
             Registered! Redirecting to login...
           </p>
         )}
@@ -76,16 +81,18 @@ export default function Register() {
           onChange={(e) => setRole(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#7c4dff]"
         >
-          <option value="ROLE_USER">User</option>
+          <option value="ROLE_USER">Lecturer</option>
+          <option value="ROLE_GUEST">Head of Department (HOD)</option>
           <option value="ROLE_MODERATOR">Moderator</option>
-          <option value="ROLE_ADMIN">Admin</option>
+          <option value="ROLE_ADMIN">Assistant Registrar (AR)</option>
         </select>
 
         <button
           type="submit"
-          className="w-full bg-[#7c4dff] text-white py-2 rounded-lg font-semibold hover:bg-[#6a3df0] transition"
+          disabled={loading}
+          className="w-full bg-[#7c4dff] text-white py-2 rounded-lg font-semibold hover:bg-[#6a3df0] disabled:opacity-50 transition cursor-pointer"
         >
-          Register
+          {loading ? "Registering..." : "Register"}
         </button>
 
         <p className="text-sm text-center mt-4">
@@ -97,4 +104,4 @@ export default function Register() {
       </form>
     </div>
   );
-}
+}

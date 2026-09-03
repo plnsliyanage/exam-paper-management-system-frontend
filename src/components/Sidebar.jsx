@@ -17,10 +17,10 @@ export default function Sidebar() {
   if (!menu) return null;
 
   return (
-    <div className="w-64 min-h-screen bg-[#0f172a] flex flex-col text-white">
+    <div className="w-64 h-screen bg-[#0f172a] flex flex-col text-white shrink-0 sticky top-0">
 
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10 shrink-0">
         <div className="w-9 h-9 rounded-lg bg-[#7c4dff] flex items-center justify-center font-bold text-sm">
           ET
         </div>
@@ -31,14 +31,14 @@ export default function Sidebar() {
       </div>
 
       {/* Role label */}
-      <div className="px-5 pt-5 pb-2">
+      <div className="px-5 pt-5 pb-2 shrink-0">
         <p className="text-[10px] font-semibold tracking-widest text-white/30 uppercase">
           {menu.title}
         </p>
       </div>
 
       {/* Menu items */}
-      <nav className="flex-1 px-3">
+      <nav className="flex-1 px-3 overflow-y-auto">
         {menu.items.map((item) => (
           <NavLink
             key={item.path}
