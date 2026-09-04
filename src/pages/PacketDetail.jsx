@@ -73,7 +73,7 @@ export default function PacketDetail() {
   const [commentLoading, setCommentLoading] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
 
-  const canUpdateStatus = ["ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_GUEST"].includes(role);
+  const canUpdateStatus = ["ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_GUEST", "ROLE_USER"].includes(role);
 
   // ── Fetch packet on mount ──
   useEffect(() => {
@@ -109,9 +109,14 @@ export default function PacketDetail() {
       setSuccessMsg(
         action === "APPROVE" ? "Packet approved successfully." :
           action === "RETURN" ? "Packet returned for revision." :
-            "Packet rejected."
+            action === "SUBMIT" || action === "SUBMITTED" ? "Packet submitted for moderation successfully." :
+              action === "COMPLETE" || action === "COMPLETED" ? "Packet marked as completed." :
+                "Packet status updated."
       );
       setTimeout(() => setSuccessMsg(""), 3000);
+      if (activeTab === "history") {
+        loadHistory();
+      }
     } catch (err) {
       setError("Failed to update status.");
     } finally {
@@ -510,29 +515,65 @@ export default function PacketDetail() {
           {/* Update Status */}
           {canUpdateStatus && (
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Update Status</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">Actions & Status</h3>
               <div className="space-y-2">
-                <button
-                  onClick={() => handleAction("APPROVE")}
-                  disabled={!!actionLoading}
-                  className="w-full bg-green-50 text-green-700 border border-green-200 rounded-xl py-3 text-sm font-medium hover:bg-green-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Packet
-                </button>
-                <button
-                  onClick={() => setNoteModal("RETURN")}
-                  disabled={!!actionLoading}
-                  className="w-full bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-xl py-3 text-sm font-medium hover:bg-yellow-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  ↩ Return for Revision
-                </button>
-                <button
-                  onClick={() => setNoteModal("REJECT")}
-                  disabled={!!actionLoading}
-                  className="w-full bg-red-50 text-red-600 border border-red-200 rounded-xl py-3 text-sm font-medium hover:bg-red-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  ✕ Reject Packet
-                </button>
+                {packet.status === "DRAFT" && (
+                  <button
+                    onClick={() => handleAction("SUBMIT")}
+                    disabled={!!actionLoading}
+                    className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                  >
+                    {actionLoading === "SUBMIT" ? <span className="animate-spin">⟳</span> : "📤"} Submit for Moderation
+                  </button>
+                )}
+
+                {["ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_GUEST"].includes(role) && (
+                  <>
+                    {(packet.status === "PENDING" || packet.status === "UNDER_MODERATION") && (
+                      <>
+                        <button
+                          onClick={() => handleAction("APPROVE")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-green-50 text-green-700 border border-green-200 rounded-xl py-3 text-sm font-medium hover:bg-green-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Packet
+                        </button>
+                        <button
+                          onClick={() => setNoteModal("RETURN")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-xl py-3 text-sm font-medium hover:bg-yellow-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          ↩ Return for Revision
+                        </button>
+                        <button
+                          onClick={() => setNoteModal("REJECT")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-red-50 text-red-600 border border-red-200 rounded-xl py-3 text-sm font-medium hover:bg-red-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          ✕ Reject Packet
+                        </button>
+                      </>
+                    )}
+
+                    {(packet.status === "APPROVED" || packet.status === "PRINTING_QUEUE") && (
+                      <button
+                        onClick={() => handleAction("COMPLETE")}
+                        disabled={!!actionLoading}
+                        className="w-full bg-teal-50 text-teal-700 border border-teal-200 rounded-xl py-3 text-sm font-medium hover:bg-teal-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Mark as Completed
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {role === "ROLE_USER" && packet.status !== "DRAFT" && (
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                    <p className="text-xs text-slate-500">
+                      Current packet stage: <span className="font-semibold text-slate-700">{statusLabels[packet.status] || packet.status}</span>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

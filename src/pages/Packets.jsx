@@ -105,14 +105,15 @@ export default function Packets() {
     }
   };
 
-  const handleDelete = async (packetId) => {
-    if (!confirm("Are you sure you want to delete this packet?")) return;
-    const numericId = parseInt(packetId.split("-")[2]);
+  const handleDelete = async (packetId, id) => {
+    if (!confirm(`Are you sure you want to delete packet ${packetId}?`)) return;
+    const targetId = id || parseInt(packetId.split("-")[2], 10);
     try {
-      await axiosInstance.delete(`/packets/${numericId}`);
-      setPackets((prev) => prev.filter((p) => p.packetId !== packetId));
+      await axiosInstance.delete(`/packets/${targetId}`);
+      setPackets((prev) => prev.filter((p) => p.packetId !== packetId && p.id !== targetId));
     } catch (err) {
-      alert("Failed to delete packet.");
+      console.error("Failed to delete packet:", err);
+      alert(err.response?.data?.message || "Failed to delete packet.");
     }
   };
 
@@ -233,10 +234,10 @@ export default function Packets() {
               </tr>
             ) : (
               filtered.map((p, index) => {
-                const numericId = parseInt(p.packetId.split("-")[2]);
+                const numericId = p.id || parseInt(p.packetId.split("-")[2], 10);
                 return (
                   <tr
-                    key={index}
+                    key={p.id || p.packetId || index}
                     onClick={() => {
                       if (isModerator) {
                         navigate(`/packets/${numericId}`);
@@ -315,6 +316,7 @@ export default function Packets() {
                               navigate(`/packets/${numericId}`);
                             }}
                             className="text-blue-400 hover:text-blue-600 text-lg"
+                            title="View Packet"
                           >
                             👁
                           </button>
@@ -324,15 +326,17 @@ export default function Packets() {
                               navigate(`/packets/edit/${numericId}`);
                             }}
                             className="text-gray-400 hover:text-gray-600 text-lg"
+                            title="Edit Packet"
                           >
                             ✏️
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(p.packetId);
+                              handleDelete(p.packetId, numericId);
                             }}
                             className="text-red-400 hover:text-red-600 text-lg"
+                            title="Delete Packet"
                           >
                             🗑
                           </button>

@@ -54,54 +54,28 @@ export default function LecturerDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const packetsResponse = await lecturerApi.getPackets(username);
-      const packetsData = Array.isArray(packetsResponse.data) ? packetsResponse.data : [];
+      const packetsResponse = await axiosInstance.get("/packets");
+      const rawPackets = Array.isArray(packetsResponse.data) ? packetsResponse.data : [];
 
-      const packetsWithMarking = await Promise.all(
-        packetsData.map(async (packet) => {
-          if (packet.taskType === "MARK_SCRIPTS") {
-            try {
-              const markingResponse = await lecturerApi.getMarkingByPacketId(packet.packetId);
-              return {
-                ...packet,
-                scriptsCount: markingResponse.data?.totalScripts || 0,
-              };
-            } catch {
-              return { ...packet, scriptsCount: 0 };
-            }
-          }
-          return packet;
-        })
-      );
-
-      setAllPackets(packetsWithMarking);
-      setPackets(packetsWithMarking);
-
-      try {
-        const statsResponse = await lecturerApi.getWorkloadStats(username);
-        const stats = statsResponse.data;
-
-        if (stats) {
-          const totalAssigned = Number(stats.totalAssignedPackets || packetsWithMarking.length);
-          const completed = Number(stats.completedPackets || 0);
-          const rate = totalAssigned > 0 ? Math.round((completed / totalAssigned) * 100) : 0;
-
-          setDashboardStats({
-            totalActiveTasks: totalAssigned,
-            scriptsToMark: Number(stats.totalScripts || 0),
-            completedTasks: completed,
-            overdueItems: Number(stats.overduePackets || 0),
-            completionRate: rate,
-            paperSettingCount: packetsWithMarking.filter((p) => p.taskType === "SET_PAPER").length,
-            scriptMarkingCount: packetsWithMarking.filter((p) => p.taskType === "MARK_SCRIPTS").length,
-            moderationCount: packetsWithMarking.filter((p) => p.taskType === "MODERATION").length,
-          });
-        } else {
-          calculateFallbackStats(packetsWithMarking);
+      const packetsWithMeta = rawPackets.map((p) => {
+        let defaultTaskType = "SET_PAPER";
+        if (p.status === "APPROVED" || p.status === "PRINTING_QUEUE") {
+          defaultTaskType = "MARK_SCRIPTS";
+        } else if (p.status === "UNDER_MODERATION") {
+          defaultTaskType = "MODERATION";
         }
-      } catch (e) {
-        calculateFallbackStats(packetsWithMarking);
-      }
+        return {
+          ...p,
+          id: p.id || (p.packetId && p.packetId.includes("-") ? parseInt(p.packetId.split("-")[2], 10) : p.packetId),
+          taskType: p.taskType || defaultTaskType,
+          currentHolderName: p.lecturerName,
+          scriptsCount: p.scriptsCount || 0,
+        };
+      });
+
+      setAllPackets(packetsWithMeta);
+      setPackets(packetsWithMeta);
+      calculateStats(packetsWithMeta);
     } catch (error) {
       console.error("Failed to load lecturer dashboard data:", error);
     } finally {
@@ -109,19 +83,22 @@ export default function LecturerDashboard() {
     }
   };
 
-  const calculateFallbackStats = (data) => {
-    const scriptMarkingPackets = data.filter((p) => p.taskType === "MARK_SCRIPTS");
-    const scripts = scriptMarkingPackets.reduce((sum, p) => sum + Number(p.scriptsCount || 0), 0);
+  const calculateStats = (data) => {
+    const totalActive = data.length;
+    const completed = data.filter((p) => p.status === "COMPLETED").length;
+    const overdue = data.filter((p) => p.overdue).length;
+    const scripts = data.filter((p) => p.taskType === "MARK_SCRIPTS").reduce((sum, p) => sum + Number(p.scriptsCount || 0), 0);
     const paperSettingCount = data.filter((p) => p.taskType === "SET_PAPER").length;
-    const scriptMarkingCount = scriptMarkingPackets.length;
+    const scriptMarkingCount = data.filter((p) => p.taskType === "MARK_SCRIPTS").length;
     const moderationCount = data.filter((p) => p.taskType === "MODERATION").length;
+    const rate = totalActive > 0 ? Math.round((completed / totalActive) * 100) : 0;
 
     setDashboardStats({
-      totalActiveTasks: data.length,
+      totalActiveTasks: totalActive,
       scriptsToMark: scripts,
-      completedTasks: data.filter((p) => p.status === "COMPLETED").length,
-      overdueItems: 0,
-      completionRate: data.length > 0 ? Math.round((data.filter((p) => p.status === "COMPLETED").length / data.length) * 100) : 0,
+      completedTasks: completed,
+      overdueItems: overdue,
+      completionRate: rate,
       paperSettingCount,
       scriptMarkingCount,
       moderationCount,
@@ -160,18 +137,31 @@ export default function LecturerDashboard() {
     setPackets(filtered);
   };
 
-  const handleCompleteTask = async (packetId) => {
+  const handleSubmitPacket = async (packetId) => {
     try {
-      await lecturerApi.completeTask(packetId);
-      const updatePacketStatus = (list) =>
-        list.map((p) => (p.packetId === packetId ? { ...p, status: "COMPLETED" } : p));
-      setAllPackets((prev) => updatePacketStatus(prev));
-      setPackets((prev) => updatePacketStatus(prev));
-      alert(`Task completed for packet: ${packetId}`);
+      const numericId = typeof packetId === "string" && packetId.includes("-")
+        ? parseInt(packetId.split("-")[2], 10)
+        : packetId;
+      await axiosInstance.put(`/packets/${numericId}/status`, { action: "SUBMIT" });
+      alert("Exam paper submitted successfully for moderation!");
+      await loadDashboardData();
+    } catch (error) {
+      console.error("Error submitting packet:", error);
+      alert(error?.response?.data?.message || "Failed to submit packet.");
+    }
+  };
+
+  const handleCompleteTask = async (packetId, action = "COMPLETE") => {
+    try {
+      const numericId = typeof packetId === "string" && packetId.includes("-")
+        ? parseInt(packetId.split("-")[2], 10)
+        : packetId;
+      await axiosInstance.put(`/packets/${numericId}/status`, { action });
+      alert("Status updated successfully!");
       await loadDashboardData();
     } catch (error) {
       console.error("Error completing task:", error);
-      alert(error?.response?.data || "Failed to complete task.");
+      alert(error?.response?.data?.message || "Failed to complete task.");
     }
   };
 
@@ -242,11 +232,12 @@ export default function LecturerDashboard() {
             ) : (
               packets.map((packet) => (
                 <PacketCard
-                  key={packet.packetId}
+                  key={packet.packetId || packet.id}
                   packet={packet}
                   onSelectDetail={setSelectedPacketId}
                   onOpenMarking={setMarkingPacket}
                   onCompleteTask={handleCompleteTask}
+                  onSubmitPacket={handleSubmitPacket}
                 />
               ))
             )}
@@ -262,6 +253,7 @@ export default function LecturerDashboard() {
         <PacketDetailModal
           packetId={selectedPacketId}
           onClose={() => setSelectedPacketId(null)}
+          onStatusUpdated={loadDashboardData}
         />
       )}
 
