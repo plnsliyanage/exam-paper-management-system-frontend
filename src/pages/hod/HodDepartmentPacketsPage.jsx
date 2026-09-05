@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Filter,
@@ -9,9 +9,42 @@ import {
   User,
   X,
   RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  Calendar,
+  Layers,
+  ArrowRight,
+  ShieldCheck,
+  CheckSquare,
+  Edit3,
+  Printer,
+  ChevronRight,
 } from "lucide-react";
 import { hodApi } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+
+const TABS = [
+  { key: "ALL", label: "All Packets" },
+  { key: "PENDING", label: "Pending" },
+  { key: "DRAFT", label: "In Draft" },
+  { key: "SUBMITTED", label: "Under Moderation" },
+  { key: "APPROVED", label: "Approved" },
+  { key: "REJECTED", label: "Rejected / Revision" },
+  { key: "PRINTING", label: "Printing" },
+  { key: "COMPLETED", label: "Completed" },
+  { key: "OVERDUE", label: "Overdue" },
+];
+
+const STATUS_CONFIG = {
+  PENDING: { label: "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200", dot: "bg-slate-400" },
+  DRAFT: { label: "Draft", bg: "bg-blue-50 text-blue-700 border-blue-200", dot: "bg-blue-500" },
+  SUBMITTED: { label: "Under Moderation", bg: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+  APPROVED: { label: "Approved", bg: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+  REJECTED: { label: "Changes Requested", bg: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" },
+  PRINTING: { label: "Printing Queue", bg: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-500" },
+  COMPLETED: { label: "Completed", bg: "bg-teal-50 text-teal-700 border-teal-200", dot: "bg-teal-500" },
+};
 
 export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
   const { getUsername } = useAuth();
@@ -28,7 +61,7 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
   const [packetDetail, setPacketDetail] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeModalTab, setActiveModalTab] = useState("details");
   const [detailLoading, setDetailLoading] = useState(false);
   const [postingComment, setPostingComment] = useState(false);
 
@@ -41,7 +74,7 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
     setError(null);
     try {
       const res = await hodApi.getDepartmentPackets(deptId);
-      setPackets(Array.isArray(res.data) ? res.data : []);
+      setPackets(Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []);
     } catch (err) {
       console.error(err);
       setError("Failed to load department packets.");
@@ -50,17 +83,18 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
     }
   };
 
-  const openDetail = async (packetId) => {
-    setSelectedPacketId(packetId);
+  const openDetail = async (packet) => {
+    const rawId = packet.id || packet.packetId;
+    setSelectedPacketId(rawId);
     setDetailLoading(true);
-    setActiveTab("details");
+    setActiveModalTab("details");
     try {
       const [detailRes, commentRes] = await Promise.all([
-        hodApi.getPacketDetails(packetId),
-        hodApi.getPacketComments(packetId),
+        hodApi.getPacketDetails(rawId),
+        hodApi.getPacketComments(rawId),
       ]);
-      setPacketDetail(detailRes.data);
-      setComments(Array.isArray(commentRes.data) ? commentRes.data : []);
+      setPacketDetail(detailRes.data || detailRes);
+      setComments(Array.isArray(commentRes.data) ? commentRes.data : Array.isArray(commentRes) ? commentRes : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -74,10 +108,14 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
     try {
       const res = await hodApi.addComment({
         packetId: selectedPacketId,
-        userId: username,
         commentText: newComment.trim(),
       });
-      setComments((prev) => [...prev, res.data]);
+      setComments((prev) => [...prev, res.data || {
+        id: Date.now(),
+        comment: newComment.trim(),
+        authorName: username,
+        createdAt: "Just now",
+      }]);
       setNewComment("");
     } catch (err) {
       console.error(err);
@@ -86,140 +124,203 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
     }
   };
 
-  const filteredPackets = packets.filter((p) => {
-    const q = searchQuery.toLowerCase().trim();
-    const matchesQuery =
-      !q ||
-      String(p.packetId || "").toLowerCase().includes(q) ||
-      (p.courseCode || "").toLowerCase().includes(q) ||
-      (p.courseName || "").toLowerCase().includes(q);
+  const tabCounts = useMemo(() => {
+    const counts = { ALL: packets.length, OVERDUE: 0 };
+    TABS.forEach((t) => {
+      if (t.key !== "ALL" && t.key !== "OVERDUE") {
+        counts[t.key] = 0;
+      }
+    });
 
-    const matchesStatus =
-      statusFilter === "ALL" ||
-      (p.status || "").toUpperCase() === statusFilter.toUpperCase();
+    packets.forEach((p) => {
+      const st = (p.status || "PENDING").toUpperCase();
+      if (counts[st] !== undefined) {
+        counts[st]++;
+      }
+      if (p.overdue || p.isOverdue) {
+        counts.OVERDUE++;
+      }
+    });
 
-    return matchesQuery && matchesStatus;
-  });
+    return counts;
+  }, [packets]);
+
+  const filteredPackets = useMemo(() => {
+    return packets.filter((p) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesQuery =
+        !q ||
+        String(p.packetId || "").toLowerCase().includes(q) ||
+        (p.courseCode || "").toLowerCase().includes(q) ||
+        (p.courseName || "").toLowerCase().includes(q) ||
+        (p.lecturerName || "").toLowerCase().includes(q) ||
+        (p.moderatorName || "").toLowerCase().includes(q);
+
+      if (!matchesQuery) return false;
+
+      if (statusFilter === "ALL") return true;
+      if (statusFilter === "OVERDUE") return p.overdue || p.isOverdue;
+
+      return (p.status || "PENDING").toUpperCase() === statusFilter.toUpperCase();
+    });
+  }, [packets, searchQuery, statusFilter]);
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto text-xs">
+    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto text-xs">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Department Exam Packets</h1>
           <p className="text-slate-500 text-xs mt-1">
-            Track and search all examination packets in your faculty.
+            Track and oversee all course units and exam packets in your department across each workflow phase.
           </p>
         </div>
 
         <button
           onClick={loadPackets}
-          className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 shadow-sm cursor-pointer font-semibold"
+          className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 flex items-center gap-2 shadow-sm cursor-pointer font-semibold text-xs"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Refresh
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200">
+        {TABS.map((tab) => {
+          const isActive = statusFilter === tab.key;
+          const count = tabCounts[tab.key] || 0;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition cursor-pointer flex items-center gap-2 ${
+                isActive
+                  ? "bg-[#7c4dff] text-white shadow-sm"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80"
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                  isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Search Input Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
           <input
             type="text"
-            placeholder="Search by packet, course code or title..."
+            placeholder="Search by course code, title, lecturer, or moderator..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#7c4dff]/20 text-xs"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#7c4dff]/20 text-xs text-slate-800"
           />
         </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-xs text-slate-700 cursor-pointer font-semibold"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="PENDING">Pending</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="APPROVED">Approved</option>
-          </select>
-        </div>
+        <span className="text-xs text-slate-400 font-semibold whitespace-nowrap">
+          Showing {filteredPackets.length} of {packets.length}
+        </span>
       </div>
 
       {/* Packets Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-slate-400">Loading packets...</div>
+          <div className="p-16 text-center text-slate-400 flex flex-col items-center justify-center space-y-2">
+            <RefreshCw className="w-6 h-6 animate-spin text-[#7c4dff]" />
+            <span>Loading department packets...</span>
+          </div>
         ) : error ? (
-          <div className="p-8 text-center bg-rose-50 border border-rose-200 text-rose-600">
+          <div className="p-8 text-center bg-rose-50 border border-rose-200 text-rose-600 font-semibold">
             {error}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase">
-                  <th className="py-3 px-4">Packet ID</th>
-                  <th className="py-3 px-4">Course</th>
-                  <th className="py-3 px-4">Cycle</th>
+                <tr className="border-b border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-4">Packet / Course</th>
+                  <th className="py-3 px-4">Lecturer</th>
+                  <th className="py-3 px-4">Moderator</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Current Holder</th>
                   <th className="py-3 px-4">Deadline</th>
+                  <th className="py-3 px-4">Priority</th>
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredPackets.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-10 text-center text-slate-400">
-                      No matching exam packets found.
+                    <td colSpan="7" className="py-12 text-center text-slate-400">
+                      No matching exam packets found for this filter.
                     </td>
                   </tr>
                 ) : (
-                  filteredPackets.map((pkt) => (
-                    <tr key={pkt.packetId} className="hover:bg-slate-50 transition">
-                      <td className="py-3 px-4 font-bold text-slate-900">
-                        #{pkt.packetId}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-bold text-slate-800 block text-xs">{pkt.courseCode}</span>
-                        <span className="text-[11px] text-slate-400">{pkt.courseName}</span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-500 font-medium">
-                        {pkt.cycleId || "2026"}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          pkt.status === "COMPLETED" || pkt.status === "Completed"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-amber-100 text-amber-800"
-                        }`}>
-                          {pkt.status || "PENDING"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">
-                        {pkt.currentHolderName || "Unassigned"}
-                        {pkt.isOverdue && (
-                          <span className="ml-1.5 px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded text-[9px] font-bold">
-                            Overdue
+                  filteredPackets.map((pkt) => {
+                    const statusKey = (pkt.status || "PENDING").toUpperCase();
+                    const statusMeta = STATUS_CONFIG[statusKey] || STATUS_CONFIG.PENDING;
+                    return (
+                      <tr key={pkt.id || pkt.packetId} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-slate-900 block text-xs">
+                            {pkt.courseCode}
                           </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-slate-500">
-                        {pkt.deadline || "N/A"}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => openDetail(pkt.packetId)}
-                          className="px-2.5 py-1.5 bg-[#7c4dff]/10 text-[#7c4dff] hover:bg-[#7c4dff]/20 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1 ml-auto text-xs"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Details
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                          <span className="text-[11px] text-slate-500 line-clamp-1">
+                            {pkt.courseName}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 font-medium text-xs">
+                          {pkt.lecturerName || "Unassigned"}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 text-xs">
+                          {pkt.moderatorName || "Unassigned"}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusMeta.bg}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+                            {statusMeta.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 text-xs">
+                          <span className="font-medium">{pkt.deadline || "N/A"}</span>
+                          {pkt.overdue && (
+                            <span className="ml-1.5 px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded text-[9px] font-bold">
+                              Overdue
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              pkt.priority === "HIGH"
+                                ? "bg-rose-50 text-rose-700"
+                                : pkt.priority === "MEDIUM"
+                                ? "bg-amber-50 text-amber-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {pkt.priority || "NORMAL"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => openDetail(pkt)}
+                            className="px-3 py-1.5 bg-[#7c4dff]/10 text-[#7c4dff] hover:bg-[#7c4dff]/20 rounded-xl font-bold transition cursor-pointer flex items-center gap-1 ml-auto text-xs"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Details
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -227,92 +328,151 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
         )}
       </div>
 
-      {/* Detail Modal */}
+      {/* Packet Detail Modal */}
       {selectedPacketId && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-slate-800 text-sm">Packet #{selectedPacketId} Overview</h3>
-              <button onClick={() => setSelectedPacketId(null)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <span className="text-[10px] font-bold text-[#7c4dff] uppercase tracking-wider">
+                  Department Examination Packet
+                </span>
+                <h3 className="font-bold text-slate-900 text-base">
+                  {packetDetail?.courseCode} - {packetDetail?.courseName}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedPacketId(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl bg-white border border-slate-200 cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex border-b border-slate-100 px-4 bg-slate-50/50">
-              {["details", "history", "comments"].map((tab) => (
+            {/* Modal Tabs */}
+            <div className="flex border-b border-slate-100 px-5 bg-slate-50/50">
+              {[
+                { id: "details", label: "Packet Info" },
+                { id: "comments", label: `Notes & Communication (${comments.length})` },
+              ].map((tab) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`py-2 px-4 text-xs font-bold capitalize border-b-2 cursor-pointer transition ${
-                    activeTab === tab ? "border-[#7c4dff] text-[#7c4dff]" : "border-transparent text-slate-400"
+                  key={tab.id}
+                  onClick={() => setActiveModalTab(tab.id)}
+                  className={`py-3 px-4 text-xs font-bold border-b-2 cursor-pointer transition ${
+                    activeModalTab === tab.id
+                      ? "border-[#7c4dff] text-[#7c4dff]"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               ))}
             </div>
 
-            <div className="p-5 overflow-y-auto flex-1 text-xs">
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 text-xs space-y-4">
               {detailLoading ? (
-                <div className="text-center py-8 text-slate-400">Loading details...</div>
-              ) : activeTab === "details" && packetDetail ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Course</span>
-                    <span className="font-bold text-slate-800">{packetDetail.courseCode} - {packetDetail.courseName}</span>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Status</span>
-                    <span className="font-bold text-[#7c4dff]">{packetDetail.status}</span>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Current Holder</span>
-                    <span className="font-bold text-slate-800">{packetDetail.currentHolderName}</span>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Deadline</span>
-                    <span className="font-bold text-slate-800">{packetDetail.deadline}</span>
-                  </div>
+                <div className="text-center py-12 text-slate-400 flex flex-col items-center justify-center space-y-2">
+                  <RefreshCw className="w-6 h-6 animate-spin text-[#7c4dff]" />
+                  <span>Loading packet details...</span>
                 </div>
-              ) : activeTab === "history" ? (
-                <div className="space-y-2">
-                  {(packetDetail?.movementHistory || []).map((m, idx) => (
-                    <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
-                      <div>
-                        <span className="font-bold text-slate-800 block">{m.action}</span>
-                        <span className="text-[11px] text-slate-500">{m.fromUserName} → {m.toUserName}</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400">{m.timestamp ? new Date(m.timestamp).toLocaleDateString() : ""}</span>
+              ) : activeModalTab === "details" && packetDetail ? (
+                <div className="space-y-4">
+                  {/* Status & Priority Overview */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Status</span>
+                      <span className="font-bold text-[#7c4dff] text-xs">{packetDetail.status}</span>
                     </div>
-                  ))}
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Priority</span>
+                      <span className="font-bold text-slate-800 text-xs">{packetDetail.priority || "NORMAL"}</span>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Duration</span>
+                      <span className="font-bold text-slate-800 text-xs">{packetDetail.duration || "3 Hours"}</span>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Marks</span>
+                      <span className="font-bold text-slate-800 text-xs">{packetDetail.totalMarks || "100"}</span>
+                    </div>
+                  </div>
+
+                  {/* Staff Assignments */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100">
+                      <span className="text-[10px] text-blue-600 font-bold uppercase block">Assigned Lecturer</span>
+                      <p className="font-bold text-slate-900 mt-0.5 text-xs">
+                        {packetDetail.lecturerName || "Unassigned"}
+                      </p>
+                    </div>
+                    <div className="p-3.5 bg-purple-50/60 rounded-2xl border border-purple-100">
+                      <span className="text-[10px] text-purple-600 font-bold uppercase block">Assigned Moderator</span>
+                      <p className="font-bold text-slate-900 mt-0.5 text-xs">
+                        {packetDetail.moderatorName || "Unassigned"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Deadlines */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Drafting Deadline</span>
+                      <p className="font-semibold text-slate-800 mt-0.5 text-xs">
+                        {packetDetail.deadline || "Not Scheduled"}
+                      </p>
+                    </div>
+                    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Moderation Deadline</span>
+                      <p className="font-semibold text-slate-800 mt-0.5 text-xs">
+                        {packetDetail.moderationDeadline || "Not Scheduled"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Moderator Note if any */}
+                  {packetDetail.moderatorNote && (
+                    <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900">
+                      <span className="text-[10px] font-bold uppercase block text-amber-700">Moderator Remarks</span>
+                      <p className="mt-1 text-xs">{packetDetail.moderatorNote}</p>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {comments.map((c, idx) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <div className="flex justify-between font-semibold text-slate-700">
-                          <span>{c.userName}</span>
-                          <span className="text-[10px] text-slate-400">{c.timestamp ? new Date(c.timestamp).toLocaleString() : ""}</span>
+                <div className="space-y-4">
+                  <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                    {comments.length === 0 ? (
+                      <p className="text-slate-400 italic text-center py-6">
+                        No comments or instructions recorded yet.
+                      </p>
+                    ) : (
+                      comments.map((c, idx) => (
+                        <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="font-bold text-slate-800">{c.authorName || c.userName || "Staff"}</span>
+                            <span className="text-[10px] text-slate-400">{c.createdAt || ""}</span>
+                          </div>
+                          <p className="text-slate-600 text-xs leading-relaxed">{c.comment || c.commentText}</p>
                         </div>
-                        <p className="text-slate-600 mt-1">{c.commentText}</p>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
-                  <div className="flex gap-2 pt-2">
+
+                  <div className="flex gap-2 pt-2 border-t border-slate-100">
                     <input
                       type="text"
-                      placeholder="Add note..."
+                      placeholder="Add HOD instruction or memo..."
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl outline-none text-xs"
+                      className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#7c4dff]/20 text-xs text-slate-800"
                     />
                     <button
                       onClick={handlePostComment}
-                      disabled={postingComment}
-                      className="px-4 py-1.5 bg-[#7c4dff] text-white rounded-xl font-bold hover:bg-[#6c3de8] cursor-pointer text-xs"
+                      disabled={postingComment || !newComment.trim()}
+                      className="px-4 py-2 bg-[#7c4dff] text-white rounded-xl font-bold hover:bg-[#6c3de8] disabled:opacity-50 transition cursor-pointer text-xs flex items-center gap-1.5"
                     >
-                      Post
+                      <Send className="w-3.5 h-3.5" /> Post
                     </button>
                   </div>
                 </div>

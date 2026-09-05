@@ -2,41 +2,47 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../api/axiosInstance";
 
 const STAGE_COLORS = {
-  Draft: { circle: "border-gray-300 text-gray-400", label: "text-gray-400" },
-  Submitted: { circle: "border-blue-500 text-blue-500 bg-blue-50", label: "text-blue-500" },
-  Moderation: { circle: "border-yellow-500 text-yellow-500 bg-yellow-50", label: "text-yellow-500" },
-  Approved: { circle: "border-green-500 text-green-500 bg-green-50", label: "text-green-500" },
-  Printing: { circle: "border-purple-500 text-purple-500 bg-purple-50", label: "text-purple-500" },
-  Completed: { circle: "border-gray-800 text-gray-800 bg-gray-100", label: "text-gray-700" },
+  Pending: { circle: "border-amber-500 text-amber-500 bg-amber-50", label: "text-amber-500" },
+  Drafting: { circle: "border-blue-500 text-blue-500 bg-blue-50", label: "text-blue-500" },
+  Moderation: { circle: "border-purple-500 text-purple-500 bg-purple-50", label: "text-purple-500" },
+  Approved: { circle: "border-emerald-500 text-emerald-500 bg-emerald-50", label: "text-emerald-500" },
+  Printing: { circle: "border-indigo-500 text-indigo-500 bg-indigo-50", label: "text-indigo-500" },
+  Completed: { circle: "border-teal-500 text-teal-500 bg-teal-50", label: "text-teal-700" },
 };
 
 const STATUS_BADGE = {
-  APPROVED: "bg-green-100 text-green-700",
-  PENDING: "bg-blue-100 text-blue-700",
-  UNDER_MODERATION: "bg-yellow-100 text-yellow-700",
-  PRINTING_QUEUE: "bg-purple-100 text-purple-700",
-  DRAFT: "bg-gray-100 text-gray-600",
-  COMPLETED: "bg-teal-100 text-teal-700",
-  DELAYED: "bg-red-100 text-red-600",
+  PENDING: "bg-amber-100 text-amber-800",
+  DRAFT: "bg-blue-100 text-blue-800",
+  SUBMITTED: "bg-purple-100 text-purple-800",
+  APPROVED: "bg-emerald-100 text-emerald-800",
+  REJECTED: "bg-rose-100 text-rose-800",
+  PRINTING: "bg-indigo-100 text-indigo-800",
+  PRINTING_QUEUE: "bg-indigo-100 text-indigo-800",
+  COMPLETED: "bg-teal-100 text-teal-800",
+  UNDER_MODERATION: "bg-purple-100 text-purple-800",
+  DELAYED: "bg-red-100 text-red-700",
 };
 
 const STATUS_LABELS = {
+  PENDING: "Pending",
+  DRAFT: "Drafting",
+  SUBMITTED: "Submitted",
   APPROVED: "Approved",
-  PENDING: "Submitted",
-  UNDER_MODERATION: "Moderation",
+  REJECTED: "Rejected",
+  PRINTING: "Printing",
   PRINTING_QUEUE: "Printing",
-  DRAFT: "Draft",
   COMPLETED: "Completed",
+  UNDER_MODERATION: "Moderation",
   DELAYED: "Delayed",
 };
 
 const DEFAULT_STAGES = [
-  { stageName: "Draft", actor: "Paper being prepared", completed: false, current: false },
-  { stageName: "Submitted", actor: "Awaiting moderation", completed: false, current: false },
-  { stageName: "Moderation", actor: "Being reviewed", completed: false, current: false },
-  { stageName: "Approved", actor: "All checks cleared", completed: false, current: false },
+  { stageName: "Pending", actor: "Registry assigned", completed: false, current: false },
+  { stageName: "Drafting", actor: "Lecturer preparing", completed: false, current: false },
+  { stageName: "Moderation", actor: "Moderator review", completed: false, current: false },
+  { stageName: "Approved", actor: "Moderator approved", completed: false, current: false },
   { stageName: "Printing", actor: "In print queue", completed: false, current: false },
-  { stageName: "Completed", actor: "Delivered", completed: false, current: false },
+  { stageName: "Completed", actor: "Finalized", completed: false, current: false },
 ];
 
 export default function Workflow() {

@@ -14,7 +14,7 @@ export default function AddPacket() {
   });
 
   const [dropdowns, setDropdowns] = useState({
-    courses: [], lecturers: [], moderators: [], statuses: []
+    courses: [], moderators: [], statuses: []
   });
 
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,10 @@ export default function AddPacket() {
       axiosInstance.get(`/packets/${id}`).then(res => {
         const p = res.data;
         setFormData({
-          courseId: "", lecturerId: "", moderatorId: "", statusId: "",
+          courseId: p.courseId || "",
+          lecturerId: p.lecturerId || "",
+          moderatorId: p.moderatorId || "",
+          statusId: p.statusId || "",
           deadline: p.deadline || "",
           moderationDeadline: p.moderationDeadline || "",
           examDate: p.examDate || "",
@@ -43,16 +46,38 @@ export default function AddPacket() {
         });
       });
     }
-  }, [id]);
+  }, [id, isEdit]);
+
+  const handleCourseChange = (e) => {
+    const selectedCourseId = e.target.value;
+    const selectedCourse = dropdowns.courses.find(c => String(c.id) === String(selectedCourseId));
+    setFormData(prev => ({
+      ...prev,
+      courseId: selectedCourseId,
+      lecturerId: selectedCourse?.lecturerId ? String(selectedCourse.lecturerId) : "",
+    }));
+  };
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const selectedCourse = dropdowns.courses.find(c => String(c.id) === String(formData.courseId));
+  const assignedLecturerName = selectedCourse?.lecturerName || "Unassigned";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (!isEdit) {
+      const selected = dropdowns.courses.find(c => String(c.id) === String(formData.courseId));
+      if (selected && selected.hasPacket) {
+        setError(`An exam packet already exists for course ${selected.code}. Please update the existing packet.`);
+        return;
+      }
+    }
+
+    setLoading(true);
     try {
       if (isEdit) {
         await axiosInstance.put(`/packets/${id}`, formData);
@@ -61,7 +86,7 @@ export default function AddPacket() {
       }
       navigate("/packets");
     } catch (err) {
-      setError("Failed to save packet. Check all fields.");
+      setError(err.response?.data?.message || "Failed to save packet. Check all fields.");
     } finally {
       setLoading(false);
     }
@@ -102,30 +127,40 @@ export default function AddPacket() {
         {/* Course & Assignment */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">Course & Assignment</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Course Dropdown */}
             <div>
               <label className={labelClass}>Course</label>
-              <select name="courseId" value={formData.courseId} onChange={handleChange} className={inputClass} required>
+              <select name="courseId" value={formData.courseId} onChange={handleCourseChange} className={inputClass} required>
                 <option value="">Select course</option>
-                {dropdowns.courses.map(c => (
-                  <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
-                ))}
+                {dropdowns.courses.map(c => {
+                  const isTaken = !isEdit && c.hasPacket;
+                  return (
+                    <option key={c.id} value={c.id} disabled={isTaken}>
+                      {c.code} — {c.name} {isTaken ? " (Packet already exists)" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
+
+            {/* Auto-Assigned Lecturer (from Course) */}
             <div>
-              <label className={labelClass}>Lecturer</label>
-              <select name="lecturerId" value={formData.lecturerId} onChange={handleChange} className={inputClass} required>
-                <option value="">Select lecturer</option>
-                {dropdowns.lecturers.map(l => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
-                ))}
-              </select>
+              <label className={labelClass}>Course Lecturer</label>
+              <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-700 flex items-center justify-between">
+                <span className="font-medium truncate">{assignedLecturerName}</span>
+                <span className="text-[11px] text-purple-600 bg-purple-50 px-2 py-0.5 rounded font-semibold shrink-0 ml-2">
+                  Auto from Course
+                </span>
+              </div>
             </div>
+
+            {/* Assign Moderator */}
             <div>
-              <label className={labelClass}>Moderator</label>
+              <label className={labelClass}>Assign Moderator</label>
               <select name="moderatorId" value={formData.moderatorId} onChange={handleChange} className={inputClass} required>
                 <option value="">Select moderator</option>
-                {dropdowns.moderators.map(m => (
+                {dropdowns.moderators?.map(m => (
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>

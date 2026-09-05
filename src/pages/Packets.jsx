@@ -4,22 +4,28 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const statusColors = {
-  PENDING: "bg-blue-100 text-blue-700",
-  APPROVED: "bg-green-100 text-green-700",
-  DRAFT: "bg-gray-100 text-gray-600",
-  UNDER_MODERATION: "bg-yellow-100 text-yellow-700",
-  PRINTING_QUEUE: "bg-purple-100 text-purple-700",
-  COMPLETED: "bg-teal-100 text-teal-700",
-  DELAYED: "bg-red-100 text-red-600",
+  PENDING: "bg-amber-100 text-amber-800",
+  DRAFT: "bg-blue-100 text-blue-800",
+  SUBMITTED: "bg-purple-100 text-purple-800",
+  APPROVED: "bg-emerald-100 text-emerald-800",
+  REJECTED: "bg-rose-100 text-rose-800",
+  PRINTING: "bg-indigo-100 text-indigo-800",
+  PRINTING_QUEUE: "bg-indigo-100 text-indigo-800",
+  COMPLETED: "bg-teal-100 text-teal-800",
+  UNDER_MODERATION: "bg-purple-100 text-purple-800",
+  DELAYED: "bg-red-100 text-red-700",
 };
 
 const statusLabels = {
-  PENDING: "Submitted",
-  APPROVED: "Approved",
+  PENDING: "Pending",
   DRAFT: "Draft",
-  UNDER_MODERATION: "Under Moderation",
+  SUBMITTED: "Submitted",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  PRINTING: "Printing",
   PRINTING_QUEUE: "Printing",
   COMPLETED: "Completed",
+  UNDER_MODERATION: "Submitted",
   DELAYED: "Delayed",
 };
 
@@ -77,13 +83,13 @@ export default function Packets() {
 
   const statusTabs = [
     "ALL",
-    "DRAFT",
     "PENDING",
-    "UNDER_MODERATION",
+    "DRAFT",
+    "SUBMITTED",
     "APPROVED",
-    "PRINTING_QUEUE",
+    "REJECTED",
+    "PRINTING",
     "COMPLETED",
-    "DELAYED",
   ];
 
   const handleExportCSV = async () => {

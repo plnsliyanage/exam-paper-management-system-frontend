@@ -4,22 +4,28 @@ import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 
 const statusColors = {
-  PENDING: "bg-blue-100 text-blue-700",
-  APPROVED: "bg-green-100 text-green-700",
-  DRAFT: "bg-gray-100 text-gray-600",
-  UNDER_MODERATION: "bg-yellow-100 text-yellow-700",
-  PRINTING_QUEUE: "bg-purple-100 text-purple-700",
-  COMPLETED: "bg-teal-100 text-teal-700",
-  DELAYED: "bg-red-100 text-red-600",
+  PENDING: "bg-amber-100 text-amber-800 border border-amber-200",
+  DRAFT: "bg-blue-100 text-blue-800 border border-blue-200",
+  SUBMITTED: "bg-purple-100 text-purple-800 border border-purple-200",
+  APPROVED: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+  REJECTED: "bg-rose-100 text-rose-800 border border-rose-200",
+  PRINTING: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+  PRINTING_QUEUE: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+  COMPLETED: "bg-teal-100 text-teal-800 border border-teal-200",
+  UNDER_MODERATION: "bg-purple-100 text-purple-800 border border-purple-200",
+  DELAYED: "bg-red-100 text-red-700 border border-red-200",
 };
 
 const statusLabels = {
-  PENDING: "Submitted",
-  APPROVED: "Approved",
-  DRAFT: "Draft",
-  UNDER_MODERATION: "Under Moderation",
-  PRINTING_QUEUE: "Printing",
+  PENDING: "Pending Drafting",
+  DRAFT: "Drafting",
+  SUBMITTED: "Submitted for Moderation",
+  APPROVED: "Approved (Ready to Print)",
+  REJECTED: "Rejected (Revision Needed)",
+  PRINTING: "Printing in Progress",
+  PRINTING_QUEUE: "Printing in Progress",
   COMPLETED: "Completed",
+  UNDER_MODERATION: "Submitted for Moderation",
   DELAYED: "Delayed",
 };
 
@@ -516,64 +522,228 @@ export default function PacketDetail() {
           {canUpdateStatus && (
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">Actions & Status</h3>
-              <div className="space-y-2">
-                {packet.status === "DRAFT" && (
-                  <button
-                    onClick={() => handleAction("SUBMIT")}
-                    disabled={!!actionLoading}
-                    className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                  >
-                    {actionLoading === "SUBMIT" ? <span className="animate-spin">⟳</span> : "📤"} Submit for Moderation
-                  </button>
-                )}
+              <div className="space-y-3">
 
-                {["ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_GUEST"].includes(role) && (
+                {/* ── Lecturer Controls ── */}
+                {role === "ROLE_USER" && (
                   <>
-                    {(packet.status === "PENDING" || packet.status === "UNDER_MODERATION") && (
-                      <>
+                    {packet.status === "PENDING" && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                          📌 Exam packet assigned to you. Click below to begin preparing the exam paper.
+                        </div>
                         <button
-                          onClick={() => handleAction("APPROVE")}
+                          onClick={() => handleAction("DRAFT")}
                           disabled={!!actionLoading}
-                          className="w-full bg-green-50 text-green-700 border border-green-200 rounded-xl py-3 text-sm font-medium hover:bg-green-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                          className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
                         >
-                          {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Packet
+                          {actionLoading === "DRAFT" ? <span className="animate-spin">⟳</span> : "✏️"} Start Drafting Paper
                         </button>
-                        <button
-                          onClick={() => setNoteModal("RETURN")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-xl py-3 text-sm font-medium hover:bg-yellow-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          ↩ Return for Revision
-                        </button>
-                        <button
-                          onClick={() => setNoteModal("REJECT")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-red-50 text-red-600 border border-red-200 rounded-xl py-3 text-sm font-medium hover:bg-red-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          ✕ Reject Packet
-                        </button>
-                      </>
+                      </div>
                     )}
 
-                    {(packet.status === "APPROVED" || packet.status === "PRINTING_QUEUE") && (
-                      <button
-                        onClick={() => handleAction("COMPLETE")}
-                        disabled={!!actionLoading}
-                        className="w-full bg-teal-50 text-teal-700 border border-teal-200 rounded-xl py-3 text-sm font-medium hover:bg-teal-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Mark as Completed
-                      </button>
+                    {packet.status === "DRAFT" && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
+                          📝 Drafting in progress. When questions & attachments are ready, submit for moderation.
+                        </div>
+                        <button
+                          onClick={() => handleAction("SUBMIT")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                        >
+                          {actionLoading === "SUBMIT" ? <span className="animate-spin">⟳</span> : "📤"} Submit for Moderation
+                        </button>
+                      </div>
+                    )}
+
+                    {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION") && (
+                      <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-center space-y-1">
+                        <span className="text-xl">📋</span>
+                        <p className="text-xs font-semibold text-purple-800">Submitted for Moderation</p>
+                        <p className="text-[11px] text-purple-600">Awaiting review and approval from the assigned moderator.</p>
+                      </div>
+                    )}
+
+                    {packet.status === "REJECTED" && (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-1">
+                          <p className="font-semibold flex items-center gap-1">⚠️ Paper Returned for Revision</p>
+                          {packet.moderatorNote && (
+                            <p className="text-red-700 bg-white/70 p-2 rounded border border-red-200 mt-1 italic">
+                              "{packet.moderatorNote}"
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleAction("DRAFT")}
+                            disabled={!!actionLoading}
+                            className="flex-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-amber-100 transition disabled:opacity-50"
+                          >
+                            ✏️ Edit Draft
+                          </button>
+                          <button
+                            onClick={() => handleAction("SUBMIT")}
+                            disabled={!!actionLoading}
+                            className="flex-1 bg-[#7c4dff] text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-[#6c3ce8] transition disabled:opacity-50"
+                          >
+                            📤 Resubmit
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {packet.status === "APPROVED" && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
+                          🎉 Exam paper approved by moderator! You can now proceed to print.
+                        </div>
+                        <button
+                          onClick={() => {
+                            window.print();
+                            handleAction("PRINT");
+                          }}
+                          disabled={!!actionLoading}
+                          className="w-full bg-emerald-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                        >
+                          {actionLoading === "PRINT" ? <span className="animate-spin">⟳</span> : "🖨️"} Proceed to Print Paper
+                        </button>
+                      </div>
+                    )}
+
+                    {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-800">
+                          🖨️ Exam paper is currently printing.
+                        </div>
+                        <button
+                          onClick={() => handleAction("COMPLETE")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-teal-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                        >
+                          {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Mark Printing Completed
+                        </button>
+                      </div>
+                    )}
+
+                    {packet.status === "COMPLETED" && (
+                      <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-center space-y-1">
+                        <span className="text-xl">✅</span>
+                        <p className="text-xs font-semibold text-teal-800">Exam Packet Completed</p>
+                        <p className="text-[11px] text-teal-600">All workflow stages and printing cleared.</p>
+                      </div>
                     )}
                   </>
                 )}
 
-                {role === "ROLE_USER" && packet.status !== "DRAFT" && (
-                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center">
-                    <p className="text-xs text-slate-500">
-                      Current packet stage: <span className="font-semibold text-slate-700">{statusLabels[packet.status] || packet.status}</span>
-                    </p>
+                {/* ── Moderator Controls ── */}
+                {role === "ROLE_MODERATOR" && (
+                  <>
+                    {(packet.status === "PENDING" || packet.status === "DRAFT") && (
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1">
+                        <span className="text-xl">⏳</span>
+                        <p className="text-xs font-semibold text-slate-700">Drafting in Progress</p>
+                        <p className="text-[11px] text-slate-500">
+                          The assigned lecturer is preparing the draft paper. You will be able to review and approve once submitted.
+                        </p>
+                      </div>
+                    )}
+
+                    {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION") && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800 font-medium">
+                          📋 Paper submitted for your review. Please evaluate questions and make your decision.
+                        </div>
+                        <button
+                          onClick={() => handleAction("APPROVE")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-emerald-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                        >
+                          {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Exam Paper
+                        </button>
+                        <button
+                          onClick={() => setNoteModal("REJECT")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-rose-50 text-rose-700 border border-rose-200 rounded-xl py-3 text-sm font-semibold hover:bg-rose-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          ✕ Reject / Request Revision
+                        </button>
+                      </div>
+                    )}
+
+                    {packet.status === "APPROVED" && (
+                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-1">
+                        <span className="text-xl">✓</span>
+                        <p className="text-xs font-semibold text-emerald-800">You Approved This Paper</p>
+                        <p className="text-[11px] text-emerald-600">The paper has cleared moderation and moved to printing.</p>
+                      </div>
+                    )}
+
+                    {packet.status === "REJECTED" && (
+                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-center space-y-1">
+                        <span className="text-xl">⚠️</span>
+                        <p className="text-xs font-semibold text-rose-800">Paper Rejected</p>
+                        <p className="text-[11px] text-rose-600">Waiting for lecturer to revise and resubmit.</p>
+                      </div>
+                    )}
+
+                    {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE" || packet.status === "COMPLETED") && (
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1">
+                        <p className="text-xs font-semibold text-slate-700">Stage: {statusLabels[packet.status] || packet.status}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* ── AR / Admin & HOD Controls ── */}
+                {["ROLE_ADMIN", "ROLE_GUEST"].includes(role) && (
+                  <div className="space-y-2">
+                    <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-600">
+                      Current: <span className="font-semibold text-slate-800">{statusLabels[packet.status] || packet.status}</span>
+                    </div>
+
+                    {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION" || packet.status === "PENDING") && (
+                      <>
+                        <button
+                          onClick={() => handleAction("APPROVE")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-emerald-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Packet
+                        </button>
+                        <button
+                          onClick={() => setNoteModal("REJECT")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-rose-50 text-rose-700 border border-rose-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-rose-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          ✕ Reject / Return
+                        </button>
+                      </>
+                    )}
+
+                    {(packet.status === "APPROVED" || packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
+                      <button
+                        onClick={() => handleAction("COMPLETE")}
+                        disabled={!!actionLoading}
+                        className="w-full bg-teal-600 text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      >
+                        {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Mark as Completed
+                      </button>
+                    )}
+
+                    {(packet.status === "REJECTED" || packet.status === "PENDING") && (
+                      <button
+                        onClick={() => handleAction("DRAFT")}
+                        disabled={!!actionLoading}
+                        className="w-full bg-blue-50 text-blue-700 border border-blue-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-blue-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      >
+                        ✏️ Switch to Draft
+                      </button>
+                    )}
                   </div>
                 )}
+
               </div>
             </div>
           )}

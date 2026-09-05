@@ -6,7 +6,7 @@ import MetricCard from "../../components/lecturer/MetricCard";
 import TaskFilterTabs from "../../components/lecturer/TaskFilterTabs";
 import PacketCard from "../../components/lecturer/PacketCard";
 import WorkloadSummary from "../../components/lecturer/WorkloadSummary";
-import { lecturerApi } from "../../services/api";
+import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 import {
   CheckCircle2,
@@ -14,6 +14,9 @@ import {
   AlertTriangle,
   BookOpen,
   Search,
+  FileEdit,
+  Send,
+  Printer,
 } from "lucide-react";
 
 export default function LecturerDashboard() {
@@ -34,13 +37,12 @@ export default function LecturerDashboard() {
   const [taskFilter, setTaskFilter] = useState("ALL");
   const [dashboardStats, setDashboardStats] = useState({
     totalActiveTasks: 0,
-    scriptsToMark: 0,
+    assignedPreparationCount: 0,
+    inModerationCount: 0,
+    approvedPrintCount: 0,
     completedTasks: 0,
     overdueItems: 0,
     completionRate: 0,
-    paperSettingCount: 0,
-    scriptMarkingCount: 0,
-    moderationCount: 0,
   });
 
   const [selectedPacketId, setSelectedPacketId] = useState(null);
@@ -59,9 +61,9 @@ export default function LecturerDashboard() {
 
       const packetsWithMeta = rawPackets.map((p) => {
         let defaultTaskType = "SET_PAPER";
-        if (p.status === "APPROVED" || p.status === "PRINTING_QUEUE") {
+        if (p.status === "APPROVED" || p.status === "PRINTING_QUEUE" || p.status === "PRINTING") {
           defaultTaskType = "MARK_SCRIPTS";
-        } else if (p.status === "UNDER_MODERATION") {
+        } else if (p.status === "SUBMITTED" || p.status === "UNDER_MODERATION") {
           defaultTaskType = "MODERATION";
         }
         return {
@@ -74,7 +76,7 @@ export default function LecturerDashboard() {
       });
 
       setAllPackets(packetsWithMeta);
-      setPackets(packetsWithMeta);
+      applyFilters(searchQuery, taskFilter, packetsWithMeta);
       calculateStats(packetsWithMeta);
     } catch (error) {
       console.error("Failed to load lecturer dashboard data:", error);
@@ -85,23 +87,22 @@ export default function LecturerDashboard() {
 
   const calculateStats = (data) => {
     const totalActive = data.length;
+    const assignedPreparationCount = data.filter((p) => ["PENDING", "DRAFT", "REJECTED"].includes(p.status)).length;
+    const inModerationCount = data.filter((p) => ["SUBMITTED", "UNDER_MODERATION"].includes(p.status)).length;
+    const approvedPrintCount = data.filter((p) => ["APPROVED", "PRINTING", "PRINTING_QUEUE"].includes(p.status)).length;
     const completed = data.filter((p) => p.status === "COMPLETED").length;
     const overdue = data.filter((p) => p.overdue).length;
-    const scripts = data.filter((p) => p.taskType === "MARK_SCRIPTS").reduce((sum, p) => sum + Number(p.scriptsCount || 0), 0);
-    const paperSettingCount = data.filter((p) => p.taskType === "SET_PAPER").length;
-    const scriptMarkingCount = data.filter((p) => p.taskType === "MARK_SCRIPTS").length;
-    const moderationCount = data.filter((p) => p.taskType === "MODERATION").length;
     const rate = totalActive > 0 ? Math.round((completed / totalActive) * 100) : 0;
 
     setDashboardStats({
       totalActiveTasks: totalActive,
-      scriptsToMark: scripts,
+      assignedPreparationCount,
+      inModerationCount,
+      approvedPrintCount,
       completedTasks: completed,
       overdueItems: overdue,
       completionRate: rate,
-      paperSettingCount,
-      scriptMarkingCount,
-      moderationCount,
+      pendingDraftCount: assignedPreparationCount,
     });
   };
 
@@ -119,7 +120,19 @@ export default function LecturerDashboard() {
   const applyFilters = (query, type, sourceData) => {
     let filtered = [...sourceData];
     if (type !== "ALL") {
-      filtered = filtered.filter((packet) => packet.taskType === type);
+      if (type === "PENDING") {
+        filtered = filtered.filter((p) => p.status === "PENDING");
+      } else if (type === "DRAFT") {
+        filtered = filtered.filter((p) => p.status === "DRAFT");
+      } else if (type === "SUBMITTED") {
+        filtered = filtered.filter((p) => ["SUBMITTED", "UNDER_MODERATION"].includes(p.status));
+      } else if (type === "APPROVED") {
+        filtered = filtered.filter((p) => ["APPROVED", "PRINTING", "PRINTING_QUEUE"].includes(p.status));
+      } else if (type === "REJECTED") {
+        filtered = filtered.filter((p) => p.status === "REJECTED");
+      } else if (type === "COMPLETED") {
+        filtered = filtered.filter((p) => p.status === "COMPLETED");
+      }
     }
     if (query.trim()) {
       const searchValue = query.trim().toLowerCase();
@@ -143,7 +156,6 @@ export default function LecturerDashboard() {
         ? parseInt(packetId.split("-")[2], 10)
         : packetId;
       await axiosInstance.put(`/packets/${numericId}/status`, { action: "SUBMIT" });
-      alert("Exam paper submitted successfully for moderation!");
       await loadDashboardData();
     } catch (error) {
       console.error("Error submitting packet:", error);
@@ -157,11 +169,10 @@ export default function LecturerDashboard() {
         ? parseInt(packetId.split("-")[2], 10)
         : packetId;
       await axiosInstance.put(`/packets/${numericId}/status`, { action });
-      alert("Status updated successfully!");
       await loadDashboardData();
     } catch (error) {
       console.error("Error completing task:", error);
-      alert(error?.response?.data?.message || "Failed to complete task.");
+      alert(error?.response?.data?.message || "Failed to update status.");
     }
   };
 
@@ -179,28 +190,28 @@ export default function LecturerDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          title="Total Active Tasks"
-          value={dashboardStats.totalActiveTasks}
-          icon={BookOpen}
-          color="text-[#7c4dff]"
-        />
-        <MetricCard
-          title="Scripts to Mark"
-          value={dashboardStats.scriptsToMark}
-          icon={Clock}
+          title="Drafts / Pending Prep"
+          value={dashboardStats.assignedPreparationCount}
+          icon={FileEdit}
           color="text-amber-600"
         />
         <MetricCard
-          title="Completed Tasks"
-          value={dashboardStats.completedTasks}
+          title="In Moderation"
+          value={dashboardStats.inModerationCount}
+          icon={Clock}
+          color="text-purple-600"
+        />
+        <MetricCard
+          title="Approved / Ready to Print"
+          value={dashboardStats.approvedPrintCount}
           icon={CheckCircle2}
           color="text-emerald-600"
         />
         <MetricCard
-          title="Overdue Items"
-          value={dashboardStats.overdueItems}
-          icon={AlertTriangle}
-          color="text-rose-600"
+          title="Completed Packets"
+          value={dashboardStats.completedTasks}
+          icon={CheckCircle2}
+          color="text-teal-600"
         />
       </div>
 

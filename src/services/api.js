@@ -168,17 +168,17 @@ export const lecturerApi = {
 // ============================================================
 
 export const hodApi = {
-  // All Department Packets
-  getDepartmentPackets: (deptId) =>
-    api.get(`/hod/department/${deptId}/packets`),
-
   // Department Statistics
   getDepartmentStatistics: (deptId) =>
-    api.get(`/hod/department/${deptId}/statistics`),
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/statistics` : "/hod/statistics"),
+
+  // All Department Packets
+  getDepartmentPackets: (deptId) =>
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/packets` : "/hod/packets"),
 
   // Search / Filter Packets
   searchPackets: (deptId, { query, status, cycleId, lecturerId } = {}) =>
-    api.get(`/hod/department/${deptId}/packets/search`, {
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/packets` : "/hod/packets", {
       params: {
         query,
         status,
@@ -188,15 +188,27 @@ export const hodApi = {
     }),
 
   // Packet Details
-  getPacketDetails: (packetId) =>
-    api.get(`/hod/packet/${packetId}`),
+  getPacketDetails: (packetId) => {
+    const id = typeof packetId === "string" && packetId.includes("-")
+      ? parseInt(packetId.split("-")[2], 10)
+      : packetId;
+    return api.get(`/packets/${id}`);
+  },
 
   // Comments
-  getPacketComments: (packetId) =>
-    api.get(`/hod/packet/${packetId}/comments`),
+  getPacketComments: (packetId) => {
+    const id = typeof packetId === "string" && packetId.includes("-")
+      ? parseInt(packetId.split("-")[2], 10)
+      : packetId;
+    return api.get(`/packets/${id}/comments`);
+  },
 
-  getComments: (packetId) =>
-    api.get(`/hod/packet/${packetId}/comments`),
+  getComments: (packetId) => {
+    const id = typeof packetId === "string" && packetId.includes("-")
+      ? parseInt(packetId.split("-")[2], 10)
+      : packetId;
+    return api.get(`/packets/${id}/comments`);
+  },
 
   // Add Comment
   addComment: (payload) =>
@@ -204,33 +216,37 @@ export const hodApi = {
 
   // Workload
   getDepartmentWorkload: (deptId) =>
-    api.get(`/hod/department/${deptId}/workload`),
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/workload` : "/hod/workload"),
 
   getWorkload: (deptId) =>
-    api.get(`/hod/department/${deptId}/workload`),
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/workload` : "/hod/workload"),
 
   // Overdue Packets
   getOverduePackets: (deptId) =>
-    api.get(`/hod/department/${deptId}/overdue`),
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/overdue` : "/hod/overdue"),
 
   // Previous Cycle Records
   getPreviousRecords: (deptId) =>
-    api.get(`/hod/department/${deptId}/previous-records`),
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/previous-records` : "/hod/previous-records"),
 
   // Department Report
   getDepartmentReport: (deptId) =>
-    api.get(`/hod/department/${deptId}/report`),
+    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/report` : "/hod/report"),
 
   // Export Report
   exportReport: (deptId, format) =>
     api.get(
-      `/hod/department/${deptId}/report/export/${
-        format === "excel" ? "excel" : "pdf"
-      }`,
+      deptId && deptId !== "ALL"
+        ? `/hod/department/${deptId}/report/export/${format === "excel" ? "excel" : "pdf"}`
+        : `/hod/report/export/${format === "excel" ? "excel" : "pdf"}`,
       {
         responseType: "blob",
       }
     ),
+
+  // Notify Staff
+  notifyStaff: (payload) =>
+    api.post("/hod/notify-staff", payload),
 };
 
 export default api;

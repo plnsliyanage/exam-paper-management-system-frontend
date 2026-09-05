@@ -10,6 +10,8 @@ import {
   MdHistory,
   MdWarning,
   MdWork,
+  MdSchool,
+  MdApartment,
 } from "react-icons/md";
 
 export const sidebarMenus = {
@@ -20,6 +22,8 @@ export const sidebarMenus = {
       { label: "Dashboard", icon: MdDashboard, path: "/dashboard" },
       { label: "Packets", icon: MdFolder, path: "/packets" },
       { label: "Workflow", icon: MdAccountTree, path: "/workflow" },
+      { label: "Courses", icon: MdSchool, path: "/courses" },
+      { label: "Departments", icon: MdApartment, path: "/departments" },
       { label: "Reports", icon: MdBarChart, path: "/reports" },
       { label: "Notifications", icon: MdNotifications, path: "/notifications" },
       { label: "User Management", icon: MdPeople, path: "/users" },
@@ -42,6 +46,8 @@ export const sidebarMenus = {
     shortTitle: "LEC",
     items: [
       { label: "Dashboard", icon: MdDashboard, path: "/dashboard" },
+      { label: "My Exam Packets", icon: MdFolder, path: "/packets" },
+      { label: "Workflow Overview", icon: MdAccountTree, path: "/workflow" },
       { label: "Schedule & Deadlines", icon: MdEvent, path: "/lecturer/calendar" },
       { label: "Previous Records", icon: MdHistory, path: "/lecturer/previous" },
       { label: "Notifications", icon: MdNotifications, path: "/notifications" },
@@ -54,6 +60,8 @@ export const sidebarMenus = {
     items: [
       { label: "Overview", icon: MdDashboard, path: "/dashboard" },
       { label: "Department Packets", icon: MdFolder, path: "/hod/packets" },
+      { label: "Department Courses", icon: MdSchool, path: "/hod/courses" },
+      { label: "My Department", icon: MdApartment, path: "/hod/department" },
       { label: "Staff Workload", icon: MdWork, path: "/hod/workload" },
       { label: "Department Reports", icon: MdBarChart, path: "/hod/reports" },
       { label: "Overdue Items", icon: MdWarning, path: "/hod/overdue" },

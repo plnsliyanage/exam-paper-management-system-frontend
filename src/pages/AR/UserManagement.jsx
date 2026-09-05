@@ -41,21 +41,25 @@ export default function UserManagement() {
   };
 
   const handleDelete = async (userId, fullName) => {
-  if (!confirm(`Are you sure you want to delete "${fullName}"? This action cannot be undone.`)) return;
-  try {
-    await axiosInstance.delete(`/users/${userId}`);
-    setData((prev) => ({
-      ...prev,
-      users: prev.users.filter((u) => u.userId !== userId),
-      stats: {
-        ...prev.stats,
-        totalUsers: prev.stats.totalUsers - 1,
-      },
-    }));
-  } catch (err) {
-    alert("Failed to delete user.");
-  }
-};
+    if (!confirm(`Are you sure you want to delete "${fullName}"? This action cannot be undone.`)) return;
+    try {
+      await axiosInstance.delete(`/users/${userId}`);
+      setData((prev) => ({
+        ...prev,
+        users: prev.users.filter((u) => u.userId !== userId),
+        stats: {
+          ...prev.stats,
+          totalUsers: Math.max(0, (prev?.stats?.totalUsers || 1) - 1),
+        },
+      }));
+    } catch (err) {
+      const errMsg =
+        err.response?.data?.message ||
+        (typeof err.response?.data === "string" ? err.response?.data : "") ||
+        "Failed to delete user.";
+      alert(errMsg);
+    }
+  };
 
   const handleToggleActive = async (userId) => {
     await axiosInstance.put(`/users/${userId}/toggle-active`);

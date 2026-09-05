@@ -12,14 +12,16 @@ import {
 } from "lucide-react";
 
 const statusConfig = {
-  DRAFT: { label: "Draft", bg: "bg-gray-100 text-gray-600 border-gray-200" },
-  PENDING: { label: "Submitted", bg: "bg-blue-50 text-blue-700 border-blue-200" },
-  SUBMITTED: { label: "Submitted", bg: "bg-blue-50 text-blue-700 border-blue-200" },
-  UNDER_MODERATION: { label: "Under Moderation", bg: "bg-amber-50 text-amber-700 border-amber-200" },
-  APPROVED: { label: "Approved", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  PRINTING_QUEUE: { label: "Printing Queue", bg: "bg-purple-50 text-purple-700 border-purple-200" },
-  COMPLETED: { label: "Completed", bg: "bg-teal-50 text-teal-700 border-teal-200" },
-  DELAYED: { label: "Delayed", bg: "bg-rose-50 text-rose-700 border-rose-200" },
+  PENDING: { label: "Pending Start", bg: "bg-amber-50 text-amber-800 border-amber-200" },
+  DRAFT: { label: "Drafting", bg: "bg-blue-50 text-blue-800 border-blue-200" },
+  SUBMITTED: { label: "In Moderation", bg: "bg-purple-50 text-purple-800 border-purple-200" },
+  UNDER_MODERATION: { label: "In Moderation", bg: "bg-purple-50 text-purple-800 border-purple-200" },
+  APPROVED: { label: "Approved (Print)", bg: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  REJECTED: { label: "Revision Needed", bg: "bg-rose-50 text-rose-800 border-rose-200" },
+  PRINTING: { label: "Printing", bg: "bg-indigo-50 text-indigo-800 border-indigo-200" },
+  PRINTING_QUEUE: { label: "Printing", bg: "bg-indigo-50 text-indigo-800 border-indigo-200" },
+  COMPLETED: { label: "Completed", bg: "bg-teal-50 text-teal-800 border-teal-200" },
+  DELAYED: { label: "Delayed", bg: "bg-rose-50 text-rose-800 border-rose-200" },
 };
 
 export default function PacketCard({
@@ -30,9 +32,13 @@ export default function PacketCard({
   onSubmitPacket,
 }) {
   const isCompleted = packet.status === "COMPLETED";
-  const isDraft = packet.status === "DRAFT" || !packet.status;
-  const isSubmitted = packet.status === "PENDING" || packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION";
-  const statusInfo = statusConfig[packet.status] || { label: packet.status || "Draft", bg: "bg-slate-100 text-slate-700 border-slate-200" };
+  const isPending = packet.status === "PENDING";
+  const isDraft = packet.status === "DRAFT";
+  const isRejected = packet.status === "REJECTED";
+  const isApproved = packet.status === "APPROVED";
+  const isPrinting = packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE";
+  const isSubmitted = packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION";
+  const statusInfo = statusConfig[packet.status] || { label: packet.status || "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200" };
 
   const renderTaskBadge = (taskType) => {
     switch (taskType) {
@@ -71,9 +77,13 @@ export default function PacketCard({
     <div
       className={`p-4 border rounded-xl bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition ${
         isCompleted
-          ? "border-emerald-200 bg-emerald-50/30 opacity-75"
+          ? "border-emerald-200 bg-emerald-50/20"
+          : isRejected
+          ? "border-rose-200 bg-rose-50/10"
+          : isApproved
+          ? "border-emerald-100 bg-emerald-50/10"
           : isSubmitted
-          ? "border-blue-100 hover:border-blue-200"
+          ? "border-purple-100 bg-purple-50/10"
           : "border-slate-200 hover:border-slate-300"
       }`}
     >
@@ -132,7 +142,16 @@ export default function PacketCard({
           </button>
         )}
 
-        {isDraft ? (
+        {isPending ? (
+          <button
+            onClick={() => onCompleteTask(packet.packetId || packet.id, "DRAFT")}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
+            title="Start Drafting Exam Paper"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            Start Draft
+          </button>
+        ) : isDraft ? (
           <button
             onClick={() => onSubmitPacket ? onSubmitPacket(packet.packetId || packet.id) : onCompleteTask(packet.packetId || packet.id, "SUBMIT")}
             className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
@@ -141,20 +160,45 @@ export default function PacketCard({
             <Send className="w-3.5 h-3.5" />
             Submit
           </button>
+        ) : isRejected ? (
+          <button
+            onClick={() => onCompleteTask(packet.packetId || packet.id, "DRAFT")}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-rose-600 text-white hover:bg-rose-700 shadow-sm transition-colors cursor-pointer text-xs"
+            title="Revise Draft"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            Revise Draft
+          </button>
+        ) : isApproved ? (
+          <button
+            onClick={() => {
+              window.print();
+              onCompleteTask(packet.packetId || packet.id, "PRINT");
+            }}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-colors cursor-pointer text-xs"
+            title="Proceed to Print Paper"
+          >
+            🖨️ Print Paper
+          </button>
+        ) : isPrinting ? (
+          <button
+            onClick={() => onCompleteTask(packet.packetId || packet.id, "COMPLETE")}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-colors cursor-pointer text-xs"
+            title="Mark Printing Completed"
+          >
+            <Check className="w-3 h-3" />
+            Done Printing
+          </button>
         ) : isCompleted ? (
-          <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs">
+          <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-teal-100 text-teal-800 text-xs">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Completed
           </span>
         ) : (
-          <button
-            onClick={() => onCompleteTask && onCompleteTask(packet.packetId || packet.id, "COMPLETE")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition-colors cursor-pointer text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-            title="Mark as Completed"
-          >
-            <Check className="w-3 h-3" />
-            Complete
-          </button>
+          <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-purple-100 text-purple-800 text-xs">
+            <Clock className="w-3.5 h-3.5" />
+            In Moderation
+          </span>
         )}
       </div>
     </div>

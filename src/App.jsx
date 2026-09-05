@@ -14,6 +14,8 @@ import Notifications from "./pages/Notifications";
 import UserManagement from "./pages/AR/UserManagement";
 import AddPacket from "./pages/AR/AddPacket";
 import AddUser from "./pages/AR/AddUser";
+import CourseManagement from "./pages/CourseManagement";
+import DepartmentManagement from "./pages/DepartmentManagement";
 
 // Lecturer Pages
 import LecturerDashboard from "./pages/lecturer/LecturerDashboard";
@@ -75,6 +77,8 @@ function AppRoutes() {
         <Route path="/users" element={<UserManagement />} />
         <Route path="/users/add" element={<AddUser />} />
         <Route path="/users/edit/:id" element={<AddUser />} />
+        <Route path="/courses" element={<CourseManagement />} />
+        <Route path="/departments" element={<DepartmentManagement />} />
 
         {/* Lecturer specific routes */}
         <Route path="/lecturer/dashboard" element={<LecturerDashboard />} />
@@ -85,6 +89,8 @@ function AppRoutes() {
         {/* HOD specific routes */}
         <Route path="/hod/dashboard" element={<HodDepartmentView />} />
         <Route path="/hod/packets" element={<HodDepartmentPacketsPage />} />
+        <Route path="/hod/courses" element={<CourseManagement isHod={true} />} />
+        <Route path="/hod/department" element={<DepartmentManagement isHod={true} />} />
         <Route path="/hod/workload" element={<HodWorkloadPage />} />
         <Route path="/hod/reports" element={<HodReportsPage />} />
         <Route path="/hod/overdue" element={<HodOverduePage />} />

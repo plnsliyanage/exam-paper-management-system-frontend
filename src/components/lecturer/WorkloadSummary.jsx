@@ -31,23 +31,30 @@ export default function WorkloadSummary({ dashboardStats }) {
 
       <div className="pt-2 text-[11px] text-slate-500 space-y-1.5 border-t border-slate-100">
         <div className="flex justify-between">
-          <span>Paper Setting Tasks:</span>
-          <span className="font-bold text-slate-700">
-            {dashboardStats?.paperSettingCount ?? 0} Active
+          <span>Pending Draft Preparation:</span>
+          <span className="font-bold text-amber-700">
+            {dashboardStats?.pendingDraftCount ?? 0}
           </span>
         </div>
 
         <div className="flex justify-between">
-          <span>Script Marking Tasks:</span>
-          <span className="font-bold text-slate-700">
-            {dashboardStats?.scriptMarkingCount ?? 0} Active
+          <span>Submitted for Moderation:</span>
+          <span className="font-bold text-purple-700">
+            {dashboardStats?.inModerationCount ?? 0}
           </span>
         </div>
 
         <div className="flex justify-between">
-          <span>Moderation / Checking Tasks:</span>
-          <span className="font-bold text-slate-700">
-            {dashboardStats?.moderationCount ?? 0} Active
+          <span>Approved & Ready to Print:</span>
+          <span className="font-bold text-emerald-700">
+            {dashboardStats?.approvedPrintCount ?? 0}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>Completed Packets:</span>
+          <span className="font-bold text-teal-700">
+            {dashboardStats?.completedTasks ?? 0}
           </span>
         </div>
       </div>
