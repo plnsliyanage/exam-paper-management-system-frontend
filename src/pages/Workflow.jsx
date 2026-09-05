@@ -1,13 +1,25 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axiosInstance";
 
+const DEFAULT_COLOR = { circle: "border-[#7c4dff] text-[#7c4dff] bg-purple-50", label: "text-[#7c4dff]" };
+
 const STAGE_COLORS = {
   Pending: { circle: "border-amber-500 text-amber-500 bg-amber-50", label: "text-amber-500" },
   Drafting: { circle: "border-blue-500 text-blue-500 bg-blue-50", label: "text-blue-500" },
+  Draft: { circle: "border-blue-500 text-blue-500 bg-blue-50", label: "text-blue-500" },
   Moderation: { circle: "border-purple-500 text-purple-500 bg-purple-50", label: "text-purple-500" },
   Approved: { circle: "border-emerald-500 text-emerald-500 bg-emerald-50", label: "text-emerald-500" },
   Printing: { circle: "border-indigo-500 text-indigo-500 bg-indigo-50", label: "text-indigo-500" },
+  "Papers Stored": { circle: "border-cyan-500 text-cyan-500 bg-cyan-50", label: "text-cyan-600" },
+  "Answer Sheets Taken": { circle: "border-orange-500 text-orange-500 bg-orange-50", label: "text-orange-600" },
+  Marking: { circle: "border-violet-500 text-violet-500 bg-violet-50", label: "text-violet-600" },
   Completed: { circle: "border-teal-500 text-teal-500 bg-teal-50", label: "text-teal-700" },
+  "Marking Complete": { circle: "border-teal-500 text-teal-500 bg-teal-50", label: "text-teal-700" },
+};
+
+const getStageColor = (name) => {
+  if (!name) return STAGE_COLORS.Drafting || DEFAULT_COLOR;
+  return STAGE_COLORS[name] || STAGE_COLORS.Drafting || DEFAULT_COLOR;
 };
 
 const STATUS_BADGE = {
@@ -18,6 +30,14 @@ const STATUS_BADGE = {
   REJECTED: "bg-rose-100 text-rose-800",
   PRINTING: "bg-indigo-100 text-indigo-800",
   PRINTING_QUEUE: "bg-indigo-100 text-indigo-800",
+  "PAPERS STORED": "bg-cyan-100 text-cyan-800",
+  PAPERS_STORED: "bg-cyan-100 text-cyan-800",
+  "ANSWER SHEETS TAKEN": "bg-orange-100 text-orange-800",
+  ANSWER_SHEETS_TAKEN: "bg-orange-100 text-orange-800",
+  MARKING: "bg-violet-100 text-violet-800",
+  UNDER_MARKING: "bg-violet-100 text-violet-800",
+  "MARKING COMPLETE": "bg-teal-100 text-teal-800",
+  MARKING_COMPLETE: "bg-teal-100 text-teal-800",
   COMPLETED: "bg-teal-100 text-teal-800",
   UNDER_MODERATION: "bg-purple-100 text-purple-800",
   DELAYED: "bg-red-100 text-red-700",
@@ -31,6 +51,14 @@ const STATUS_LABELS = {
   REJECTED: "Rejected",
   PRINTING: "Printing",
   PRINTING_QUEUE: "Printing",
+  "PAPERS STORED": "Papers Stored",
+  PAPERS_STORED: "Papers Stored",
+  "ANSWER SHEETS TAKEN": "Sheets Taken",
+  ANSWER_SHEETS_TAKEN: "Sheets Taken",
+  MARKING: "Marking",
+  UNDER_MARKING: "Marking",
+  "MARKING COMPLETE": "Marking Complete",
+  MARKING_COMPLETE: "Marking Complete",
   COMPLETED: "Completed",
   UNDER_MODERATION: "Moderation",
   DELAYED: "Delayed",
@@ -41,8 +69,11 @@ const DEFAULT_STAGES = [
   { stageName: "Drafting", actor: "Lecturer preparing", completed: false, current: false },
   { stageName: "Moderation", actor: "Moderator review", completed: false, current: false },
   { stageName: "Approved", actor: "Moderator approved", completed: false, current: false },
-  { stageName: "Printing", actor: "In print queue", completed: false, current: false },
-  { stageName: "Completed", actor: "Finalized", completed: false, current: false },
+  { stageName: "Printing", actor: "Lecturer printing", completed: false, current: false },
+  { stageName: "Papers Stored", actor: "Safe custody", completed: false, current: false },
+  { stageName: "Answer Sheets Taken", actor: "Exam finished & collected", completed: false, current: false },
+  { stageName: "Marking", actor: "Lecturer marking", completed: false, current: false },
+  { stageName: "Marking Complete", actor: "Finalized", completed: false, current: false },
 ];
 
 export default function Workflow() {
@@ -66,8 +97,9 @@ export default function Workflow() {
     const fetch = async () => {
       try {
         const res = await axiosInstance.get("/workflow");
-        setPackets(res.data);
-        if (res.data.length > 0) setSelected(res.data[0]);
+        const list = Array.isArray(res.data) ? res.data : [];
+        setPackets(list);
+        if (list.length > 0) setSelected(list[0]);
       } catch (err) {
         setError("Failed to load workflow.");
       } finally {
@@ -99,12 +131,12 @@ export default function Workflow() {
       {/* Top — workflow stages diagram */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h2 className="text-sm font-semibold text-gray-700 mb-6">Exam Paper Workflow</h2>
-        <div className="flex items-start justify-between relative">
+        <div className="flex items-start justify-between relative overflow-x-auto pb-2">
           <div className="absolute top-5 left-0 right-0 h-px bg-gray-200 z-0 mx-10" />
           {displayStages.map((stage, i) => {
-            const colors = STAGE_COLORS[stage.stageName] || STAGE_COLORS.Draft;
+            const colors = getStageColor(stage.stageName);
             return (
-              <div key={i} className="flex flex-col items-center z-10 flex-1">
+              <div key={i} className="flex flex-col items-center z-10 flex-1 min-w-[70px]">
                 <div
                   className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-bold bg-white ${
                     stage.completed
@@ -117,7 +149,7 @@ export default function Workflow() {
                   {i + 1}
                 </div>
                 <p
-                  className={`text-xs font-semibold mt-2 ${
+                  className={`text-xs font-semibold mt-2 text-center ${
                     stage.current
                       ? colors.label
                       : stage.completed
@@ -127,7 +159,7 @@ export default function Workflow() {
                 >
                   {stage.stageName}
                 </p>
-                <p className="text-xs text-gray-400 text-center mt-0.5 max-w-20">
+                <p className="text-[11px] text-gray-400 text-center mt-0.5 max-w-[90px]">
                   {stage.actor}
                 </p>
               </div>
@@ -223,7 +255,7 @@ export default function Workflow() {
               <h3 className="text-sm font-semibold text-gray-700 mb-6">Stage Progress</h3>
               <div className="space-y-0">
                 {selected.stages.map((stage, i) => {
-                  const colors = STAGE_COLORS[stage.stageName] || STAGE_COLORS.Draft;
+                  const colors = getStageColor(stage.stageName);
                   return (
                     <div key={i} className="flex gap-4">
                       {/* Circle + line */}

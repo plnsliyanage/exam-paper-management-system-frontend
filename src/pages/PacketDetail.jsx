@@ -11,6 +11,10 @@ const statusColors = {
   REJECTED: "bg-rose-100 text-rose-800 border border-rose-200",
   PRINTING: "bg-indigo-100 text-indigo-800 border border-indigo-200",
   PRINTING_QUEUE: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+  "PAPERS STORED": "bg-cyan-100 text-cyan-800 border border-cyan-200",
+  "ANSWER SHEETS TAKEN": "bg-orange-100 text-orange-800 border border-orange-200",
+  MARKING: "bg-violet-100 text-violet-800 border border-violet-200",
+  "MARKING COMPLETE": "bg-teal-100 text-teal-800 border border-teal-200",
   COMPLETED: "bg-teal-100 text-teal-800 border border-teal-200",
   UNDER_MODERATION: "bg-purple-100 text-purple-800 border border-purple-200",
   DELAYED: "bg-red-100 text-red-700 border border-red-200",
@@ -24,6 +28,10 @@ const statusLabels = {
   REJECTED: "Rejected (Revision Needed)",
   PRINTING: "Printing in Progress",
   PRINTING_QUEUE: "Printing in Progress",
+  "PAPERS STORED": "Papers Stored in Safe",
+  "ANSWER SHEETS TAKEN": "Answer Sheets Taken",
+  MARKING: "Marking in Progress",
+  "MARKING COMPLETE": "Marking Complete & Stored",
   COMPLETED: "Completed",
   UNDER_MODERATION: "Submitted for Moderation",
   DELAYED: "Delayed",
@@ -615,23 +623,68 @@ export default function PacketDetail() {
                     {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
                       <div className="space-y-2">
                         <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-800">
-                          🖨️ Exam paper is currently printing.
+                          🖨️ Exam paper is currently printing. Once printing is complete, store the papers in secure custody.
                         </div>
                         <button
-                          onClick={() => handleAction("COMPLETE")}
+                          onClick={() => handleAction("PAPERS_STORED")}
                           disabled={!!actionLoading}
-                          className="w-full bg-teal-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                          className="w-full bg-cyan-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-cyan-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
                         >
-                          {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Mark Printing Completed
+                          {actionLoading === "PAPERS_STORED" ? <span className="animate-spin">⟳</span> : "📦"} Store Printed Papers
                         </button>
                       </div>
                     )}
 
-                    {packet.status === "COMPLETED" && (
+                    {packet.status === "PAPERS STORED" && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-xl text-xs text-cyan-800">
+                          📦 Printed exam papers are safely stored in custody awaiting the exam. After the exam is conducted, retrieve the student answer scripts from the store.
+                        </div>
+                        <button
+                          onClick={() => handleAction("ANSWER_SHEETS_TAKEN")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-orange-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-orange-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                        >
+                          {actionLoading === "ANSWER_SHEETS_TAKEN" ? <span className="animate-spin">⟳</span> : "📑"} Take Answer Sheets from Store
+                        </button>
+                      </div>
+                    )}
+
+                    {packet.status === "ANSWER SHEETS TAKEN" && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-800">
+                          📑 Answer sheets have been retrieved from storage. Click below to begin evaluating and marking.
+                        </div>
+                        <button
+                          onClick={() => handleAction("MARKING")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-purple-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                        >
+                          {actionLoading === "MARKING" ? <span className="animate-spin">⟳</span> : "✏️"} Start Marking Answer Sheets
+                        </button>
+                      </div>
+                    )}
+
+                    {packet.status === "MARKING" && (
+                      <div className="space-y-2">
+                        <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800">
+                          ✏️ Answer sheet marking is in progress. Once marking is finalized, store the mark sheets securely in the department.
+                        </div>
+                        <button
+                          onClick={() => handleAction("MARKING_COMPLETE")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-teal-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                        >
+                          {actionLoading === "MARKING_COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Finish Marking & Store Mark Sheets
+                        </button>
+                      </div>
+                    )}
+
+                    {(packet.status === "MARKING COMPLETE" || packet.status === "COMPLETED") && (
                       <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-center space-y-1">
                         <span className="text-xl">✅</span>
-                        <p className="text-xs font-semibold text-teal-800">Exam Packet Completed</p>
-                        <p className="text-[11px] text-teal-600">All workflow stages and printing cleared.</p>
+                        <p className="text-xs font-semibold text-teal-800">Marking Complete & Stored</p>
+                        <p className="text-[11px] text-teal-600">All examination workflow stages, marking, and custody storage finalized.</p>
                       </div>
                     )}
                   </>

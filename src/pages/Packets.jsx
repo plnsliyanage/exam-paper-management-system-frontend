@@ -11,6 +11,14 @@ const statusColors = {
   REJECTED: "bg-rose-100 text-rose-800",
   PRINTING: "bg-indigo-100 text-indigo-800",
   PRINTING_QUEUE: "bg-indigo-100 text-indigo-800",
+  "PAPERS STORED": "bg-cyan-100 text-cyan-800",
+  PAPERS_STORED: "bg-cyan-100 text-cyan-800",
+  "ANSWER SHEETS TAKEN": "bg-orange-100 text-orange-800",
+  ANSWER_SHEETS_TAKEN: "bg-orange-100 text-orange-800",
+  MARKING: "bg-violet-100 text-violet-800",
+  UNDER_MARKING: "bg-violet-100 text-violet-800",
+  "MARKING COMPLETE": "bg-teal-100 text-teal-800",
+  MARKING_COMPLETE: "bg-teal-100 text-teal-800",
   COMPLETED: "bg-teal-100 text-teal-800",
   UNDER_MODERATION: "bg-purple-100 text-purple-800",
   DELAYED: "bg-red-100 text-red-700",
@@ -24,7 +32,15 @@ const statusLabels = {
   REJECTED: "Rejected",
   PRINTING: "Printing",
   PRINTING_QUEUE: "Printing",
-  COMPLETED: "Completed",
+  "PAPERS STORED": "Papers Stored",
+  PAPERS_STORED: "Papers Stored",
+  "ANSWER SHEETS TAKEN": "Sheets Taken",
+  ANSWER_SHEETS_TAKEN: "Sheets Taken",
+  MARKING: "Marking",
+  UNDER_MARKING: "Marking",
+  "MARKING COMPLETE": "Marking Complete",
+  MARKING_COMPLETE: "Marking Complete",
+  COMPLETED: "Marking Complete",
   UNDER_MODERATION: "Submitted",
   DELAYED: "Delayed",
 };
@@ -66,7 +82,17 @@ export default function Packets() {
   useEffect(() => {
     let result = packets;
     if (statusFilter !== "ALL") {
-      result = result.filter((p) => p.status === statusFilter);
+      if (statusFilter === "MARKING COMPLETE" || statusFilter === "COMPLETED") {
+        result = result.filter((p) => ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status));
+      } else if (statusFilter === "PAPERS STORED") {
+        result = result.filter((p) => ["PAPERS STORED", "PAPERS_STORED"].includes(p.status));
+      } else if (statusFilter === "ANSWER SHEETS TAKEN") {
+        result = result.filter((p) => ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN"].includes(p.status));
+      } else if (statusFilter === "PRINTING") {
+        result = result.filter((p) => ["PRINTING", "PRINTING_QUEUE"].includes(p.status));
+      } else {
+        result = result.filter((p) => p.status === statusFilter);
+      }
     }
     if (search) {
       const q = search.toLowerCase();
@@ -89,7 +115,10 @@ export default function Packets() {
     "APPROVED",
     "REJECTED",
     "PRINTING",
-    "COMPLETED",
+    "PAPERS STORED",
+    "ANSWER SHEETS TAKEN",
+    "MARKING",
+    "MARKING COMPLETE",
   ];
 
   const handleExportCSV = async () => {
@@ -123,8 +152,22 @@ export default function Packets() {
     }
   };
 
-  const countFor = (s) =>
-    s === "ALL" ? packets.length : packets.filter((p) => p.status === s).length;
+  const countFor = (s) => {
+    if (s === "ALL") return packets.length;
+    if (s === "COMPLETED" || s === "MARKING COMPLETE") {
+      return packets.filter((p) => ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status)).length;
+    }
+    if (s === "PAPERS STORED") {
+      return packets.filter((p) => ["PAPERS STORED", "PAPERS_STORED"].includes(p.status)).length;
+    }
+    if (s === "ANSWER SHEETS TAKEN") {
+      return packets.filter((p) => ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN"].includes(p.status)).length;
+    }
+    if (s === "PRINTING") {
+      return packets.filter((p) => ["PRINTING", "PRINTING_QUEUE"].includes(p.status)).length;
+    }
+    return packets.filter((p) => p.status === s).length;
+  };
 
   const tableHeaders = isModerator
     ? ["Packet ID", "Course", "Lecturer", "Deadline", "Status", "Priority"]

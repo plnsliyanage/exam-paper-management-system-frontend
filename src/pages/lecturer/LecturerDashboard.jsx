@@ -89,8 +89,9 @@ export default function LecturerDashboard() {
     const totalActive = data.length;
     const assignedPreparationCount = data.filter((p) => ["PENDING", "DRAFT", "REJECTED"].includes(p.status)).length;
     const inModerationCount = data.filter((p) => ["SUBMITTED", "UNDER_MODERATION"].includes(p.status)).length;
-    const approvedPrintCount = data.filter((p) => ["APPROVED", "PRINTING", "PRINTING_QUEUE"].includes(p.status)).length;
-    const completed = data.filter((p) => p.status === "COMPLETED").length;
+    const approvedPrintCount = data.filter((p) => ["APPROVED", "PRINTING", "PRINTING_QUEUE", "PAPERS STORED", "PAPERS_STORED"].includes(p.status)).length;
+    const markingCount = data.filter((p) => ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN", "MARKING", "UNDER_MARKING"].includes(p.status)).length;
+    const completed = data.filter((p) => ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status)).length;
     const overdue = data.filter((p) => p.overdue).length;
     const rate = totalActive > 0 ? Math.round((completed / totalActive) * 100) : 0;
 
@@ -99,6 +100,7 @@ export default function LecturerDashboard() {
       assignedPreparationCount,
       inModerationCount,
       approvedPrintCount,
+      markingCount,
       completedTasks: completed,
       overdueItems: overdue,
       completionRate: rate,
@@ -127,11 +129,19 @@ export default function LecturerDashboard() {
       } else if (type === "SUBMITTED") {
         filtered = filtered.filter((p) => ["SUBMITTED", "UNDER_MODERATION"].includes(p.status));
       } else if (type === "APPROVED") {
-        filtered = filtered.filter((p) => ["APPROVED", "PRINTING", "PRINTING_QUEUE"].includes(p.status));
+        filtered = filtered.filter((p) => p.status === "APPROVED");
       } else if (type === "REJECTED") {
         filtered = filtered.filter((p) => p.status === "REJECTED");
+      } else if (type === "PRINTING") {
+        filtered = filtered.filter((p) => ["PRINTING", "PRINTING_QUEUE"].includes(p.status));
+      } else if (type === "PAPERS STORED") {
+        filtered = filtered.filter((p) => ["PAPERS STORED", "PAPERS_STORED"].includes(p.status));
+      } else if (type === "ANSWER SHEETS TAKEN") {
+        filtered = filtered.filter((p) => ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN"].includes(p.status));
+      } else if (type === "MARKING") {
+        filtered = filtered.filter((p) => ["MARKING", "UNDER_MARKING"].includes(p.status));
       } else if (type === "COMPLETED") {
-        filtered = filtered.filter((p) => p.status === "COMPLETED");
+        filtered = filtered.filter((p) => ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status));
       }
     }
     if (query.trim()) {

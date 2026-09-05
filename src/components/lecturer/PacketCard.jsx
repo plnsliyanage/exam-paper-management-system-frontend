@@ -20,6 +20,13 @@ const statusConfig = {
   REJECTED: { label: "Revision Needed", bg: "bg-rose-50 text-rose-800 border-rose-200" },
   PRINTING: { label: "Printing", bg: "bg-indigo-50 text-indigo-800 border-indigo-200" },
   PRINTING_QUEUE: { label: "Printing", bg: "bg-indigo-50 text-indigo-800 border-indigo-200" },
+  "PAPERS STORED": { label: "Papers Stored", bg: "bg-cyan-50 text-cyan-800 border-cyan-200" },
+  PAPERS_STORED: { label: "Papers Stored", bg: "bg-cyan-50 text-cyan-800 border-cyan-200" },
+  "ANSWER SHEETS TAKEN": { label: "Sheets Taken", bg: "bg-orange-50 text-orange-800 border-orange-200" },
+  ANSWER_SHEETS_TAKEN: { label: "Sheets Taken", bg: "bg-orange-50 text-orange-800 border-orange-200" },
+  MARKING: { label: "Marking", bg: "bg-violet-50 text-violet-800 border-violet-200" },
+  "MARKING COMPLETE": { label: "Completed", bg: "bg-teal-50 text-teal-800 border-teal-200" },
+  MARKING_COMPLETE: { label: "Completed", bg: "bg-teal-50 text-teal-800 border-teal-200" },
   COMPLETED: { label: "Completed", bg: "bg-teal-50 text-teal-800 border-teal-200" },
   DELAYED: { label: "Delayed", bg: "bg-rose-50 text-rose-800 border-rose-200" },
 };
@@ -31,14 +38,18 @@ export default function PacketCard({
   onCompleteTask,
   onSubmitPacket,
 }) {
-  const isCompleted = packet.status === "COMPLETED";
-  const isPending = packet.status === "PENDING";
-  const isDraft = packet.status === "DRAFT";
-  const isRejected = packet.status === "REJECTED";
-  const isApproved = packet.status === "APPROVED";
-  const isPrinting = packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE";
-  const isSubmitted = packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION";
-  const statusInfo = statusConfig[packet.status] || { label: packet.status || "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200" };
+  const statusKey = (packet.status || "").toUpperCase();
+  const isCompleted = statusKey === "COMPLETED" || statusKey === "MARKING COMPLETE" || statusKey === "MARKING_COMPLETE";
+  const isPending = statusKey === "PENDING";
+  const isDraft = statusKey === "DRAFT";
+  const isRejected = statusKey === "REJECTED";
+  const isApproved = statusKey === "APPROVED";
+  const isPrinting = statusKey === "PRINTING" || statusKey === "PRINTING_QUEUE";
+  const isStored = statusKey === "PAPERS STORED" || statusKey === "PAPERS_STORED";
+  const isSheetsTaken = statusKey === "ANSWER SHEETS TAKEN" || statusKey === "ANSWER_SHEETS_TAKEN";
+  const isMarking = statusKey === "MARKING";
+  const isSubmitted = statusKey === "SUBMITTED" || statusKey === "UNDER_MODERATION";
+  const statusInfo = statusConfig[packet.status] || statusConfig[statusKey] || { label: packet.status || "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200" };
 
   const renderTaskBadge = (taskType) => {
     switch (taskType) {
@@ -84,6 +95,12 @@ export default function PacketCard({
           ? "border-emerald-100 bg-emerald-50/10"
           : isSubmitted
           ? "border-purple-100 bg-purple-50/10"
+          : isStored
+          ? "border-cyan-100 bg-cyan-50/10"
+          : isSheetsTaken
+          ? "border-orange-100 bg-orange-50/10"
+          : isMarking
+          ? "border-violet-100 bg-violet-50/10"
           : "border-slate-200 hover:border-slate-300"
       }`}
     >
@@ -182,12 +199,37 @@ export default function PacketCard({
           </button>
         ) : isPrinting ? (
           <button
-            onClick={() => onCompleteTask(packet.packetId || packet.id, "COMPLETE")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-colors cursor-pointer text-xs"
-            title="Mark Printing Completed"
+            onClick={() => onCompleteTask(packet.packetId || packet.id, "PAPERS_STORED")}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm transition-colors cursor-pointer text-xs"
+            title="Store Printed Papers"
           >
             <Check className="w-3 h-3" />
-            Done Printing
+            Store Papers
+          </button>
+        ) : isStored ? (
+          <button
+            onClick={() => onCompleteTask(packet.packetId || packet.id, "ANSWER_SHEETS_TAKEN")}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-orange-600 text-white hover:bg-orange-700 shadow-sm transition-colors cursor-pointer text-xs"
+            title="Take Answer Sheets from Store"
+          >
+            📑 Take Answer Sheets
+          </button>
+        ) : isSheetsTaken ? (
+          <button
+            onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING")}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-violet-600 text-white hover:bg-violet-700 shadow-sm transition-colors cursor-pointer text-xs"
+            title="Start Marking Answer Sheets"
+          >
+            ✏️ Start Marking
+          </button>
+        ) : isMarking ? (
+          <button
+            onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING_COMPLETE")}
+            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-colors cursor-pointer text-xs"
+            title="Finish Marking & Store Mark Sheets"
+          >
+            <Check className="w-3 h-3" />
+            Complete Marking
           </button>
         ) : isCompleted ? (
           <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-teal-100 text-teal-800 text-xs">

@@ -2,11 +2,15 @@ import React from "react";
 
 const FILTER_TABS = [
   { id: "ALL", label: "All Packets" },
-  { id: "PENDING", label: "Pending Start" },
+  { id: "PENDING", label: "Pending" },
   { id: "DRAFT", label: "Drafting" },
   { id: "SUBMITTED", label: "In Moderation" },
-  { id: "APPROVED", label: "Approved / Print" },
+  { id: "APPROVED", label: "Approved" },
   { id: "REJECTED", label: "Revision Needed" },
+  { id: "PRINTING", label: "Printing" },
+  { id: "PAPERS STORED", label: "Papers Stored" },
+  { id: "ANSWER SHEETS TAKEN", label: "Sheets Taken" },
+  { id: "MARKING", label: "Marking" },
   { id: "COMPLETED", label: "Completed" },
 ];
 

@@ -23,7 +23,15 @@ const STATUS_CONFIG = {
   SUBMITTED: { label: "Under Moderation", bg: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
   APPROVED: { label: "Approved", bg: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
   REJECTED: { label: "Changes Requested", bg: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" },
-  PRINTING: { label: "Printing Queue", bg: "bg-purple-50 text-purple-700 border-purple-200", dot: "bg-purple-500" },
+  PRINTING: { label: "Printing", bg: "bg-indigo-50 text-indigo-700 border-indigo-200", dot: "bg-indigo-500" },
+  "PAPERS STORED": { label: "Papers Stored", bg: "bg-cyan-50 text-cyan-700 border-cyan-200", dot: "bg-cyan-500" },
+  PAPERS_STORED: { label: "Papers Stored", bg: "bg-cyan-50 text-cyan-700 border-cyan-200", dot: "bg-cyan-500" },
+  "ANSWER SHEETS TAKEN": { label: "Sheets Taken", bg: "bg-orange-50 text-orange-700 border-orange-200", dot: "bg-orange-500" },
+  ANSWER_SHEETS_TAKEN: { label: "Sheets Taken", bg: "bg-orange-50 text-orange-700 border-orange-200", dot: "bg-orange-500" },
+  MARKING: { label: "Marking", bg: "bg-violet-50 text-violet-700 border-violet-200", dot: "bg-violet-500" },
+  UNDER_MARKING: { label: "Marking", bg: "bg-violet-50 text-violet-700 border-violet-200", dot: "bg-violet-500" },
+  "MARKING COMPLETE": { label: "Marking Complete", bg: "bg-teal-50 text-teal-700 border-teal-200", dot: "bg-teal-500" },
+  MARKING_COMPLETE: { label: "Marking Complete", bg: "bg-teal-50 text-teal-700 border-teal-200", dot: "bg-teal-500" },
   COMPLETED: { label: "Completed", bg: "bg-teal-50 text-teal-700 border-teal-200", dot: "bg-teal-500" },
 };
 
