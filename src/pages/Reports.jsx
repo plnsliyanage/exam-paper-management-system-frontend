@@ -160,11 +160,10 @@ export default function Reports() {
             <button
               key={s.key}
               onClick={() => setSemester(s.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                semester === s.key
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${semester === s.key
                   ? "bg-[#7c4dff] text-white"
                   : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
-              }`}
+                }`}
             >
               {s.label}
             </button>

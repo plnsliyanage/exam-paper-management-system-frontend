@@ -21,11 +21,10 @@ export default function TaskFilterTabs({ taskFilter, onFilterChange }) {
         <button
           key={tab.id}
           onClick={() => onFilterChange(tab.id)}
-          className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer text-xs ${
-            taskFilter === tab.id
+          className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer text-xs ${taskFilter === tab.id
               ? "bg-[#7c4dff] text-white shadow-sm"
               : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          }`}
+            }`}
         >
           {tab.label}
         </button>

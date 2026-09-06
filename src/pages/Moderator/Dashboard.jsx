@@ -105,8 +105,8 @@ export default function ModeratorDashboard() {
         actionType === "APPROVE"
           ? "approved"
           : actionType === "RETURN"
-          ? "returned for revision"
-          : "rejected";
+            ? "returned for revision"
+            : "rejected";
 
       setActionMessage({
         text: `Packet ${selectedPacket.packetId} (${selectedPacket.courseCode}) has been ${actionLabel}.`,
@@ -162,11 +162,10 @@ export default function ModeratorDashboard() {
       {/* Action Toast / Banner */}
       {actionMessage.text && (
         <div
-          className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between shadow-sm transition ${
-            actionMessage.type === "success"
+          className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between shadow-sm transition ${actionMessage.type === "success"
               ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
               : "bg-rose-50 text-rose-800 border border-rose-200"
-          }`}
+            }`}
         >
           <span>{actionMessage.text}</span>
           <button
@@ -264,8 +263,8 @@ export default function ModeratorDashboard() {
                   pkt.priority === "High"
                     ? "text-red-500"
                     : pkt.priority === "Medium"
-                    ? "text-amber-500"
-                    : "text-emerald-500";
+                      ? "text-amber-500"
+                      : "text-emerald-500";
 
                 return (
                   <div
@@ -274,11 +273,10 @@ export default function ModeratorDashboard() {
                       setSelectedPacket(pkt);
                       setFeedbackText(pkt.moderatorNote || "");
                     }}
-                    className={`p-4 cursor-pointer transition relative ${
-                      isSelected
+                    className={`p-4 cursor-pointer transition relative ${isSelected
                         ? "bg-rose-50/40 border-l-4 border-rose-400"
                         : "hover:bg-gray-50/70"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between text-[11px] mb-1">
                       <span className="text-gray-400 font-medium">
@@ -374,20 +372,18 @@ export default function ModeratorDashboard() {
                         className="flex items-center gap-3 cursor-pointer select-none group"
                       >
                         <div
-                          className={`w-4 h-4 rounded border flex items-center justify-center transition shrink-0 ${
-                            checked
+                          className={`w-4 h-4 rounded border flex items-center justify-center transition shrink-0 ${checked
                               ? "bg-[#0f172a] border-[#0f172a] text-white"
                               : "bg-white border-gray-300 group-hover:border-gray-400"
-                          }`}
+                            }`}
                         >
                           {checked && <MdCheck size={12} />}
                         </div>
                         <span
-                          className={`text-xs ${
-                            checked
+                          className={`text-xs ${checked
                               ? "text-gray-900 font-medium"
                               : "text-gray-600"
-                          }`}
+                            }`}
                         >
                           {itemText}
                         </span>
@@ -468,18 +464,18 @@ export default function ModeratorDashboard() {
               const iconBg = isReturn
                 ? "bg-amber-50 text-amber-600"
                 : isApprove
-                ? "bg-emerald-50 text-emerald-600"
-                : isReject
-                ? "bg-rose-50 text-rose-600"
-                : "bg-blue-50 text-blue-600";
+                  ? "bg-emerald-50 text-emerald-600"
+                  : isReject
+                    ? "bg-rose-50 text-rose-600"
+                    : "bg-blue-50 text-blue-600";
 
               const statusColor = isReturn
                 ? "text-amber-700"
                 : isApprove
-                ? "text-emerald-700"
-                : isReject
-                ? "text-rose-700"
-                : "text-blue-700";
+                  ? "text-emerald-700"
+                  : isReject
+                    ? "text-rose-700"
+                    : "text-blue-700";
 
               return (
                 <div

@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MdSearch, MdNotifications } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState, useCallback } from "react";
-import axiosInstance from "../api/axiosInstance"; 
+import axiosInstance from "../api/axiosInstance";
 
 const pageTitles = {
   "/dashboard": {
@@ -51,7 +51,7 @@ export default function DashboardLayout() {
           setUnreadCount(res.data.count);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [username]);
 
   useEffect(() => {

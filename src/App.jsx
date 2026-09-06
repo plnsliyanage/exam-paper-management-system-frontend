@@ -36,6 +36,14 @@ function ProtectedRoute({ children }) {
   return token ? children : <Navigate to="/login" />;
 }
 
+function AdminRoute({ children }) {
+  const { token, getRole } = useAuth();
+  if (!token) return <Navigate to="/login" replace />;
+  const role = getRole();
+  if (role !== "ROLE_ADMIN") return <Navigate to="/packets" replace />;
+  return children;
+}
+
 function RoleBasedDashboard() {
   const { getRole } = useAuth();
   const role = getRole();
@@ -69,14 +77,14 @@ function AppRoutes() {
         <Route path="/packets" element={<Packets />} />
         <Route path="/packets/:id" element={<PacketDetail />} />
 
-        <Route path="/packets/add" element={<AddPacket />} />
-        <Route path="/packets/edit/:id" element={<AddPacket />} />
+        <Route path="/packets/add" element={<AdminRoute><AddPacket /></AdminRoute>} />
+        <Route path="/packets/edit/:id" element={<AdminRoute><AddPacket /></AdminRoute>} />
         <Route path="/workflow" element={<Workflow />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/users" element={<UserManagement />} />
-        <Route path="/users/add" element={<AddUser />} />
-        <Route path="/users/edit/:id" element={<AddUser />} />
+        <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+        <Route path="/users/add" element={<AdminRoute><AddUser /></AdminRoute>} />
+        <Route path="/users/edit/:id" element={<AdminRoute><AddUser /></AdminRoute>} />
         <Route path="/courses" element={<CourseManagement />} />
         <Route path="/departments" element={<DepartmentManagement />} />
 

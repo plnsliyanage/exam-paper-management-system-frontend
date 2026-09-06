@@ -165,11 +165,10 @@ export default function UserManagement() {
             <button
               key={key}
               onClick={() => setRoleFilter(key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                roleFilter === key
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${roleFilter === key
                   ? "bg-[#7c4dff] text-white"
                   : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
-              }`}
+                }`}
             >
               {label}
             </button>
@@ -284,11 +283,10 @@ export default function UserManagement() {
                       </button>
                       <button
                         onClick={() => handleToggleActive(u.userId)}
-                        className={`transition text-lg ${
-                          u.isActive
+                        className={`transition text-lg ${u.isActive
                             ? "text-gray-400 hover:text-gray-600"
                             : "text-green-400 hover:text-green-600"
-                        }`}
+                          }`}
                         title={u.isActive ? "Deactivate" : "Activate"}
                       >
                         🛡

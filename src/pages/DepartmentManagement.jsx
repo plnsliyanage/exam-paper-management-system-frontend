@@ -172,7 +172,7 @@ export default function DepartmentManagement({ isHod = false }) {
       console.error("Error saving department:", err);
       setFormError(
         err.response?.data?.message ||
-          "An error occurred while saving the department. Please try again."
+        "An error occurred while saving the department. Please try again."
       );
     } finally {
       setSaving(false);
@@ -202,7 +202,7 @@ export default function DepartmentManagement({ isHod = false }) {
       console.error("Error deleting department:", err);
       setDeleteError(
         err.response?.data?.message ||
-          "Failed to delete department. Ensure all courses and staff are reallocated first."
+        "Failed to delete department. Ensure all courses and staff are reallocated first."
       );
     } finally {
       setDeleting(false);
@@ -230,11 +230,10 @@ export default function DepartmentManagement({ isHod = false }) {
       {/* Toast Alert */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border transition-all animate-bounce ${
-            toast.type === "success"
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border transition-all animate-bounce ${toast.type === "success"
               ? "bg-white border-green-200 text-green-800"
               : "bg-white border-red-200 text-red-800"
-          }`}
+            }`}
         >
           {toast.type === "success" ? (
             <MdCheckCircle className="text-green-500 text-xl" />
@@ -489,21 +488,20 @@ export default function DepartmentManagement({ isHod = false }) {
                             </td>
                             <td className="px-6 py-4">
                               <span
-                                className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                                  s.role === "ROLE_MODERATOR"
+                                className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.role === "ROLE_MODERATOR"
                                     ? "bg-amber-50 text-amber-700"
                                     : s.role === "ROLE_USER"
-                                    ? "bg-purple-50 text-[#7c4dff]"
-                                    : "bg-blue-50 text-blue-700"
-                                }`}
+                                      ? "bg-purple-50 text-[#7c4dff]"
+                                      : "bg-blue-50 text-blue-700"
+                                  }`}
                               >
                                 {s.role === "ROLE_USER"
                                   ? "Lecturer"
                                   : s.role === "ROLE_MODERATOR"
-                                  ? "Moderator"
-                                  : s.role === "ROLE_GUEST"
-                                  ? "HOD"
-                                  : "Admin"}
+                                    ? "Moderator"
+                                    : s.role === "ROLE_GUEST"
+                                      ? "HOD"
+                                      : "Admin"}
                               </span>
                             </td>
                           </tr>
@@ -619,11 +617,10 @@ export default function DepartmentManagement({ isHod = false }) {
                       {/* Active Packets */}
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            d.activePacketsCount > 0
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${d.activePacketsCount > 0
                               ? "bg-purple-50 text-[#7c4dff]"
                               : "bg-gray-100 text-gray-400"
-                          }`}
+                            }`}
                         >
                           {d.activePacketsCount} packets
                         </span>
@@ -729,8 +726,8 @@ export default function DepartmentManagement({ isHod = false }) {
                         {isAssignedHere
                           ? "(Current HOD)"
                           : hod.currentDepartmentName !== "Unassigned"
-                          ? `(Currently assigned to ${hod.currentDepartmentName})`
-                          : ""}
+                            ? `(Currently assigned to ${hod.currentDepartmentName})`
+                            : ""}
                       </option>
                     );
                   })}
@@ -787,16 +784,16 @@ export default function DepartmentManagement({ isHod = false }) {
               {(deptToDelete.totalCourses > 0 ||
                 deptToDelete.totalLecturers > 0 ||
                 deptToDelete.activePacketsCount > 0) && (
-                <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-xl flex items-start gap-2 text-left mt-2">
-                  <MdInfoOutline size={16} className="shrink-0 text-blue-600 mt-0.5" />
-                  <span>
-                    Note: Deleting this department will safely set any linked{" "}
-                    <strong>{deptToDelete.totalCourses} course(s)</strong> and{" "}
-                    <strong>{deptToDelete.totalLecturers} staff member(s)</strong> to{" "}
-                    <em>Unassigned</em>. No courses or user accounts will be lost.
-                  </span>
-                </div>
-              )}
+                  <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-xl flex items-start gap-2 text-left mt-2">
+                    <MdInfoOutline size={16} className="shrink-0 text-blue-600 mt-0.5" />
+                    <span>
+                      Note: Deleting this department will safely set any linked{" "}
+                      <strong>{deptToDelete.totalCourses} course(s)</strong> and{" "}
+                      <strong>{deptToDelete.totalLecturers} staff member(s)</strong> to{" "}
+                      <em>Unassigned</em>. No courses or user accounts will be lost.
+                    </span>
+                  </div>
+                )}
             </div>
 
             {deleteError && (

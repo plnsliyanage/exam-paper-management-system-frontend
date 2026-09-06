@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AddPacket() {
   const { id } = useParams(); // if editing
   const navigate = useNavigate();
+  const { getRole } = useAuth();
+  const role = getRole();
   const isEdit = !!id;
 
   const [formData, setFormData] = useState({
@@ -21,10 +24,15 @@ export default function AddPacket() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (role && role !== "ROLE_ADMIN") {
+      navigate("/packets", { replace: true });
+      return;
+    }
+
     // Load dropdown data
     axiosInstance.get("/form-data").then(res => {
       setDropdowns(res.data);
-    });
+    }).catch(() => {});
 
     // If editing, load existing packet
     if (isEdit) {
@@ -44,9 +52,9 @@ export default function AddPacket() {
           format: p.format || "",
           moderatorNote: p.moderatorNote || "",
         });
-      });
+      }).catch(() => {});
     }
-  }, [id, isEdit]);
+  }, [id, isEdit, role, navigate]);
 
   const handleCourseChange = (e) => {
     const selectedCourseId = e.target.value;

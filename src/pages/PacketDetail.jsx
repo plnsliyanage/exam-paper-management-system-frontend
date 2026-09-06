@@ -301,8 +301,8 @@ export default function PacketDetail() {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={`text-sm py-4 mr-6 transition ${activeTab === tab.key
-                      ? "font-medium text-[#7c4dff] border-b-2 border-[#7c4dff]"
-                      : "text-gray-400 hover:text-gray-600"
+                    ? "font-medium text-[#7c4dff] border-b-2 border-[#7c4dff]"
+                    : "text-gray-400 hover:text-gray-600"
                     }`}
                 >
                   {tab.label}
@@ -880,8 +880,8 @@ export default function PacketDetail() {
                 onClick={() => handleAction(noteModal, note)}
                 disabled={!!actionLoading}
                 className={`px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 transition ${noteModal === "RETURN"
-                    ? "bg-yellow-500 hover:bg-yellow-600"
-                    : "bg-red-500 hover:bg-red-600"
+                  ? "bg-yellow-500 hover:bg-yellow-600"
+                  : "bg-red-500 hover:bg-red-600"
                   }`}
               >
                 {actionLoading ? "Processing..." : noteModal === "RETURN" ? "Return" : "Reject"}

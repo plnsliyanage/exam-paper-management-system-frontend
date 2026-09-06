@@ -141,6 +141,10 @@ export default function Packets() {
   };
 
   const handleDelete = async (packetId, id) => {
+    if (!isAdmin) {
+      alert("Only Assistant Registrar (Admin) can delete exam packets.");
+      return;
+    }
     if (!confirm(`Are you sure you want to delete packet ${packetId}?`)) return;
     const targetId = id || parseInt(packetId.split("-")[2], 10);
     try {
@@ -169,9 +173,16 @@ export default function Packets() {
     return packets.filter((p) => p.status === s).length;
   };
 
-  const tableHeaders = isModerator
-    ? ["Packet ID", "Course", "Lecturer", "Deadline", "Status", "Priority"]
-    : ["Packet ID", "Course", "Lecturer", "Moderator", "Deadline", "Status", "Priority", "Actions"];
+  const tableHeaders = [
+    "Packet ID",
+    "Course",
+    "Lecturer",
+    ...(isModerator ? [] : ["Moderator"]),
+    "Deadline",
+    "Status",
+    "Priority",
+    "Actions",
+  ];
 
   if (loading)
     return (
@@ -245,11 +256,10 @@ export default function Packets() {
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-              statusFilter === s
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${statusFilter === s
                 ? "bg-[#7c4dff] text-white"
                 : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
-            }`}
+              }`}
           >
             {s === "ALL" ? "All" : statusLabels[s]} ({countFor(s)})
           </button>
@@ -287,16 +297,8 @@ export default function Packets() {
                 return (
                   <tr
                     key={p.id || p.packetId || index}
-                    onClick={() => {
-                      if (isModerator) {
-                        navigate(`/packets/${numericId}`);
-                      }
-                    }}
-                    className={`border-b border-gray-50 transition ${
-                      isModerator
-                        ? "hover:bg-purple-50/40 cursor-pointer"
-                        : "hover:bg-gray-50"
-                    }`}
+                    onClick={() => navigate(`/packets/${numericId}`)}
+                    className="border-b border-gray-50 hover:bg-purple-50/30 transition cursor-pointer"
                   >
                     <td className="px-5 py-4 text-sm font-semibold text-[#7c4dff]">
                       {p.packetId}
@@ -321,16 +323,15 @@ export default function Packets() {
 
                     <td className="px-5 py-4">
                       <p
-                        className={`text-sm font-medium ${
-                          p.overdue ? "text-red-500" : "text-gray-700"
-                        }`}
+                        className={`text-sm font-medium ${p.overdue ? "text-red-500" : "text-gray-700"
+                          }`}
                       >
                         {p.deadline
                           ? new Date(p.deadline).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
                           : "—"}
                       </p>
                       {p.overdue && (
@@ -340,9 +341,8 @@ export default function Packets() {
 
                     <td className="px-5 py-4">
                       <span
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                          statusColors[p.status] || "bg-gray-100 text-gray-500"
-                        }`}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[p.status] || "bg-gray-100 text-gray-500"
+                          }`}
                       >
                         {statusLabels[p.status] || p.status}
                       </span>
@@ -356,42 +356,44 @@ export default function Packets() {
                       </span>
                     </td>
 
-                    {!isModerator && (
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/packets/${numericId}`);
-                            }}
-                            className="text-blue-400 hover:text-blue-600 text-lg"
-                            title="View Packet"
-                          >
-                            👁
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/packets/edit/${numericId}`);
-                            }}
-                            className="text-gray-400 hover:text-gray-600 text-lg"
-                            title="Edit Packet"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(p.packetId, numericId);
-                            }}
-                            className="text-red-400 hover:text-red-600 text-lg"
-                            title="Delete Packet"
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/packets/${numericId}`);
+                          }}
+                          className="text-blue-500 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                          title="View Packet"
+                        >
+                          👁
+                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/packets/edit/${numericId}`);
+                              }}
+                              className="text-gray-400 hover:text-[#7c4dff] text-base transition"
+                              title="Edit Packet"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(p.packetId, numericId);
+                              }}
+                              className="text-red-400 hover:text-red-600 text-base transition"
+                              title="Delete Packet"
+                            >
+                              🗑
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })

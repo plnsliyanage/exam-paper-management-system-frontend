@@ -86,23 +86,22 @@ export default function PacketCard({
 
   return (
     <div
-      className={`p-4 border rounded-xl bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition ${
-        isCompleted
+      className={`p-4 border rounded-xl bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition ${isCompleted
           ? "border-emerald-200 bg-emerald-50/20"
           : isRejected
-          ? "border-rose-200 bg-rose-50/10"
-          : isApproved
-          ? "border-emerald-100 bg-emerald-50/10"
-          : isSubmitted
-          ? "border-purple-100 bg-purple-50/10"
-          : isStored
-          ? "border-cyan-100 bg-cyan-50/10"
-          : isSheetsTaken
-          ? "border-orange-100 bg-orange-50/10"
-          : isMarking
-          ? "border-violet-100 bg-violet-50/10"
-          : "border-slate-200 hover:border-slate-300"
-      }`}
+            ? "border-rose-200 bg-rose-50/10"
+            : isApproved
+              ? "border-emerald-100 bg-emerald-50/10"
+              : isSubmitted
+                ? "border-purple-100 bg-purple-50/10"
+                : isStored
+                  ? "border-cyan-100 bg-cyan-50/10"
+                  : isSheetsTaken
+                    ? "border-orange-100 bg-orange-50/10"
+                    : isMarking
+                      ? "border-violet-100 bg-violet-50/10"
+                      : "border-slate-200 hover:border-slate-300"
+        }`}
     >
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">

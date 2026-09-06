@@ -121,11 +121,10 @@ export default function Notifications() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                filter === tab.key
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${filter === tab.key
                   ? "bg-[#7c4dff] text-white shadow-sm"
                   : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -153,9 +152,8 @@ export default function Notifications() {
               <div
                 key={n.id}
                 onClick={() => !n.isRead && handleMarkRead(n.id)}
-                className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition shadow-sm ${
-                  n.isRead ? "bg-white border-gray-100 hover:bg-gray-50/70" : config.bg
-                }`}
+                className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition shadow-sm ${n.isRead ? "bg-white border-gray-100 hover:bg-gray-50/70" : config.bg
+                  }`}
               >
                 {/* Icon */}
                 <div
@@ -168,9 +166,8 @@ export default function Notifications() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <p
-                      className={`text-sm font-bold ${
-                        n.isRead ? "text-gray-700" : "text-gray-900"
-                      }`}
+                      className={`text-sm font-bold ${n.isRead ? "text-gray-700" : "text-gray-900"
+                        }`}
                     >
                       {n.title}
                     </p>
@@ -209,4 +206,4 @@ export default function Notifications() {
       </div>
     </div>
   );
-}
+}

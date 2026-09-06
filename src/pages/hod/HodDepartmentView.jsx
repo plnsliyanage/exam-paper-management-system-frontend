@@ -69,8 +69,8 @@ export default function HodDepartmentView({ deptId = "ALL" }) {
       const safePackets = Array.isArray(packetsRes.data)
         ? packetsRes.data
         : Array.isArray(packetsRes)
-        ? packetsRes
-        : [];
+          ? packetsRes
+          : [];
       setPackets(safePackets);
     } catch (err) {
       console.error("Failed to load department dashboard:", err);

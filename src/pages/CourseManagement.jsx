@@ -217,7 +217,7 @@ export default function CourseManagement({ isHod = false }) {
       console.error("Error saving course:", err);
       setFormError(
         err.response?.data?.message ||
-          "An error occurred while saving the course. Please try again."
+        "An error occurred while saving the course. Please try again."
       );
     } finally {
       setSaving(false);
@@ -246,7 +246,7 @@ export default function CourseManagement({ isHod = false }) {
       console.error("Error deleting course:", err);
       setDeleteError(
         err.response?.data?.message ||
-          "Failed to delete course. It may be linked to active exam packets."
+        "Failed to delete course. It may be linked to active exam packets."
       );
     } finally {
       setDeleting(false);
@@ -290,11 +290,10 @@ export default function CourseManagement({ isHod = false }) {
       {/* Toast Alert */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border transition-all animate-bounce ${
-            toast.type === "success"
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border transition-all animate-bounce ${toast.type === "success"
               ? "bg-white border-green-200 text-green-800"
               : "bg-white border-red-200 text-red-800"
-          }`}
+            }`}
         >
           {toast.type === "success" ? (
             <MdCheckCircle className="text-green-500 text-xl" />
@@ -562,11 +561,10 @@ export default function CourseManagement({ isHod = false }) {
                       {/* Linked Packets */}
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            c.activePacketsCount > 0
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${c.activePacketsCount > 0
                               ? "bg-purple-50 text-[#7c4dff]"
                               : "bg-gray-100 text-gray-400"
-                          }`}
+                            }`}
                         >
                           {c.activePacketsCount}{" "}
                           {c.activePacketsCount === 1 ? "packet" : "packets"}
