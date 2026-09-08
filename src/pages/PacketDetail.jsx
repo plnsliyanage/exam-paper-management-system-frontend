@@ -87,7 +87,7 @@ export default function PacketDetail() {
   const [commentLoading, setCommentLoading] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
 
-  const canUpdateStatus = ["ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_GUEST", "ROLE_USER"].includes(role);
+  const canUpdateStatus = ["ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_GUEST", "ROLE_USER", "ROLE_SYSTEM_ADMIN"].includes(role);
 
   // ── Fetch packet on mount ──
   useEffect(() => {
@@ -749,52 +749,100 @@ export default function PacketDetail() {
                   </>
                 )}
 
-                {/* ── AR / Admin & HOD Controls ── */}
-                {["ROLE_ADMIN", "ROLE_GUEST"].includes(role) && (
-                  <div className="space-y-2">
-                    <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-600">
-                      Current: <span className="font-semibold text-slate-800">{statusLabels[packet.status] || packet.status}</span>
+                {/* ── System Admin Full Lifecycle Controls ── */}
+                {role === "ROLE_SYSTEM_ADMIN" ? (
+                  <div className="space-y-2.5">
+                    <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-700">
+                      <span className="font-bold">System Admin Override:</span> Stage is <span className="font-semibold">{statusLabels[packet.status] || packet.status}</span>
                     </div>
 
-                    {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION" || packet.status === "PENDING") && (
-                      <>
-                        <button
-                          onClick={() => handleAction("APPROVE")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-emerald-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
-                        >
-                          {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Packet
-                        </button>
-                        <button
-                          onClick={() => setNoteModal("REJECT")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-rose-50 text-rose-700 border border-rose-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-rose-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
-                        >
-                          ✕ Reject / Return
-                        </button>
-                      </>
-                    )}
-
-                    {(packet.status === "APPROVED" || packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
-                      <button
-                        onClick={() => handleAction("COMPLETE")}
-                        disabled={!!actionLoading}
-                        className="w-full bg-teal-600 text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
-                      >
-                        {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Mark as Completed
-                      </button>
-                    )}
-
-                    {(packet.status === "REJECTED" || packet.status === "PENDING") && (
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => handleAction("DRAFT")}
                         disabled={!!actionLoading}
-                        className="w-full bg-blue-50 text-blue-700 border border-blue-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-blue-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        className="bg-blue-50 text-blue-700 border border-blue-200 rounded-xl py-2 px-2 text-xs font-semibold hover:bg-blue-100 transition disabled:opacity-50 text-center"
                       >
-                        ✏️ Switch to Draft
+                        ✏️ Draft
                       </button>
-                    )}
+                      <button
+                        onClick={() => handleAction("SUBMIT")}
+                        disabled={!!actionLoading}
+                        className="bg-purple-50 text-purple-700 border border-purple-200 rounded-xl py-2 px-2 text-xs font-semibold hover:bg-purple-100 transition disabled:opacity-50 text-center"
+                      >
+                        📤 Submit
+                      </button>
+                      <button
+                        onClick={() => handleAction("APPROVE")}
+                        disabled={!!actionLoading}
+                        className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl py-2 px-2 text-xs font-semibold hover:bg-emerald-100 transition disabled:opacity-50 text-center"
+                      >
+                        ✓ Approve
+                      </button>
+                      <button
+                        onClick={() => setNoteModal("REJECT")}
+                        disabled={!!actionLoading}
+                        className="bg-rose-50 text-rose-700 border border-rose-200 rounded-xl py-2 px-2 text-xs font-semibold hover:bg-rose-100 transition disabled:opacity-50 text-center"
+                      >
+                        ✕ Reject
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => handleAction("COMPLETE")}
+                      disabled={!!actionLoading}
+                      className="w-full bg-teal-600 text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
+                    >
+                      {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "🖨️"} Mark as Completed
+                    </button>
                   </div>
+                ) : (
+                  /* ── AR / Admin & HOD Controls ── */
+                  ["ROLE_ADMIN", "ROLE_GUEST"].includes(role) && (
+                    <div className="space-y-2">
+                      <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-600">
+                        Current: <span className="font-semibold text-slate-800">{statusLabels[packet.status] || packet.status}</span>
+                      </div>
+
+                      {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION" || packet.status === "PENDING") && (
+                        <>
+                          <button
+                            onClick={() => handleAction("APPROVE")}
+                            disabled={!!actionLoading}
+                            className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-emerald-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          >
+                            {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Packet
+                          </button>
+                          <button
+                            onClick={() => setNoteModal("REJECT")}
+                            disabled={!!actionLoading}
+                            className="w-full bg-rose-50 text-rose-700 border border-rose-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-rose-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          >
+                            ✕ Reject / Return
+                          </button>
+                        </>
+                      )}
+
+                      {(packet.status === "APPROVED" || packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
+                        <button
+                          onClick={() => handleAction("COMPLETE")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-teal-600 text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Mark as Completed
+                        </button>
+                      )}
+
+                      {(packet.status === "REJECTED" || packet.status === "PENDING") && (
+                        <button
+                          onClick={() => handleAction("DRAFT")}
+                          disabled={!!actionLoading}
+                          className="w-full bg-blue-50 text-blue-700 border border-blue-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-blue-100 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        >
+                          ✏️ Switch to Draft
+                        </button>
+                      )}
+                    </div>
+                  )
                 )}
 
               </div>

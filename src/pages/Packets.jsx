@@ -61,7 +61,7 @@ export default function Packets() {
   const { getRole } = useAuth();
   const role = getRole();
   const isModerator = role === "ROLE_MODERATOR";
-  const isAdmin = role === "ROLE_ADMIN";
+  const isAdmin = role === "ROLE_ADMIN" || role === "ROLE_SYSTEM_ADMIN";
   const navigate = useNavigate();
 
   useEffect(() => {

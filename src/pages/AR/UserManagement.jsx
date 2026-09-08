@@ -7,6 +7,7 @@ const ROLE_BADGE_COLORS = {
   ROLE_GUEST: "bg-green-100 text-green-700",
   ROLE_USER: "bg-purple-100 text-purple-700",
   ROLE_MODERATOR: "bg-yellow-100 text-yellow-700",
+  ROLE_SYSTEM_ADMIN: "bg-rose-100 text-rose-700",
 };
 
 const ROLE_FILTER_LABELS = {
@@ -15,6 +16,7 @@ const ROLE_FILTER_LABELS = {
   ROLE_GUEST: "HOD",
   ROLE_USER: "Lecturer",
   ROLE_MODERATOR: "Moderator",
+  ROLE_SYSTEM_ADMIN: "System Admin",
 };
 
 export default function UserManagement() {

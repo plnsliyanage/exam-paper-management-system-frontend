@@ -70,4 +70,19 @@ export const sidebarMenus = {
       { label: "Settings", icon: MdSettings, path: "/settings" },
     ],
   },
+  ROLE_SYSTEM_ADMIN: {
+    title: "System Administrator",
+    shortTitle: "SYS",
+    items: [
+      { label: "Dashboard", icon: MdDashboard, path: "/dashboard" },
+      { label: "User Management", icon: MdPeople, path: "/users" },
+      { label: "Departments", icon: MdApartment, path: "/departments" },
+      { label: "Courses", icon: MdSchool, path: "/courses" },
+      { label: "Packets", icon: MdFolder, path: "/packets" },
+      { label: "Workflow", icon: MdAccountTree, path: "/workflow" },
+      { label: "Reports", icon: MdBarChart, path: "/reports" },
+      { label: "Notifications", icon: MdNotifications, path: "/notifications" },
+      { label: "Settings", icon: MdSettings, path: "/settings" },
+    ],
+  },
 };

@@ -40,7 +40,7 @@ function AdminRoute({ children }) {
   const { token, getRole } = useAuth();
   if (!token) return <Navigate to="/login" replace />;
   const role = getRole();
-  if (role !== "ROLE_ADMIN") return <Navigate to="/packets" replace />;
+  if (role !== "ROLE_ADMIN" && role !== "ROLE_SYSTEM_ADMIN") return <Navigate to="/packets" replace />;
   return children;
 }
 

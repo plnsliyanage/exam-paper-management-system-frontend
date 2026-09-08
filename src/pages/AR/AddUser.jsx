@@ -7,6 +7,7 @@ const ROLE_OPTIONS = [
   { value: "ROLE_GUEST", label: "Head of Department (HOD)" },
   { value: "ROLE_USER", label: "Lecturer" },
   { value: "ROLE_MODERATOR", label: "Moderator" },
+  { value: "ROLE_SYSTEM_ADMIN", label: "System Administrator (SystemAdmin)" },
 ];
 
 export default function AddUser() {

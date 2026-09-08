@@ -33,6 +33,7 @@ export default function DashboardLayout() {
     ROLE_MODERATOR: "MOD",
     ROLE_USER: "LEC",
     ROLE_GUEST: "HOD",
+    ROLE_SYSTEM_ADMIN: "SYS",
   };
 
   const username = getUsername();

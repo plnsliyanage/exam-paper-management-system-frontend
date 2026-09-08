@@ -86,6 +86,7 @@ export default function Register() {
           <option value="ROLE_GUEST">Head of Department (HOD)</option>
           <option value="ROLE_MODERATOR">Moderator</option>
           <option value="ROLE_ADMIN">Assistant Registrar (AR)</option>
+          <option value="ROLE_SYSTEM_ADMIN">System Administrator (SystemAdmin)</option>
         </select>
 
         <button

@@ -24,7 +24,7 @@ export default function AddPacket() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (role && role !== "ROLE_ADMIN") {
+    if (role && role !== "ROLE_ADMIN" && role !== "ROLE_SYSTEM_ADMIN") {
       navigate("/packets", { replace: true });
       return;
     }
