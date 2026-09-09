@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 
 const ROLE_OPTIONS = [
   { value: "ROLE_ADMIN", label: "Asst. Registrar (AR)" },
@@ -13,6 +14,8 @@ const ROLE_OPTIONS = [
 export default function AddUser() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getRole } = useAuth();
+  const currentRole = getRole();
   const isEdit = !!id;
 
   const [departments, setDepartments] = useState([]);
@@ -31,6 +34,11 @@ export default function AddUser() {
   });
 
   useEffect(() => {
+    if (currentRole && currentRole !== "ROLE_SYSTEM_ADMIN") {
+      navigate("/users", { replace: true });
+      return;
+    }
+
     // Load departments
     axiosInstance.get("/users/departments").then(res => {
       setDepartments(res.data);
