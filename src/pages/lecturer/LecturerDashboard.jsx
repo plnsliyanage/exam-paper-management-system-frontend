@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PacketDetailModal from "../../components/PacketDetailModal";
 import MarkingEntryModal from "../../components/MarkingEntryModal";
+import SchedulePrintModal from "../../components/printing/SchedulePrintModal";
 import LecturerHeader from "../../components/lecturer/LecturerHeader";
 import MetricCard from "../../components/lecturer/MetricCard";
 import TaskFilterTabs from "../../components/lecturer/TaskFilterTabs";
@@ -47,6 +48,7 @@ export default function LecturerDashboard() {
 
   const [selectedPacketId, setSelectedPacketId] = useState(null);
   const [markingPacket, setMarkingPacket] = useState(null);
+  const [scheduleModalPacket, setScheduleModalPacket] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -259,6 +261,7 @@ export default function LecturerDashboard() {
                   onOpenMarking={setMarkingPacket}
                   onCompleteTask={handleCompleteTask}
                   onSubmitPacket={handleSubmitPacket}
+                  onOpenSchedulePrint={setScheduleModalPacket}
                 />
               ))
             )}
@@ -285,6 +288,18 @@ export default function LecturerDashboard() {
           onClose={() => setMarkingPacket(null)}
           onSuccess={async () => {
             setMarkingPacket(null);
+            await loadDashboardData();
+          }}
+        />
+      )}
+
+      {scheduleModalPacket && (
+        <SchedulePrintModal
+          isOpen={!!scheduleModalPacket}
+          packet={scheduleModalPacket}
+          onClose={() => setScheduleModalPacket(null)}
+          onSuccess={async () => {
+            setScheduleModalPacket(null);
             await loadDashboardData();
           }}
         />
