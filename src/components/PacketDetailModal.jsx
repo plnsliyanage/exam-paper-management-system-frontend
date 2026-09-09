@@ -9,9 +9,12 @@ import {
   CheckCircle2,
   Calendar,
   FileText,
+  Printer,
+  MapPin,
 } from "lucide-react";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
+import SchedulePrintModal from "./printing/SchedulePrintModal";
 
 export default function PacketDetailModal({
   packetId,
@@ -26,6 +29,8 @@ export default function PacketDetailModal({
   const [packet, setPacket] = useState(null);
   const [history, setHistory] = useState([]);
   const [comments, setComments] = useState([]);
+  const [printSchedule, setPrintSchedule] = useState(null);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,6 +65,17 @@ export default function PacketDetailModal({
         setComments(Array.isArray(commentResponse.data) ? commentResponse.data : []);
       } catch {
         setComments([]);
+      }
+
+      try {
+        const scheduleResponse = await axiosInstance.get(`/printing/packet/${numericId}`);
+        if (scheduleResponse.data && scheduleResponse.data.scheduleId) {
+          setPrintSchedule(scheduleResponse.data);
+        } else {
+          setPrintSchedule(null);
+        }
+      } catch {
+        setPrintSchedule(null);
       }
     } catch (err) {
       console.error("Failed to load packet details:", err);
@@ -209,6 +225,61 @@ export default function PacketDetailModal({
             </div>
           )}
 
+          {/* Printing Appointment Section for APPROVED or PRINTING */}
+          {(packet.status === "APPROVED" || packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
+            <div className="space-y-2">
+              <h3 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider text-slate-400">
+                <Printer className="w-3.5 h-3.5 text-[#7c4dff]" />
+                Exam Printing Schedule
+              </h3>
+              {printSchedule ? (
+                <div className="p-3.5 bg-purple-50/80 border border-purple-200 rounded-xl space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#7c4dff]" />
+                      {printSchedule.scheduleDate} ({printSchedule.timeLabel})
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-[#7c4dff] border border-purple-200">
+                      {printSchedule.status}
+                    </span>
+                  </div>
+                  <p className="text-slate-500 text-[11px] flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-slate-400" />
+                    {printSchedule.location} • {printSchedule.copies || 50} Copies
+                  </p>
+                  {printSchedule.notes && (
+                    <p className="text-[10px] text-slate-500 italic">"{printSchedule.notes}"</p>
+                  )}
+                  {printSchedule.status === "SCHEDULED" && (
+                    <div className="pt-1 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsPrintModalOpen(true)}
+                        className="text-[#7c4dff] hover:text-[#6c3de8] font-bold text-[11px] underline cursor-pointer"
+                      >
+                        Reschedule Time Slot
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2 text-xs">
+                  <div className="space-y-0.5">
+                    <p className="font-bold text-amber-900">Printing Slot Required</p>
+                    <p className="text-[11px] text-amber-700">Please book a 30-minute time slot at the printing center.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsPrintModalOpen(true)}
+                    className="px-3 py-1.5 bg-[#7c4dff] hover:bg-[#6c3de8] text-white font-bold rounded-lg shadow-sm text-xs cursor-pointer shrink-0"
+                  >
+                    📅 Book Slot
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* History / Movement Timeline */}
           <div className="space-y-3">
             <h3 className="font-bold text-slate-800 flex items-center gap-1.5 uppercase text-[11px] tracking-wider text-slate-400">
@@ -303,36 +374,55 @@ export default function PacketDetailModal({
                 Submit for Moderation
               </button>
             ) : packet.status === "APPROVED" ? (
-              <button
-                onClick={() => handleStatusAction("PRINT")}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-              >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Print Paper"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPrintModalOpen(true)}
+                  className="px-4 py-2 bg-[#7c4dff] text-white font-bold rounded-xl hover:bg-[#6c3de8] flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  📅 {printSchedule ? "Change Slot" : "Book Print Slot"}
+                </button>
+                {printSchedule && (
+                  <button
+                    onClick={() => handleStatusAction("PRINT")}
+                    disabled={actionLoading}
+                    className="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                  >
+                    {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "🖨️ Proceed to Print"}
+                  </button>
+                )}
+              </div>
             ) : packet.status === "PRINTING" ? (
               <button
                 onClick={() => handleStatusAction("PAPERS_STORED")}
                 disabled={actionLoading}
-                className="px-4 py-2 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                className="px-4 py-2 bg-cyan-600 text-white font-bold rounded-xl hover:bg-cyan-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
               >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Papers Stored in Safe"}
+                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "📦 Store Printed Papers"}
               </button>
             ) : packet.status === "PAPERS STORED" ? (
               <button
                 onClick={() => handleStatusAction("ANSWER_SHEETS_TAKEN")}
                 disabled={actionLoading}
-                className="px-4 py-2 bg-orange-600 text-white font-semibold rounded-xl hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                className="px-4 py-2 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
               >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Take Answer Sheets"}
+                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "📑 Take Answer Sheets"}
+              </button>
+            ) : packet.status === "ANSWER SHEETS TAKEN" ? (
+              <button
+                onClick={() => handleStatusAction("MARKING")}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+              >
+                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✏️ Start Marking"}
               </button>
             ) : packet.status === "MARKING" ? (
               <button
                 onClick={() => handleStatusAction("MARKING_COMPLETE")}
                 disabled={actionLoading}
-                className="px-4 py-2 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                className="px-4 py-2 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
               >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Marking Complete & Stored"}
+                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✓ Marking Complete & Stored"}
               </button>
             ) : isCompleted || packet.status === "MARKING COMPLETE" ? (
               <div className="px-4 py-2 bg-teal-50 border border-teal-200 text-teal-700 font-bold rounded-xl flex items-center gap-1.5 text-xs">
@@ -357,6 +447,20 @@ export default function PacketDetailModal({
           </button>
         </div>
       </div>
+
+      {isPrintModalOpen && (
+        <SchedulePrintModal
+          isOpen={isPrintModalOpen}
+          packet={packet}
+          existingSchedule={printSchedule}
+          onClose={() => setIsPrintModalOpen(false)}
+          onSuccess={async () => {
+            setIsPrintModalOpen(false);
+            await loadPacketData();
+            if (onStatusUpdated) onStatusUpdated();
+          }}
+        />
+      )}
     </div>
   );
 }
