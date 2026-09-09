@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
+import SchedulePrintModal from "../components/printing/SchedulePrintModal";
+import { Printer, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 
 const statusColors = {
   PENDING: "bg-amber-100 text-amber-800 border border-amber-200",
@@ -89,9 +91,14 @@ export default function PacketDetail() {
 
   const canUpdateStatus = ["ROLE_ADMIN", "ROLE_MODERATOR", "ROLE_GUEST", "ROLE_USER", "ROLE_SYSTEM_ADMIN"].includes(role);
 
+  // Printing schedule state
+  const [printSchedule, setPrintSchedule] = useState(null);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
   // ── Fetch packet on mount ──
   useEffect(() => {
     fetchPacket();
+    fetchPrintSchedule();
   }, [id]);
 
   // ── Fetch tab data when tab changes ──
@@ -109,6 +116,33 @@ export default function PacketDetail() {
       setError("Failed to load packet details.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPrintSchedule = async () => {
+    try {
+      const res = await axiosInstance.get(`/printing/packet/${id}`);
+      if (res.data && res.data.scheduleId) {
+        setPrintSchedule(res.data);
+      } else {
+        setPrintSchedule(null);
+      }
+    } catch (err) {
+      setPrintSchedule(null);
+    }
+  };
+
+  const handleCancelPrintSlot = async (scheduleId) => {
+    if (!confirm("Are you sure you want to cancel this printing appointment? The time slot will be released.")) {
+      return;
+    }
+    try {
+      await axiosInstance.delete(`/printing/schedules/${scheduleId}`);
+      setSuccessMsg("Printing appointment cancelled.");
+      setTimeout(() => setSuccessMsg(""), 3000);
+      fetchPrintSchedule();
+    } catch (err) {
+      setError("Failed to cancel printing appointment.");
     }
   };
 
@@ -603,27 +637,120 @@ export default function PacketDetail() {
                     )}
 
                     {packet.status === "APPROVED" && (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
-                          🎉 Exam paper approved by moderator! You can now proceed to print.
+                          🎉 Exam paper approved by moderator! Schedule a printing slot before printing papers.
                         </div>
-                        <button
-                          onClick={() => {
-                            window.print();
-                            handleAction("PRINT");
-                          }}
-                          disabled={!!actionLoading}
-                          className="w-full bg-emerald-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "PRINT" ? <span className="animate-spin">⟳</span> : "🖨️"} Proceed to Print Paper
-                        </button>
+
+                        {/* Printing appointment card if booked */}
+                        {printSchedule ? (
+                          <div className="p-3.5 bg-purple-50/80 border border-purple-200 rounded-xl space-y-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                <Printer className="w-3.5 h-3.5 text-[#7c4dff]" />
+                                Printing Appointment
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-[#7c4dff] border border-purple-200">
+                                {printSchedule.status}
+                              </span>
+                            </div>
+                            <p className="text-slate-600 flex items-center gap-1 font-medium">
+                              <Calendar className="w-3 h-3 text-[#7c4dff]" />
+                              {printSchedule.scheduleDate} ({printSchedule.timeLabel})
+                            </p>
+                            <p className="text-slate-500 text-[11px] flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400" />
+                              {printSchedule.location} • {printSchedule.copies || 50} Copies
+                            </p>
+                            <div className="flex items-center gap-2 pt-1 border-t border-purple-100">
+                              <button
+                                type="button"
+                                onClick={() => setIsPrintModalOpen(true)}
+                                className="text-[#7c4dff] hover:text-[#6c3de8] font-bold text-[11px] underline"
+                              >
+                                Reschedule
+                              </button>
+                              <span className="text-slate-300">•</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCancelPrintSlot(printSchedule.scheduleId)}
+                                className="text-rose-600 hover:text-rose-700 font-bold text-[11px] underline"
+                              >
+                                Cancel Slot
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setIsPrintModalOpen(true)}
+                            className="w-full bg-[#7c4dff] hover:bg-[#6c3de8] text-white rounded-xl py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                          >
+                            📅 Schedule Printing Slot (Required)
+                          </button>
+                        )}
+
+                        {printSchedule && (
+                          <button
+                            onClick={() => {
+                              window.print();
+                              handleAction("PRINT");
+                            }}
+                            disabled={!!actionLoading}
+                            className="w-full bg-emerald-600 text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                          >
+                            {actionLoading === "PRINT" ? <span className="animate-spin">⟳</span> : "🖨️"} Proceed to Print Paper
+                          </button>
+                        )}
                       </div>
                     )}
 
                     {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
+                        {/* Printing appointment card */}
+                        {printSchedule && (
+                          <div className="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                <Printer className="w-3.5 h-3.5 text-indigo-600" />
+                                Printing Slot Details
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                {printSchedule.status}
+                              </span>
+                            </div>
+                            <p className="text-slate-600 flex items-center gap-1 font-medium">
+                              <Calendar className="w-3 h-3 text-indigo-600" />
+                              {printSchedule.scheduleDate} ({printSchedule.timeLabel})
+                            </p>
+                            <p className="text-slate-500 text-[11px] flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400" />
+                              {printSchedule.location} • {printSchedule.copies || 50} Copies
+                            </p>
+                            {printSchedule.status === "SCHEDULED" && (
+                              <div className="flex items-center gap-2 pt-1 border-t border-indigo-100">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsPrintModalOpen(true)}
+                                  className="text-indigo-600 hover:text-indigo-700 font-bold text-[11px] underline"
+                                >
+                                  Reschedule
+                                </button>
+                                <span className="text-slate-300">•</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelPrintSlot(printSchedule.scheduleId)}
+                                  className="text-rose-600 hover:text-rose-700 font-bold text-[11px] underline"
+                                >
+                                  Cancel Slot
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-800">
-                          🖨️ Exam paper is currently printing. Once printing is complete, store the papers in secure custody.
+                          🖨️ Exam paper is in printing stage. Once printing is complete, store the papers in secure custody.
                         </div>
                         <button
                           onClick={() => handleAction("PAPERS_STORED")}
@@ -937,6 +1064,22 @@ export default function PacketDetail() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Printing Schedule Modal */}
+      {isPrintModalOpen && (
+        <SchedulePrintModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
+          packet={packet}
+          existingSchedule={printSchedule}
+          onSuccess={(newSchedule) => {
+            setPrintSchedule(newSchedule);
+            setSuccessMsg("Printing slot scheduled successfully.");
+            setTimeout(() => setSuccessMsg(""), 3000);
+            fetchPacket();
+          }}
+        />
       )}
 
     </div>

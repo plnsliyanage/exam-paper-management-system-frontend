@@ -38,9 +38,9 @@ const statusLabels = {
   ANSWER_SHEETS_TAKEN: "Sheets Taken",
   MARKING: "Marking",
   UNDER_MARKING: "Marking",
-  "MARKING COMPLETE": "Marking Complete",
-  MARKING_COMPLETE: "Marking Complete",
-  COMPLETED: "Marking Complete",
+  "MARKING COMPLETE": "Completed",
+  MARKING_COMPLETE: "Completed",
+  COMPLETED: "Completed",
   UNDER_MODERATION: "Submitted",
   DELAYED: "Delayed",
 };
@@ -61,7 +61,7 @@ export default function Packets() {
   const { getRole } = useAuth();
   const role = getRole();
   const isModerator = role === "ROLE_MODERATOR";
-  const isAdmin = role === "ROLE_ADMIN" || role === "ROLE_SYSTEM_ADMIN";
+  const isSystemAdmin = role === "ROLE_SYSTEM_ADMIN";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function Packets() {
     "PAPERS STORED",
     "ANSWER SHEETS TAKEN",
     "MARKING",
-    "MARKING COMPLETE",
+    "COMPLETED",
   ];
 
   const handleExportCSV = async () => {
@@ -141,8 +141,8 @@ export default function Packets() {
   };
 
   const handleDelete = async (packetId, id) => {
-    if (!isAdmin) {
-      alert("Only Assistant Registrar (Admin) can delete exam packets.");
+    if (!isSystemAdmin) {
+      alert("Only System Administrator can delete exam packets.");
       return;
     }
     if (!confirm(`Are you sure you want to delete packet ${packetId}?`)) return;
@@ -239,8 +239,8 @@ export default function Packets() {
           </button>
         </div>
 
-        {/* Add Packet (Only for Admin) */}
-        {isAdmin && (
+        {/* Add Packet (Only for SystemAdmin) */}
+        {isSystemAdmin && (
           <button
             onClick={() => navigate("/packets/add")}
             className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition"
@@ -368,7 +368,7 @@ export default function Packets() {
                         >
                           👁
                         </button>
-                        {isAdmin && (
+                        {isSystemAdmin && (
                           <>
                             <button
                               onClick={(e) => {

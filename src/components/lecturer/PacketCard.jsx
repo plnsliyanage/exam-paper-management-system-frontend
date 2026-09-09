@@ -37,6 +37,7 @@ export default function PacketCard({
   onOpenMarking,
   onCompleteTask,
   onSubmitPacket,
+  onOpenSchedulePrint,
 }) {
   const statusKey = (packet.status || "").toUpperCase();
   const isCompleted = statusKey === "COMPLETED" || statusKey === "MARKING COMPLETE" || statusKey === "MARKING_COMPLETE";
@@ -187,24 +188,29 @@ export default function PacketCard({
           </button>
         ) : isApproved ? (
           <button
-            onClick={() => {
-              window.print();
-              onCompleteTask(packet.packetId || packet.id, "PRINT");
-            }}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-colors cursor-pointer text-xs"
-            title="Proceed to Print Paper"
+            onClick={() => onOpenSchedulePrint ? onOpenSchedulePrint(packet) : onSelectDetail(packet.packetId || packet.id)}
+            className="px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
+            title="Book 30-minute Printing Slot"
           >
-            🖨️ Print Paper
+            📅 Book Print Slot
           </button>
         ) : isPrinting ? (
-          <button
-            onClick={() => onCompleteTask(packet.packetId || packet.id, "PAPERS_STORED")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm transition-colors cursor-pointer text-xs"
-            title="Store Printed Papers"
-          >
-            <Check className="w-3 h-3" />
-            Store Papers
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onOpenSchedulePrint ? onOpenSchedulePrint(packet) : onSelectDetail(packet.packetId || packet.id)}
+              className="px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-purple-50 text-[#7c4dff] border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer text-xs"
+              title="View or Reschedule Printing Slot"
+            >
+              📅 Slot Info
+            </button>
+            <button
+              onClick={() => onCompleteTask(packet.packetId || packet.id, "PAPERS_STORED")}
+              className="px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm transition-colors cursor-pointer text-xs"
+              title="Store Printed Papers in Safe Custody"
+            >
+              📦 Store Papers
+            </button>
+          </div>
         ) : isStored ? (
           <button
             onClick={() => onCompleteTask(packet.packetId || packet.id, "ANSWER_SHEETS_TAKEN")}
