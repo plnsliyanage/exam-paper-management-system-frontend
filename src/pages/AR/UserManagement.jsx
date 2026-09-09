@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const ROLE_BADGE_COLORS = {
   ROLE_ADMIN: "bg-blue-100 text-blue-700",
@@ -25,6 +26,9 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { getRole } = useAuth();
+  const currentRole = getRole();
+  const isSystemAdmin = currentRole === "ROLE_SYSTEM_ADMIN";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -177,12 +181,14 @@ export default function UserManagement() {
           ))}
         </div>
 
-        <button
-          onClick={() => navigate("/users/add")}
-          className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition"
-        >
-          + Add User
-        </button>
+        {isSystemAdmin && (
+          <button
+            onClick={() => navigate("/users/add")}
+            className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition"
+          >
+            + Add User
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -196,7 +202,7 @@ export default function UserManagement() {
                 "Department",
                 "Status",
                 "Last Login",
-                "Actions",
+                isSystemAdmin ? "Actions" : "Access",
               ].map((h) => (
                 <th
                   key={h}
@@ -275,32 +281,38 @@ export default function UserManagement() {
 
                   {/* Actions */}
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => navigate(`/users/edit/${u.userId}`)}
-                        className="text-blue-400 hover:text-blue-600 transition text-lg"
-                        title="Edit user"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleToggleActive(u.userId)}
-                        className={`transition text-lg ${u.isActive
-                            ? "text-gray-400 hover:text-gray-600"
-                            : "text-green-400 hover:text-green-600"
-                          }`}
-                        title={u.isActive ? "Deactivate" : "Activate"}
-                      >
-                        🛡
-                      </button>
-                      <button
-                        onClick={() => handleDelete(u.userId, u.fullName)}
-                        className="text-red-400 hover:text-red-600 transition text-lg"
-                        title="Delete user"
-                      >
-                        🗑
-                      </button>
-                    </div>
+                    {isSystemAdmin ? (
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate(`/users/edit/${u.userId}`)}
+                          className="text-blue-400 hover:text-blue-600 transition text-lg"
+                          title="Edit user"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleToggleActive(u.userId)}
+                          className={`transition text-lg ${u.isActive
+                              ? "text-gray-400 hover:text-gray-600"
+                              : "text-green-400 hover:text-green-600"
+                            }`}
+                          title={u.isActive ? "Deactivate" : "Activate"}
+                        >
+                          🛡
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.userId, u.fullName)}
+                          className="text-red-400 hover:text-red-600 transition text-lg"
+                          title="Delete user"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium">
+                        View Only
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))

@@ -24,6 +24,7 @@ export default function DepartmentManagement({ isHod = false }) {
   const { getRole } = useAuth();
   const role = getRole();
   const isHodUser = isHod || role === "ROLE_GUEST";
+  const canManageDepartments = role === "ROLE_SYSTEM_ADMIN";
   const navigate = useNavigate();
 
   // Data state
@@ -353,13 +354,15 @@ export default function DepartmentManagement({ isHod = false }) {
           </div>
 
           {/* Add Department Button */}
-          <button
-            onClick={handleOpenAddModal}
-            className="flex items-center justify-center gap-2 bg-[#7c4dff] hover:bg-[#6a3df0] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:shadow transition cursor-pointer shrink-0"
-          >
-            <MdAdd size={18} />
-            <span>Add Department</span>
-          </button>
+          {canManageDepartments && (
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center justify-center gap-2 bg-[#7c4dff] hover:bg-[#6a3df0] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:shadow transition cursor-pointer shrink-0"
+            >
+              <MdAdd size={18} />
+              <span>Add Department</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -628,22 +631,28 @@ export default function DepartmentManagement({ isHod = false }) {
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleOpenEditModal(d)}
-                            className="p-1.5 text-gray-400 hover:text-[#7c4dff] hover:bg-purple-50 rounded-lg transition"
-                            title="Edit department"
-                          >
-                            <MdEdit size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleOpenDeleteDialog(d)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                            title="Delete department"
-                          >
-                            <MdDeleteOutline size={18} />
-                          </button>
-                        </div>
+                        {canManageDepartments ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(d)}
+                              className="p-1.5 text-gray-400 hover:text-[#7c4dff] hover:bg-purple-50 rounded-lg transition"
+                              title="Edit department"
+                            >
+                              <MdEdit size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenDeleteDialog(d)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                              title="Delete department"
+                            >
+                              <MdDeleteOutline size={18} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium">
+                            View Only
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))

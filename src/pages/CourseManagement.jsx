@@ -21,6 +21,7 @@ export default function CourseManagement({ isHod = false }) {
   const { getRole } = useAuth();
   const role = getRole();
   const isHodUser = isHod || role === "ROLE_GUEST";
+  const canManageCourses = role === "ROLE_SYSTEM_ADMIN";
 
   // Data state
   const [courses, setCourses] = useState([]);
@@ -417,13 +418,15 @@ export default function CourseManagement({ isHod = false }) {
         </div>
 
         {/* Add Course Button */}
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center justify-center gap-2 bg-[#7c4dff] hover:bg-[#6a3df0] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:shadow transition cursor-pointer shrink-0"
-        >
-          <MdAdd size={18} />
-          <span>Add Course</span>
-        </button>
+        {canManageCourses && (
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center justify-center gap-2 bg-[#7c4dff] hover:bg-[#6a3df0] text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm hover:shadow transition cursor-pointer shrink-0"
+          >
+            <MdAdd size={18} />
+            <span>Add Course</span>
+          </button>
+        )}
       </div>
 
       {/* Main Table */}
@@ -573,22 +576,28 @@ export default function CourseManagement({ isHod = false }) {
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleOpenEditModal(c)}
-                            className="p-1.5 text-gray-400 hover:text-[#7c4dff] hover:bg-purple-50 rounded-lg transition"
-                            title="Edit course & staff assignments"
-                          >
-                            <MdEdit size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleOpenDeleteDialog(c)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                            title="Delete course"
-                          >
-                            <MdDeleteOutline size={18} />
-                          </button>
-                        </div>
+                        {canManageCourses ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleOpenEditModal(c)}
+                              className="p-1.5 text-gray-400 hover:text-[#7c4dff] hover:bg-purple-50 rounded-lg transition"
+                              title="Edit course & staff assignments"
+                            >
+                              <MdEdit size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenDeleteDialog(c)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                              title="Delete course"
+                            >
+                              <MdDeleteOutline size={18} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium">
+                            View Only
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))
