@@ -16,6 +16,7 @@ import AddPacket from "./pages/AR/AddPacket";
 import AddUser from "./pages/AR/AddUser";
 import CourseManagement from "./pages/CourseManagement";
 import DepartmentManagement from "./pages/DepartmentManagement";
+import PrintingSchedule from "./pages/PrintingSchedule";
 
 // Lecturer Pages
 import LecturerDashboard from "./pages/lecturer/LecturerDashboard";
@@ -41,6 +42,14 @@ function AdminRoute({ children }) {
   if (!token) return <Navigate to="/login" replace />;
   const role = getRole();
   if (role !== "ROLE_ADMIN" && role !== "ROLE_SYSTEM_ADMIN") return <Navigate to="/packets" replace />;
+  return children;
+}
+
+function SystemAdminRoute({ children }) {
+  const { token, getRole } = useAuth();
+  if (!token) return <Navigate to="/login" replace />;
+  const role = getRole();
+  if (role !== "ROLE_SYSTEM_ADMIN") return <Navigate to="/packets" replace />;
   return children;
 }
 
@@ -77,16 +86,17 @@ function AppRoutes() {
         <Route path="/packets" element={<Packets />} />
         <Route path="/packets/:id" element={<PacketDetail />} />
 
-        <Route path="/packets/add" element={<AdminRoute><AddPacket /></AdminRoute>} />
-        <Route path="/packets/edit/:id" element={<AdminRoute><AddPacket /></AdminRoute>} />
+        <Route path="/packets/add" element={<SystemAdminRoute><AddPacket /></SystemAdminRoute>} />
+        <Route path="/packets/edit/:id" element={<SystemAdminRoute><AddPacket /></SystemAdminRoute>} />
         <Route path="/workflow" element={<Workflow />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-        <Route path="/users/add" element={<AdminRoute><AddUser /></AdminRoute>} />
-        <Route path="/users/edit/:id" element={<AdminRoute><AddUser /></AdminRoute>} />
+        <Route path="/users/add" element={<SystemAdminRoute><AddUser /></SystemAdminRoute>} />
+        <Route path="/users/edit/:id" element={<SystemAdminRoute><AddUser /></SystemAdminRoute>} />
         <Route path="/courses" element={<CourseManagement />} />
         <Route path="/departments" element={<DepartmentManagement />} />
+        <Route path="/printing/schedule" element={<PrintingSchedule />} />
 
         {/* Lecturer specific routes */}
         <Route path="/lecturer/dashboard" element={<LecturerDashboard />} />
