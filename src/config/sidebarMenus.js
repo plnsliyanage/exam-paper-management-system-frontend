@@ -12,6 +12,7 @@ import {
   MdWork,
   MdSchool,
   MdApartment,
+  MdPrint,
 } from "react-icons/md";
 
 export const sidebarMenus = {
@@ -22,6 +23,7 @@ export const sidebarMenus = {
       { label: "Dashboard", icon: MdDashboard, path: "/dashboard" },
       { label: "Packets", icon: MdFolder, path: "/packets" },
       { label: "Workflow", icon: MdAccountTree, path: "/workflow" },
+      { label: "Printing Schedule", icon: MdPrint, path: "/printing/schedule" },
       { label: "Courses", icon: MdSchool, path: "/courses" },
       { label: "Departments", icon: MdApartment, path: "/departments" },
       { label: "Reports", icon: MdBarChart, path: "/reports" },
@@ -49,6 +51,7 @@ export const sidebarMenus = {
       { label: "My Exam Packets", icon: MdFolder, path: "/packets" },
       { label: "Workflow Overview", icon: MdAccountTree, path: "/workflow" },
       { label: "Schedule & Deadlines", icon: MdEvent, path: "/lecturer/calendar" },
+      { label: "Printing Schedule", icon: MdPrint, path: "/printing/schedule" },
       { label: "Previous Records", icon: MdHistory, path: "/lecturer/previous" },
       { label: "Notifications", icon: MdNotifications, path: "/notifications" },
       { label: "Settings", icon: MdSettings, path: "/settings" },
@@ -79,6 +82,7 @@ export const sidebarMenus = {
       { label: "Departments", icon: MdApartment, path: "/departments" },
       { label: "Courses", icon: MdSchool, path: "/courses" },
       { label: "Packets", icon: MdFolder, path: "/packets" },
+      { label: "Printing Schedule", icon: MdPrint, path: "/printing/schedule" },
       { label: "Workflow", icon: MdAccountTree, path: "/workflow" },
       { label: "Reports", icon: MdBarChart, path: "/reports" },
       { label: "Notifications", icon: MdNotifications, path: "/notifications" },
