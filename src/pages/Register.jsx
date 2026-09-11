@@ -82,9 +82,8 @@ export default function Register() {
           onChange={(e) => setRole(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[#7c4dff]"
         >
-          <option value="ROLE_USER">Lecturer</option>
+          <option value="ROLE_USER">Lecturer (Teaching & Moderating)</option>
           <option value="ROLE_GUEST">Head of Department (HOD)</option>
-          <option value="ROLE_MODERATOR">Moderator</option>
           <option value="ROLE_ADMIN">Assistant Registrar (AR)</option>
           <option value="ROLE_SYSTEM_ADMIN">System Administrator (SystemAdmin)</option>
         </select>

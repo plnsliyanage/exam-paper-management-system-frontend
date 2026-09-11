@@ -6,8 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 const ROLE_OPTIONS = [
   { value: "ROLE_ADMIN", label: "Asst. Registrar (AR)" },
   { value: "ROLE_GUEST", label: "Head of Department (HOD)" },
-  { value: "ROLE_USER", label: "Lecturer" },
-  { value: "ROLE_MODERATOR", label: "Moderator" },
+  { value: "ROLE_USER", label: "Lecturer (Teaching & Moderating)" },
   { value: "ROLE_SYSTEM_ADMIN", label: "System Administrator (SystemAdmin)" },
 ];
 
