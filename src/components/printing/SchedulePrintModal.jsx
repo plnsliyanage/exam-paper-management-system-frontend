@@ -15,6 +15,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 
 const DEFAULT_LOCATION = "Exam Printing Center - Room 102";
 
@@ -51,6 +52,11 @@ export default function SchedulePrintModal({
   existingSchedule = null,
   onSuccess,
 }) {
+  const { getUsername, getRole } = useAuth();
+  const username = (getUsername() || "").toLowerCase();
+  const role = getRole();
+  const isStaff = role === "ROLE_USER" || role === "ROLE_MODERATOR";
+
   const isReschedule = !!existingSchedule;
   const todayDateStr = formatLocalDate(new Date());
   const tomorrow = new Date();
@@ -118,9 +124,21 @@ export default function SchedulePrintModal({
       setLoadingPackets(true);
       const res = await axiosInstance.get("/packets");
       const list = Array.isArray(res.data) ? res.data : [];
-      const eligible = list.filter(
-        (p) => p.status === "APPROVED" || p.status === "PRINTING" || p.status === "PRINTING_QUEUE"
-      );
+      const eligible = list.filter((p) => {
+        const isReady =
+          p.status === "APPROVED" ||
+          p.status === "PRINTING" ||
+          p.status === "PRINTING_QUEUE";
+        if (!isReady) return false;
+        if (isStaff) {
+          // Strict author-only course filtering for lecturer
+          const isAuthor =
+            (p.lecturerUsername && p.lecturerUsername.toLowerCase() === username) ||
+            (p.lecturerName && p.lecturerName.toLowerCase() === username);
+          return isAuthor;
+        }
+        return true;
+      });
       setApprovedPackets(eligible);
       if (eligible.length > 0 && !selectedPacket) {
         setSelectedPacket(eligible[0]);
@@ -322,47 +340,73 @@ const generateDefaultSlots = () => {
             </div>
           )}
 
-          {/* Packet Picker if opened standalone */}
+          {/* Course / Packet Selector Dropbox */}
           {!packet && !isReschedule && (
-            <div className="space-y-1.5 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-              <label className="font-bold text-slate-700 flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-[#7c4dff]" />
-                Select Exam Paper to Print
-              </label>
+            <div className="space-y-2.5 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                  <BookOpen className="w-3.5 h-3.5 text-[#7c4dff]" />
+                  Select Course for Printing Schedule
+                </label>
+                {isStaff && (
+                  <span className="text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100 font-semibold">
+                    Your Teaching Courses
+                  </span>
+                )}
+              </div>
+
               {loadingPackets ? (
-                <div className="py-2 text-slate-400 flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#7c4dff]" />
-                  <span>Loading approved exam papers...</span>
+                <div className="py-3 text-slate-400 flex items-center justify-center gap-2 bg-white rounded-xl border border-slate-200">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#7c4dff]" />
+                  <span>Loading relevant approved courses...</span>
                 </div>
               ) : approvedPackets.length === 0 ? (
-                <p className="text-amber-700 text-[11px] bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                  No approved packets found currently waiting for printing.
-                </p>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    {isStaff
+                      ? "No approved exam papers found for your assigned courses. Only approved exam papers for courses where you are the lecturer can be scheduled for printing."
+                      : "No approved exam packets found currently waiting for printing."}
+                  </span>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pt-1">
-                  {approvedPackets.map((p) => {
-                    const isPicked =
-                      (selectedPacket?.packetId || selectedPacket?.id) === (p.packetId || p.id);
-                    return (
-                      <div
-                        key={p.packetId || p.id}
-                        onClick={() => setSelectedPacket(p)}
-                        className={`p-2.5 rounded-xl border cursor-pointer transition flex items-center justify-between ${
-                          isPicked
-                            ? "bg-purple-50 border-[#7c4dff] text-[#7c4dff] font-bold shadow-xs"
-                            : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
-                        }`}
-                      >
-                        <div>
-                          <p className="text-xs font-bold">{p.courseCode}</p>
-                          <p className="text-[10px] text-slate-500 truncate max-w-[170px]">{p.courseName}</p>
-                        </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
-                          #{p.packetId}
-                        </span>
+                <div className="space-y-2">
+                  <select
+                    value={selectedPacket?.packetId || selectedPacket?.id || ""}
+                    onChange={(e) => {
+                      const picked = approvedPackets.find(
+                        (p) => String(p.packetId || p.id) === String(e.target.value)
+                      );
+                      setSelectedPacket(picked || null);
+                    }}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#7c4dff]/20 focus:border-[#7c4dff] transition cursor-pointer shadow-xs"
+                  >
+                    <option value="" disabled>
+                      -- Choose a Course ({approvedPackets.length} approved available) --
+                    </option>
+                    {approvedPackets.map((p) => (
+                      <option key={p.packetId || p.id} value={p.packetId || p.id}>
+                        {p.courseCode} — {p.courseName} (Packet #{p.packetId || p.id})
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedPacket && (
+                    <div className="p-3 bg-white border border-purple-100 rounded-xl flex items-center justify-between text-xs shadow-xs">
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-slate-800">
+                          {selectedPacket.courseCode} — {selectedPacket.courseName}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          Lecturer: <span className="text-slate-700 font-medium">{selectedPacket.lecturerName || "You"}</span>
+                          {selectedPacket.department ? ` · Dept: ${selectedPacket.department}` : ""}
+                        </p>
                       </div>
-                    );
-                  })}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Approved
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -484,13 +528,7 @@ const generateDefaultSlots = () => {
                       String(existingSchedule.startTime).substring(0, 5) ===
                         String(slot.startTime).substring(0, 5));
 
-                  const isAvailable =
-                    !isBooked ||
-                    isMyExistingSlot ||
-                    slot.isAvailable === true ||
-                    slot.available === true;
-
-                  const canSelect = isAvailable || isMyExistingSlot;
+                  const canSelect = !isBooked || isMyExistingSlot;
 
                   const isSelected =
                     selectedSlot &&
@@ -505,13 +543,13 @@ const generateDefaultSlots = () => {
                       type="button"
                       key={idx}
                       disabled={!canSelect}
-                      onClick={() => setSelectedSlot(slot)}
+                      onClick={() => canSelect && setSelectedSlot(slot)}
                       className={`p-2.5 rounded-xl border text-center font-semibold transition flex flex-col items-center justify-center gap-1 ${
                         isSelected
                           ? "bg-[#7c4dff] text-white border-[#7c4dff] shadow-md shadow-purple-200 ring-2 ring-purple-300"
                           : canSelect
                           ? "bg-emerald-50/60 text-emerald-800 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 cursor-pointer"
-                          : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
+                          : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60 pointer-events-none"
                       }`}
                       title={
                         !canSelect
@@ -526,6 +564,11 @@ const generateDefaultSlots = () => {
                       <span className="text-[10px] opacity-80">
                         to {slot.timeLabel?.split(" - ")[1] || slot.endTime}
                       </span>
+                      {!canSelect && (
+                        <span className="text-[9px] font-bold text-rose-500 truncate max-w-full">
+                          {slot.bookedCourseCode ? `Booked (${slot.bookedCourseCode})` : "Reserved"}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
