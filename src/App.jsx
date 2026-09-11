@@ -56,10 +56,7 @@ function SystemAdminRoute({ children }) {
 function RoleBasedDashboard() {
   const { getRole } = useAuth();
   const role = getRole();
-  if (role === "ROLE_MODERATOR") {
-    return <ModeratorDashboard />;
-  }
-  if (role === "ROLE_USER") {
+  if (role === "ROLE_MODERATOR" || role === "ROLE_USER") {
     return <LecturerDashboard />;
   }
   if (role === "ROLE_GUEST") {

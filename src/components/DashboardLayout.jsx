@@ -69,8 +69,8 @@ export default function DashboardLayout() {
   }, [fetchUnreadCount, location.pathname]);
 
   const subtitle =
-    location.pathname === "/dashboard" && role === "ROLE_MODERATOR"
-      ? "Moderator review workspace — Semester 2, 2026"
+    location.pathname === "/dashboard" && (role === "ROLE_USER" || role === "ROLE_MODERATOR")
+      ? "Lecturer & moderation workspace — Semester 2, 2026"
       : page.sub;
 
   return (
