@@ -56,12 +56,14 @@ export default function Packets() {
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [roleScope, setRoleScope] = useState("ALL"); // ALL | AUTHORED | MODERATING
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const { getRole } = useAuth();
+  const { getRole, getUsername } = useAuth();
   const role = getRole();
-  const isModerator = role === "ROLE_MODERATOR";
+  const currentUsername = (getUsername() || "").toLowerCase();
   const isSystemAdmin = role === "ROLE_SYSTEM_ADMIN";
+  const isLecturer = role === "ROLE_USER" || role === "ROLE_MODERATOR";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,6 +83,24 @@ export default function Packets() {
 
   useEffect(() => {
     let result = packets;
+
+    // Role scope filter for Lecturer/Academic staff
+    if (isLecturer && roleScope !== "ALL") {
+      if (roleScope === "AUTHORED") {
+        result = result.filter((p) => {
+          const lecUser = (p.lecturerUsername || "").toLowerCase();
+          const lecName = (p.lecturerName || "").toLowerCase();
+          return lecUser === currentUsername || lecName === currentUsername;
+        });
+      } else if (roleScope === "MODERATING") {
+        result = result.filter((p) => {
+          const modUser = (p.moderatorUsername || "").toLowerCase();
+          const modName = (p.moderatorName || "").toLowerCase();
+          return modUser === currentUsername || modName === currentUsername;
+        });
+      }
+    }
+
     if (statusFilter !== "ALL") {
       if (statusFilter === "MARKING COMPLETE" || statusFilter === "COMPLETED") {
         result = result.filter((p) => ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status));
@@ -101,11 +121,12 @@ export default function Packets() {
           p.packetId.toLowerCase().includes(q) ||
           p.courseCode.toLowerCase().includes(q) ||
           p.courseName.toLowerCase().includes(q) ||
-          p.lecturerName.toLowerCase().includes(q)
+          p.lecturerName.toLowerCase().includes(q) ||
+          (p.moderatorName && p.moderatorName.toLowerCase().includes(q))
       );
     }
     setFiltered(result);
-  }, [search, statusFilter, packets]);
+  }, [search, statusFilter, roleScope, packets, currentUsername, isLecturer]);
 
   const statusTabs = [
     "ALL",
@@ -176,8 +197,9 @@ export default function Packets() {
   const tableHeaders = [
     "Packet ID",
     "Course",
+    ...(isLecturer ? ["My Role"] : []),
     "Lecturer",
-    ...(isModerator ? [] : ["Moderator"]),
+    "Moderator",
     "Deadline",
     "Status",
     "Priority",
@@ -201,6 +223,39 @@ export default function Packets() {
 
   return (
     <div className="space-y-4">
+      {/* Role scope selector for Lecturer */}
+      {isLecturer && (
+        <div className="flex items-center gap-2 bg-purple-50/60 p-1.5 rounded-xl border border-purple-100 w-fit">
+          <button
+            onClick={() => setRoleScope("ALL")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${roleScope === "ALL"
+                ? "bg-[#7c4dff] text-white shadow-sm"
+                : "text-slate-600 hover:bg-white/80"
+              }`}
+          >
+            📚 All My Packets ({packets.length})
+          </button>
+          <button
+            onClick={() => setRoleScope("AUTHORED")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${roleScope === "AUTHORED"
+                ? "bg-[#7c4dff] text-white shadow-sm"
+                : "text-slate-600 hover:bg-white/80"
+              }`}
+          >
+            ✍️ Authored by Me (Teaching)
+          </button>
+          <button
+            onClick={() => setRoleScope("MODERATING")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${roleScope === "MODERATING"
+                ? "bg-[#7c4dff] text-white shadow-sm"
+                : "text-slate-600 hover:bg-white/80"
+              }`}
+          >
+            🔍 Assigned for Moderation (Review)
+          </button>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -294,6 +349,11 @@ export default function Packets() {
             ) : (
               filtered.map((p, index) => {
                 const numericId = p.id || parseInt(p.packetId.split("-")[2], 10);
+                const isAuthorOfPacket = (p.lecturerUsername && p.lecturerUsername.toLowerCase() === currentUsername) ||
+                                         (p.lecturerName && p.lecturerName.toLowerCase() === currentUsername);
+                const isModOfPacket = (p.moderatorUsername && p.moderatorUsername.toLowerCase() === currentUsername) ||
+                                      (p.moderatorName && p.moderatorName.toLowerCase() === currentUsername);
+
                 return (
                   <tr
                     key={p.id || p.packetId || index}
@@ -311,15 +371,29 @@ export default function Packets() {
                       <p className="text-xs text-gray-400">{p.courseName}</p>
                     </td>
 
+                    {isLecturer && (
+                      <td className="px-5 py-4">
+                        {isModOfPacket ? (
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 inline-flex items-center gap-1">
+                            🔍 Moderator
+                          </span>
+                        ) : isAuthorOfPacket ? (
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1">
+                            ✍️ Author
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                    )}
+
                     <td className="px-5 py-4 text-sm text-gray-600">
                       {p.lecturerName}
                     </td>
 
-                    {!isModerator && (
-                      <td className="px-5 py-4 text-sm text-gray-600">
-                        {p.moderatorName}
-                      </td>
-                    )}
+                    <td className="px-5 py-4 text-sm text-gray-600">
+                      {p.moderatorName || "Unassigned"}
+                    </td>
 
                     <td className="px-5 py-4">
                       <p

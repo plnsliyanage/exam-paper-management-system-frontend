@@ -446,17 +446,38 @@ export default function PacketDetail() {
               {/* ── ATTACHMENTS ── */}
               {activeTab === "attachments" && (
                 <div className="space-y-4">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#7c4dff] hover:bg-purple-50 transition">
-                    <p className="text-2xl mb-1">📎</p>
-                    <p className="text-sm font-medium text-gray-600">Click to upload file</p>
-                    <p className="text-xs text-gray-400 mt-1">PDF, Word, Images up to 10MB</p>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                      onChange={handleFileUpload}
-                    />
-                  </label>
+                  {(() => {
+                    const normUser = (username || "").toLowerCase();
+                    const isMod = (packet.moderatorUsername && packet.moderatorUsername.toLowerCase() === normUser) ||
+                                  (packet.moderatorName && packet.moderatorName.toLowerCase() === normUser);
+                    const isAuthor = (packet.lecturerUsername && packet.lecturerUsername.toLowerCase() === normUser) ||
+                                     (packet.lecturerName && packet.lecturerName.toLowerCase() === normUser);
+                    const isPrivileged = ["ROLE_ADMIN", "ROLE_SYSTEM_ADMIN", "ROLE_GUEST"].includes(role);
+                    const canUpload = isPrivileged || isAuthor;
+
+                    if (canUpload) {
+                      return (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#7c4dff] hover:bg-purple-50 transition">
+                          <p className="text-2xl mb-1">📎</p>
+                          <p className="text-sm font-medium text-gray-600">Click to upload exam file</p>
+                          <p className="text-xs text-gray-400 mt-1">PDF, Word, Images up to 10MB</p>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                            onChange={handleFileUpload}
+                          />
+                        </label>
+                      );
+                    }
+
+                    return (
+                      <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-center gap-2">
+                        <span className="text-base">ℹ️</span>
+                        <span>As the assigned moderator, you can review and download the exam attachments below. Exam papers are prepared and uploaded by the course author.</span>
+                      </div>
+                    );
+                  })()}
 
                   {tabLoading ? (
                     <p className="text-sm text-gray-400 text-center py-4">Loading...</p>
@@ -472,6 +493,12 @@ export default function PacketDetail() {
                           a.fileType?.includes("pdf") ? "📄" :
                             a.fileType?.includes("word") || a.fileType?.includes("document") ? "📝" :
                               a.fileType?.includes("image") ? "🖼" : "📎";
+                        const normUser = (username || "").toLowerCase();
+                        const isAuthor = (packet.lecturerUsername && packet.lecturerUsername.toLowerCase() === normUser) ||
+                                         (packet.lecturerName && packet.lecturerName.toLowerCase() === normUser);
+                        const isPrivileged = ["ROLE_ADMIN", "ROLE_SYSTEM_ADMIN", "ROLE_GUEST"].includes(role);
+                        const canDelete = isPrivileged || isAuthor;
+
                         return (
                           <div key={a.id} className="flex items-center gap-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition">
                             <span className="text-2xl">{icon}</span>
@@ -488,15 +515,17 @@ export default function PacketDetail() {
                                 rel="noreferrer"
                                 className="text-[#7c4dff] hover:underline text-sm font-medium"
                               >
-
                                 Download
                               </a>
-                              <button
-                                onClick={() => handleDeleteAttachment(a.id)}
-                                className="text-gray-300 hover:text-red-400 transition"
-                              >
-                                🗑
-                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteAttachment(a.id)}
+                                  className="text-gray-300 hover:text-red-400 transition cursor-pointer"
+                                  title="Delete attachment"
+                                >
+                                  🗑
+                                </button>
+                              )}
                             </div>
                           </div>
                         );
@@ -563,317 +592,345 @@ export default function PacketDetail() {
           {/* Update Status */}
           {canUpdateStatus && (
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Actions & Status</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Actions & Status</h3>
+
+              {/* Context Banner */}
+              {((packet.moderatorUsername && packet.moderatorUsername.toLowerCase() === (username || "").toLowerCase()) ||
+                (packet.moderatorName && packet.moderatorName.toLowerCase() === (username || "").toLowerCase()) ||
+                role === "ROLE_MODERATOR") ? (
+                <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 font-semibold flex items-center gap-1.5 mb-3">
+                  <span>🔍</span> You are the Assigned Peer Moderator
+                </div>
+              ) : ((packet.lecturerUsername && packet.lecturerUsername.toLowerCase() === (username || "").toLowerCase()) ||
+                   (packet.lecturerName && packet.lecturerName.toLowerCase() === (username || "").toLowerCase()) ||
+                   role === "ROLE_USER") ? (
+                <div className="p-2.5 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800 font-semibold flex items-center gap-1.5 mb-3">
+                  <span>✍️</span> You are the Course Lecturer (Author)
+                </div>
+              ) : null}
+
               <div className="space-y-3">
 
-                {/* ── Lecturer Controls ── */}
-                {role === "ROLE_USER" && (
-                  <>
-                    {packet.status === "PENDING" && (
-                      <div className="space-y-2">
-                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                          📌 Exam packet assigned to you. Click below to begin preparing the exam paper.
-                        </div>
-                        <button
-                          onClick={() => handleAction("DRAFT")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "DRAFT" ? <span className="animate-spin">⟳</span> : "✏️"} Start Drafting Paper
-                        </button>
-                      </div>
-                    )}
+                {/* ── Contextual Academic Staff Controls (ROLE_USER / ROLE_MODERATOR) ── */}
+                {(role === "ROLE_USER" || role === "ROLE_MODERATOR") && (
+                  (() => {
+                    const normUser = (username || "").toLowerCase();
+                    const isMod = (packet.moderatorUsername && packet.moderatorUsername.toLowerCase() === normUser) ||
+                                  (packet.moderatorName && packet.moderatorName.toLowerCase() === normUser) ||
+                                  role === "ROLE_MODERATOR";
 
-                    {packet.status === "DRAFT" && (
-                      <div className="space-y-2">
-                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
-                          📝 Drafting in progress. When questions & attachments are ready, submit for moderation.
-                        </div>
-                        <button
-                          onClick={() => handleAction("SUBMIT")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "SUBMIT" ? <span className="animate-spin">⟳</span> : "📤"} Submit for Moderation
-                        </button>
-                      </div>
-                    )}
-
-                    {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION") && (
-                      <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-center space-y-1">
-                        <span className="text-xl">📋</span>
-                        <p className="text-xs font-semibold text-purple-800">Submitted for Moderation</p>
-                        <p className="text-[11px] text-purple-600">Awaiting review and approval from the assigned moderator.</p>
-                      </div>
-                    )}
-
-                    {packet.status === "REJECTED" && (
-                      <div className="space-y-3">
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-1">
-                          <p className="font-semibold flex items-center gap-1">⚠️ Paper Returned for Revision</p>
-                          {packet.moderatorNote && (
-                            <p className="text-red-700 bg-white/70 p-2 rounded border border-red-200 mt-1 italic">
-                              "{packet.moderatorNote}"
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAction("DRAFT")}
-                            disabled={!!actionLoading}
-                            className="flex-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-amber-100 transition disabled:opacity-50"
-                          >
-                            ✏️ Edit Draft
-                          </button>
-                          <button
-                            onClick={() => handleAction("SUBMIT")}
-                            disabled={!!actionLoading}
-                            className="flex-1 bg-[#7c4dff] text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-[#6c3ce8] transition disabled:opacity-50"
-                          >
-                            📤 Resubmit
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {packet.status === "APPROVED" && (
-                      <div className="space-y-3">
-                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
-                          🎉 Exam paper approved by moderator! Schedule a printing slot before printing papers.
-                        </div>
-
-                        {/* Printing appointment card if booked */}
-                        {printSchedule ? (
-                          <div className="p-3.5 bg-purple-50/80 border border-purple-200 rounded-xl space-y-2 text-xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                                <Printer className="w-3.5 h-3.5 text-[#7c4dff]" />
-                                Printing Appointment
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-[#7c4dff] border border-purple-200">
-                                {printSchedule.status}
-                              </span>
+                    if (isMod) {
+                      // ── MODERATOR CONTROLS ──
+                      return (
+                        <>
+                          {(packet.status === "PENDING" || packet.status === "DRAFT") && (
+                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1">
+                              <span className="text-xl">⏳</span>
+                              <p className="text-xs font-semibold text-slate-700">Drafting in Progress</p>
+                              <p className="text-[11px] text-slate-500">
+                                The assigned author ({packet.lecturerName}) is preparing the draft paper. You will be able to review and decide once submitted.
+                              </p>
                             </div>
-                            <p className="text-slate-600 flex items-center gap-1 font-medium">
-                              <Calendar className="w-3 h-3 text-[#7c4dff]" />
-                              {printSchedule.scheduleDate} ({printSchedule.timeLabel})
-                            </p>
-                            <p className="text-slate-500 text-[11px] flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-slate-400" />
-                              {printSchedule.location} • {printSchedule.copies || 50} Copies
-                            </p>
-                            <div className="flex items-center gap-2 pt-1 border-t border-purple-100">
+                          )}
+
+                          {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION") && (
+                            <div className="space-y-2">
+                              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800 font-medium">
+                                📋 Paper submitted for your review. Please evaluate questions and make your decision.
+                              </div>
                               <button
-                                type="button"
-                                onClick={() => setIsPrintModalOpen(true)}
-                                className="text-[#7c4dff] hover:text-[#6c3de8] font-bold text-[11px] underline"
+                                onClick={() => handleAction("APPROVE")}
+                                disabled={!!actionLoading}
+                                className="w-full bg-emerald-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
                               >
-                                Reschedule
+                                {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Exam Paper
                               </button>
-                              <span className="text-slate-300">•</span>
                               <button
-                                type="button"
-                                onClick={() => handleCancelPrintSlot(printSchedule.scheduleId)}
-                                className="text-rose-600 hover:text-rose-700 font-bold text-[11px] underline"
+                                onClick={() => setNoteModal("REJECT")}
+                                disabled={!!actionLoading}
+                                className="w-full bg-rose-50 text-rose-700 border border-rose-200 rounded-xl py-3 text-sm font-semibold hover:bg-rose-100 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                               >
-                                Cancel Slot
+                                ✕ Reject / Request Revision
+                              </button>
+                            </div>
+                          )}
+
+                          {packet.status === "APPROVED" && (
+                            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-1">
+                              <span className="text-xl">✓</span>
+                              <p className="text-xs font-semibold text-emerald-800">You Approved This Paper</p>
+                              <p className="text-[11px] text-emerald-600">The paper has cleared moderation and moved to printing.</p>
+                            </div>
+                          )}
+
+                          {packet.status === "REJECTED" && (
+                            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-center space-y-1">
+                              <span className="text-xl">⚠️</span>
+                              <p className="text-xs font-semibold text-rose-800">Paper Returned for Revision</p>
+                              <p className="text-[11px] text-rose-600">Waiting for lecturer to revise and resubmit.</p>
+                            </div>
+                          )}
+
+                          {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE" || packet.status === "PAPERS STORED" || packet.status === "ANSWER SHEETS TAKEN" || packet.status === "MARKING" || packet.status === "MARKING COMPLETE" || packet.status === "COMPLETED") && (
+                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1">
+                              <p className="text-xs font-semibold text-slate-700">Stage: {statusLabels[packet.status] || packet.status}</p>
+                              <p className="text-[11px] text-slate-500">Post-moderation exam lifecycle in progress.</p>
+                            </div>
+                          )}
+                        </>
+                      );
+                    }
+
+                    // ── AUTHOR (LECTURER) CONTROLS ──
+                    return (
+                      <>
+                        {packet.status === "PENDING" && (
+                          <div className="space-y-2">
+                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                              📌 Exam packet assigned to you. Click below to begin preparing the exam paper.
+                            </div>
+                            <button
+                              onClick={() => handleAction("DRAFT")}
+                              disabled={!!actionLoading}
+                              className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                            >
+                              {actionLoading === "DRAFT" ? <span className="animate-spin">⟳</span> : "✏️"} Start Drafting Paper
+                            </button>
+                          </div>
+                        )}
+
+                        {packet.status === "DRAFT" && (
+                          <div className="space-y-2">
+                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
+                              📝 Drafting in progress. When questions & attachments are ready, submit for moderation.
+                            </div>
+                            <button
+                              onClick={() => handleAction("SUBMIT")}
+                              disabled={!!actionLoading}
+                              className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                            >
+                              {actionLoading === "SUBMIT" ? <span className="animate-spin">⟳</span> : "📤"} Submit for Moderation
+                            </button>
+                          </div>
+                        )}
+
+                        {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION") && (
+                          <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-center space-y-1">
+                            <span className="text-xl">📋</span>
+                            <p className="text-xs font-semibold text-purple-800">Submitted for Moderation</p>
+                            <p className="text-[11px] text-purple-600">Awaiting review and approval from moderator ({packet.moderatorName || "Assigned Moderator"}).</p>
+                          </div>
+                        )}
+
+                        {packet.status === "REJECTED" && (
+                          <div className="space-y-3">
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-1">
+                              <p className="font-semibold flex items-center gap-1">⚠️ Paper Returned for Revision</p>
+                              {packet.moderatorNote && (
+                                <p className="text-red-700 bg-white/70 p-2 rounded border border-red-200 mt-1 italic">
+                                  "{packet.moderatorNote}"
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleAction("DRAFT")}
+                                disabled={!!actionLoading}
+                                className="flex-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl py-2.5 text-xs font-semibold hover:bg-amber-100 transition disabled:opacity-50 cursor-pointer"
+                              >
+                                ✏️ Edit Draft
+                              </button>
+                              <button
+                                onClick={() => handleAction("SUBMIT")}
+                                disabled={!!actionLoading}
+                                className="flex-1 bg-[#7c4dff] text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-[#6c3ce8] transition disabled:opacity-50 cursor-pointer"
+                              >
+                                📤 Resubmit
                               </button>
                             </div>
                           </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setIsPrintModalOpen(true)}
-                            className="w-full bg-[#7c4dff] hover:bg-[#6c3de8] text-white rounded-xl py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                          >
-                            📅 Schedule Printing Slot (Required)
-                          </button>
                         )}
 
-                        {printSchedule && (
-                          <button
-                            onClick={() => {
-                              window.print();
-                              handleAction("PRINT");
-                            }}
-                            disabled={!!actionLoading}
-                            className="w-full bg-emerald-600 text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                          >
-                            {actionLoading === "PRINT" ? <span className="animate-spin">⟳</span> : "🖨️"} Proceed to Print Paper
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
-                      <div className="space-y-3">
-                        {/* Printing appointment card */}
-                        {printSchedule && (
-                          <div className="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-2 text-xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                                <Printer className="w-3.5 h-3.5 text-indigo-600" />
-                                Printing Slot Details
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
-                                {printSchedule.status}
-                              </span>
+                        {packet.status === "APPROVED" && (
+                          <div className="space-y-3">
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
+                              🎉 Exam paper approved by moderator! Schedule a printing slot before printing papers.
                             </div>
-                            <p className="text-slate-600 flex items-center gap-1 font-medium">
-                              <Calendar className="w-3 h-3 text-indigo-600" />
-                              {printSchedule.scheduleDate} ({printSchedule.timeLabel})
-                            </p>
-                            <p className="text-slate-500 text-[11px] flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-slate-400" />
-                              {printSchedule.location} • {printSchedule.copies || 50} Copies
-                            </p>
-                            {printSchedule.status === "SCHEDULED" && (
-                              <div className="flex items-center gap-2 pt-1 border-t border-indigo-100">
-                                <button
-                                  type="button"
-                                  onClick={() => setIsPrintModalOpen(true)}
-                                  className="text-indigo-600 hover:text-indigo-700 font-bold text-[11px] underline"
-                                >
-                                  Reschedule
-                                </button>
-                                <span className="text-slate-300">•</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCancelPrintSlot(printSchedule.scheduleId)}
-                                  className="text-rose-600 hover:text-rose-700 font-bold text-[11px] underline"
-                                >
-                                  Cancel Slot
-                                </button>
+
+                            {/* Printing appointment card if booked */}
+                            {printSchedule ? (
+                              <div className="p-3.5 bg-purple-50/80 border border-purple-200 rounded-xl space-y-2 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                    <Printer className="w-3.5 h-3.5 text-[#7c4dff]" />
+                                    Printing Appointment
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-[#7c4dff] border border-purple-200">
+                                    {printSchedule.status}
+                                  </span>
+                                </div>
+                                <p className="text-slate-600 flex items-center gap-1 font-medium">
+                                  <Calendar className="w-3 h-3 text-[#7c4dff]" />
+                                  {printSchedule.scheduleDate} ({printSchedule.timeLabel})
+                                </p>
+                                <p className="text-slate-500 text-[11px] flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-slate-400" />
+                                  {printSchedule.location} • {printSchedule.copies || 50} Copies
+                                </p>
+                                <div className="flex items-center gap-2 pt-1 border-t border-purple-100">
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsPrintModalOpen(true)}
+                                    className="text-[#7c4dff] hover:text-[#6c3de8] font-bold text-[11px] underline cursor-pointer"
+                                  >
+                                    Reschedule
+                                  </button>
+                                  <span className="text-slate-300">•</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCancelPrintSlot(printSchedule.scheduleId)}
+                                    className="text-rose-600 hover:text-rose-700 font-bold text-[11px] underline cursor-pointer"
+                                  >
+                                    Cancel Slot
+                                  </button>
+                                </div>
                               </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setIsPrintModalOpen(true)}
+                                className="w-full bg-[#7c4dff] hover:bg-[#6c3de8] text-white rounded-xl py-3 text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                              >
+                                📅 Schedule Printing Slot (Required)
+                              </button>
+                            )}
+
+                            {printSchedule && (
+                              <button
+                                onClick={() => {
+                                  window.print();
+                                  handleAction("PRINT");
+                                }}
+                                disabled={!!actionLoading}
+                                className="w-full bg-emerald-600 text-white rounded-xl py-2.5 text-xs font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                              >
+                                {actionLoading === "PRINT" ? <span className="animate-spin">⟳</span> : "🖨️"} Proceed to Print Paper
+                              </button>
                             )}
                           </div>
                         )}
 
-                        <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-800">
-                          🖨️ Exam paper is in printing stage. Once printing is complete, store the papers in secure custody.
-                        </div>
-                        <button
-                          onClick={() => handleAction("PAPERS_STORED")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-cyan-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-cyan-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "PAPERS_STORED" ? <span className="animate-spin">⟳</span> : "📦"} Store Printed Papers
-                        </button>
-                      </div>
-                    )}
+                        {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE") && (
+                          <div className="space-y-3">
+                            {printSchedule && (
+                              <div className="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-2 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                    <Printer className="w-3.5 h-3.5 text-indigo-600" />
+                                    Printing Slot Details
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                    {printSchedule.status}
+                                  </span>
+                                </div>
+                                <p className="text-slate-600 flex items-center gap-1 font-medium">
+                                  <Calendar className="w-3 h-3 text-indigo-600" />
+                                  {printSchedule.scheduleDate} ({printSchedule.timeLabel})
+                                </p>
+                                <p className="text-slate-500 text-[11px] flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-slate-400" />
+                                  {printSchedule.location} • {printSchedule.copies || 50} Copies
+                                </p>
+                                {printSchedule.status === "SCHEDULED" && (
+                                  <div className="flex items-center gap-2 pt-1 border-t border-indigo-100">
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsPrintModalOpen(true)}
+                                      className="text-indigo-600 hover:text-indigo-700 font-bold text-[11px] underline cursor-pointer"
+                                    >
+                                      Reschedule
+                                    </button>
+                                    <span className="text-slate-300">•</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCancelPrintSlot(printSchedule.scheduleId)}
+                                      className="text-rose-600 hover:text-rose-700 font-bold text-[11px] underline cursor-pointer"
+                                    >
+                                      Cancel Slot
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
-                    {packet.status === "PAPERS STORED" && (
-                      <div className="space-y-2">
-                        <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-xl text-xs text-cyan-800">
-                          📦 Printed exam papers are safely stored in custody awaiting the exam. After the exam is conducted, retrieve the student answer scripts from the store.
-                        </div>
-                        <button
-                          onClick={() => handleAction("ANSWER_SHEETS_TAKEN")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-orange-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-orange-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "ANSWER_SHEETS_TAKEN" ? <span className="animate-spin">⟳</span> : "📑"} Take Answer Sheets from Store
-                        </button>
-                      </div>
-                    )}
+                            <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-800">
+                              🖨️ Exam paper is in printing stage. Once printing is complete, store the papers in secure custody.
+                            </div>
+                            <button
+                              onClick={() => handleAction("PAPERS_STORED")}
+                              disabled={!!actionLoading}
+                              className="w-full bg-cyan-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-cyan-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                            >
+                              {actionLoading === "PAPERS_STORED" ? <span className="animate-spin">⟳</span> : "📦"} Store Printed Papers
+                            </button>
+                          </div>
+                        )}
 
-                    {packet.status === "ANSWER SHEETS TAKEN" && (
-                      <div className="space-y-2">
-                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-800">
-                          📑 Answer sheets have been retrieved from storage. Click below to begin evaluating and marking.
-                        </div>
-                        <button
-                          onClick={() => handleAction("MARKING")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-purple-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "MARKING" ? <span className="animate-spin">⟳</span> : "✏️"} Start Marking Answer Sheets
-                        </button>
-                      </div>
-                    )}
+                        {packet.status === "PAPERS STORED" && (
+                          <div className="space-y-2">
+                            <div className="p-3 bg-cyan-50 border border-cyan-200 rounded-xl text-xs text-cyan-800">
+                              📦 Printed exam papers are safely stored in custody awaiting the exam. After the exam is conducted, retrieve the student answer scripts from the store.
+                            </div>
+                            <button
+                              onClick={() => handleAction("ANSWER_SHEETS_TAKEN")}
+                              disabled={!!actionLoading}
+                              className="w-full bg-orange-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-orange-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                            >
+                              {actionLoading === "ANSWER_SHEETS_TAKEN" ? <span className="animate-spin">⟳</span> : "📑"} Take Answer Sheets from Store
+                            </button>
+                          </div>
+                        )}
 
-                    {packet.status === "MARKING" && (
-                      <div className="space-y-2">
-                        <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800">
-                          ✏️ Answer sheet marking is in progress. Once marking is finalized, store the mark sheets securely in the department.
-                        </div>
-                        <button
-                          onClick={() => handleAction("MARKING_COMPLETE")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-teal-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "MARKING_COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Finish Marking & Store Mark Sheets
-                        </button>
-                      </div>
-                    )}
+                        {packet.status === "ANSWER SHEETS TAKEN" && (
+                          <div className="space-y-2">
+                            <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-800">
+                              📑 Answer sheets have been retrieved from storage. Click below to begin evaluating and marking.
+                            </div>
+                            <button
+                              onClick={() => handleAction("MARKING")}
+                              disabled={!!actionLoading}
+                              className="w-full bg-purple-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                            >
+                              {actionLoading === "MARKING" ? <span className="animate-spin">⟳</span> : "✏️"} Start Marking Answer Sheets
+                            </button>
+                          </div>
+                        )}
 
-                    {(packet.status === "MARKING COMPLETE" || packet.status === "COMPLETED") && (
-                      <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-center space-y-1">
-                        <span className="text-xl">✅</span>
-                        <p className="text-xs font-semibold text-teal-800">Marking Complete & Stored</p>
-                        <p className="text-[11px] text-teal-600">All examination workflow stages, marking, and custody storage finalized.</p>
-                      </div>
-                    )}
-                  </>
-                )}
+                        {packet.status === "MARKING" && (
+                          <div className="space-y-2">
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800">
+                              ✏️ Answer sheet marking is in progress. Once marking is finalized, store the mark sheets securely in the department.
+                            </div>
+                            <button
+                              onClick={() => handleAction("MARKING_COMPLETE")}
+                              disabled={!!actionLoading}
+                              className="w-full bg-teal-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                            >
+                              {actionLoading === "MARKING_COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Finish Marking & Store Mark Sheets
+                            </button>
+                          </div>
+                        )}
 
-                {/* ── Moderator Controls ── */}
-                {role === "ROLE_MODERATOR" && (
-                  <>
-                    {(packet.status === "PENDING" || packet.status === "DRAFT") && (
-                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1">
-                        <span className="text-xl">⏳</span>
-                        <p className="text-xs font-semibold text-slate-700">Drafting in Progress</p>
-                        <p className="text-[11px] text-slate-500">
-                          The assigned lecturer is preparing the draft paper. You will be able to review and approve once submitted.
-                        </p>
-                      </div>
-                    )}
-
-                    {(packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION") && (
-                      <div className="space-y-2">
-                        <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800 font-medium">
-                          📋 Paper submitted for your review. Please evaluate questions and make your decision.
-                        </div>
-                        <button
-                          onClick={() => handleAction("APPROVE")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-emerald-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
-                        >
-                          {actionLoading === "APPROVE" ? <span className="animate-spin">⟳</span> : "✓"} Approve Exam Paper
-                        </button>
-                        <button
-                          onClick={() => setNoteModal("REJECT")}
-                          disabled={!!actionLoading}
-                          className="w-full bg-rose-50 text-rose-700 border border-rose-200 rounded-xl py-3 text-sm font-semibold hover:bg-rose-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          ✕ Reject / Request Revision
-                        </button>
-                      </div>
-                    )}
-
-                    {packet.status === "APPROVED" && (
-                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-1">
-                        <span className="text-xl">✓</span>
-                        <p className="text-xs font-semibold text-emerald-800">You Approved This Paper</p>
-                        <p className="text-[11px] text-emerald-600">The paper has cleared moderation and moved to printing.</p>
-                      </div>
-                    )}
-
-                    {packet.status === "REJECTED" && (
-                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-center space-y-1">
-                        <span className="text-xl">⚠️</span>
-                        <p className="text-xs font-semibold text-rose-800">Paper Rejected</p>
-                        <p className="text-[11px] text-rose-600">Waiting for lecturer to revise and resubmit.</p>
-                      </div>
-                    )}
-
-                    {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE" || packet.status === "COMPLETED") && (
-                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1">
-                        <p className="text-xs font-semibold text-slate-700">Stage: {statusLabels[packet.status] || packet.status}</p>
-                      </div>
-                    )}
-                  </>
+                        {(packet.status === "MARKING COMPLETE" || packet.status === "COMPLETED") && (
+                          <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-center space-y-1">
+                            <span className="text-xl">✅</span>
+                            <p className="text-xs font-semibold text-teal-800">Marking Complete & Stored</p>
+                            <p className="text-[11px] text-teal-600">All examination workflow stages, marking, and custody storage finalized.</p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()
                 )}
 
                 {/* ── System Admin Full Lifecycle Controls ── */}

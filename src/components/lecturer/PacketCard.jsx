@@ -9,13 +9,16 @@ import {
   Check,
   Send,
   Clock,
+  CheckCheck,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const statusConfig = {
   PENDING: { label: "Pending Start", bg: "bg-amber-50 text-amber-800 border-amber-200" },
   DRAFT: { label: "Drafting", bg: "bg-blue-50 text-blue-800 border-blue-200" },
   SUBMITTED: { label: "In Moderation", bg: "bg-purple-50 text-purple-800 border-purple-200" },
   UNDER_MODERATION: { label: "In Moderation", bg: "bg-purple-50 text-purple-800 border-purple-200" },
+  SUBMITTED_FOR_MODERATION: { label: "In Moderation", bg: "bg-purple-50 text-purple-800 border-purple-200" },
   APPROVED: { label: "Approved (Print)", bg: "bg-emerald-50 text-emerald-800 border-emerald-200" },
   REJECTED: { label: "Revision Needed", bg: "bg-rose-50 text-rose-800 border-rose-200" },
   PRINTING: { label: "Printing", bg: "bg-indigo-50 text-indigo-800 border-indigo-200" },
@@ -39,6 +42,14 @@ export default function PacketCard({
   onSubmitPacket,
   onOpenSchedulePrint,
 }) {
+  const { getUsername } = useAuth();
+  const currentUsername = (getUsername() || "").toLowerCase();
+  const isModOfPacket = (packet.moderatorUsername && packet.moderatorUsername.toLowerCase() === currentUsername) ||
+                        (packet.moderatorName && packet.moderatorName.toLowerCase() === currentUsername);
+  const isAuthorOfPacket = (packet.lecturerUsername && packet.lecturerUsername.toLowerCase() === currentUsername) ||
+                           (packet.lecturerName && packet.lecturerName.toLowerCase() === currentUsername) ||
+                           !isModOfPacket;
+
   const statusKey = (packet.status || "").toUpperCase();
   const isCompleted = statusKey === "COMPLETED" || statusKey === "MARKING COMPLETE" || statusKey === "MARKING_COMPLETE";
   const isPending = statusKey === "PENDING";
@@ -49,41 +60,8 @@ export default function PacketCard({
   const isStored = statusKey === "PAPERS STORED" || statusKey === "PAPERS_STORED";
   const isSheetsTaken = statusKey === "ANSWER SHEETS TAKEN" || statusKey === "ANSWER_SHEETS_TAKEN";
   const isMarking = statusKey === "MARKING";
-  const isSubmitted = statusKey === "SUBMITTED" || statusKey === "UNDER_MODERATION";
+  const isSubmitted = statusKey === "SUBMITTED" || statusKey === "UNDER_MODERATION" || statusKey === "SUBMITTED_FOR_MODERATION";
   const statusInfo = statusConfig[packet.status] || statusConfig[statusKey] || { label: packet.status || "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200" };
-
-  const renderTaskBadge = (taskType) => {
-    switch (taskType) {
-      case "SET_PAPER":
-        return (
-          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 flex items-center gap-1 w-fit">
-            <FileText className="w-3 h-3" />
-            Paper Setting
-          </span>
-        );
-      case "MARK_SCRIPTS":
-        return (
-          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1 w-fit">
-            <CheckSquare className="w-3 h-3" />
-            Script Marking
-          </span>
-        );
-      case "MODERATION":
-        return (
-          <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 flex items-center gap-1 w-fit">
-            <ShieldCheck className="w-3 h-3" />
-            Moderation
-          </span>
-        );
-      default:
-        return (
-          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 flex items-center gap-1 w-fit">
-            <FileText className="w-3 h-3" />
-            Paper Setting
-          </span>
-        );
-    }
-  };
 
   return (
     <div
@@ -94,7 +72,7 @@ export default function PacketCard({
             : isApproved
               ? "border-emerald-100 bg-emerald-50/10"
               : isSubmitted
-                ? "border-purple-100 bg-purple-50/10"
+                ? isModOfPacket ? "border-purple-300 bg-purple-50/30 ring-1 ring-purple-200" : "border-purple-100 bg-purple-50/10"
                 : isStored
                   ? "border-cyan-100 bg-cyan-50/10"
                   : isSheetsTaken
@@ -114,7 +92,18 @@ export default function PacketCard({
             {packet.packetId}
           </span>
 
-          {renderTaskBadge(packet.taskType)}
+          {/* Context Role Badge */}
+          {isModOfPacket ? (
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 flex items-center gap-1 w-fit">
+              <ShieldCheck className="w-3 h-3 text-blue-600" />
+              Moderator
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 flex items-center gap-1 w-fit">
+              <FileText className="w-3 h-3 text-purple-600" />
+              Author (Lecturer)
+            </span>
+          )}
 
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${statusInfo.bg}`}>
             {isCompleted ? <CheckCircle2 className="w-3 h-3" /> : isSubmitted ? <Clock className="w-3 h-3" /> : null}
@@ -127,9 +116,13 @@ export default function PacketCard({
         </h3>
 
         <p className="text-xs text-slate-400">
-          Moderator: <span className="text-slate-600 font-medium">{packet.moderatorName || "Not assigned"}</span>
+          {isModOfPacket ? (
+            <>Author: <span className="text-slate-700 font-medium">{packet.lecturerName || "Unassigned"}</span></>
+          ) : (
+            <>Moderator: <span className="text-slate-700 font-medium">{packet.moderatorName || "Unassigned"}</span></>
+          )}
           {" | "}Deadline: <span className={packet.overdue ? "text-red-500 font-semibold" : "text-slate-600"}>{packet.deadline || "N/A"}</span>
-          {packet.taskType === "MARK_SCRIPTS" && (
+          {packet.taskType === "MARK_SCRIPTS" && isAuthorOfPacket && (
             <>
               {" | "}Scripts:{" "}
               <span className="font-bold text-amber-600">
@@ -149,103 +142,138 @@ export default function PacketCard({
           <Eye className="w-4 h-4" />
         </button>
 
-        {packet.taskType === "MARK_SCRIPTS" && !isCompleted && (
-          <button
-            onClick={() => onOpenMarking(packet)}
-            title="Enter Marks"
-            className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors cursor-pointer"
-          >
-            <Edit3 className="w-4 h-4" />
-          </button>
-        )}
-
-        {isPending ? (
-          <button
-            onClick={() => onCompleteTask(packet.packetId || packet.id, "DRAFT")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
-            title="Start Drafting Exam Paper"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            Start Draft
-          </button>
-        ) : isDraft ? (
-          <button
-            onClick={() => onSubmitPacket ? onSubmitPacket(packet.packetId || packet.id) : onCompleteTask(packet.packetId || packet.id, "SUBMIT")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
-            title="Submit Exam Paper for Moderation"
-          >
-            <Send className="w-3.5 h-3.5" />
-            Submit
-          </button>
-        ) : isRejected ? (
-          <button
-            onClick={() => onCompleteTask(packet.packetId || packet.id, "DRAFT")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-rose-600 text-white hover:bg-rose-700 shadow-sm transition-colors cursor-pointer text-xs"
-            title="Revise Draft"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            Revise Draft
-          </button>
-        ) : isApproved ? (
-          <button
-            onClick={() => onOpenSchedulePrint ? onOpenSchedulePrint(packet) : onSelectDetail(packet.packetId || packet.id)}
-            className="px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
-            title="Book 30-minute Printing Slot"
-          >
-            📅 Book Print Slot
-          </button>
-        ) : isPrinting ? (
-          <div className="flex items-center gap-1.5">
+        {/* ── MODERATOR SPECIFIC ACTIONS ── */}
+        {isModOfPacket ? (
+          isSubmitted ? (
             <button
-              onClick={() => onOpenSchedulePrint ? onOpenSchedulePrint(packet) : onSelectDetail(packet.packetId || packet.id)}
-              className="px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-purple-50 text-[#7c4dff] border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer text-xs"
-              title="View or Reschedule Printing Slot"
+              onClick={() => onSelectDetail(packet.packetId || packet.id)}
+              className="px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-purple-600 text-white hover:bg-purple-700 shadow-sm transition-colors cursor-pointer text-xs animate-pulse"
+              title="Review Exam Paper & Approve/Reject"
             >
-              📅 Slot Info
+              <CheckCheck className="w-3.5 h-3.5" />
+              Review & Decide
             </button>
-            <button
-              onClick={() => onCompleteTask(packet.packetId || packet.id, "PAPERS_STORED")}
-              className="px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm transition-colors cursor-pointer text-xs"
-              title="Store Printed Papers in Safe Custody"
-            >
-              📦 Store Papers
-            </button>
-          </div>
-        ) : isStored ? (
-          <button
-            onClick={() => onCompleteTask(packet.packetId || packet.id, "ANSWER_SHEETS_TAKEN")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-orange-600 text-white hover:bg-orange-700 shadow-sm transition-colors cursor-pointer text-xs"
-            title="Take Answer Sheets from Store"
-          >
-            📑 Take Answer Sheets
-          </button>
-        ) : isSheetsTaken ? (
-          <button
-            onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-violet-600 text-white hover:bg-violet-700 shadow-sm transition-colors cursor-pointer text-xs"
-            title="Start Marking Answer Sheets"
-          >
-            ✏️ Start Marking
-          </button>
-        ) : isMarking ? (
-          <button
-            onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING_COMPLETE")}
-            className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-colors cursor-pointer text-xs"
-            title="Finish Marking & Store Mark Sheets"
-          >
-            <Check className="w-3 h-3" />
-            Complete Marking
-          </button>
-        ) : isCompleted ? (
-          <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-teal-100 text-teal-800 text-xs">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Completed
-          </span>
+          ) : isApproved ? (
+            <span className="px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Approved by You
+            </span>
+          ) : isDraft || isPending ? (
+            <span className="px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 bg-slate-50 text-slate-500 border border-slate-200 text-xs">
+              <Clock className="w-3 h-3" />
+              Author Preparing
+            </span>
+          ) : isRejected ? (
+            <span className="px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 text-xs">
+              Awaiting Revision
+            </span>
+          ) : (
+            <span className="px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 bg-slate-100 text-slate-700 text-xs">
+              {statusInfo.label}
+            </span>
+          )
         ) : (
-          <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-purple-100 text-purple-800 text-xs">
-            <Clock className="w-3.5 h-3.5" />
-            In Moderation
-          </span>
+          /* ── AUTHOR SPECIFIC ACTIONS ── */
+          <>
+            {packet.taskType === "MARK_SCRIPTS" && !isCompleted && (
+              <button
+                onClick={() => onOpenMarking(packet)}
+                title="Enter Marks"
+                className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors cursor-pointer"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+            )}
+
+            {isPending ? (
+              <button
+                onClick={() => onCompleteTask(packet.packetId || packet.id, "DRAFT")}
+                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
+                title="Start Drafting Exam Paper"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                Start Draft
+              </button>
+            ) : isDraft ? (
+              <button
+                onClick={() => onSubmitPacket ? onSubmitPacket(packet.packetId || packet.id) : onCompleteTask(packet.packetId || packet.id, "SUBMIT")}
+                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
+                title="Submit Exam Paper for Moderation"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Submit
+              </button>
+            ) : isRejected ? (
+              <button
+                onClick={() => onCompleteTask(packet.packetId || packet.id, "DRAFT")}
+                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-rose-600 text-white hover:bg-rose-700 shadow-sm transition-colors cursor-pointer text-xs"
+                title="Revise Draft"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                Revise Draft
+              </button>
+            ) : isApproved ? (
+              <button
+                onClick={() => onOpenSchedulePrint ? onOpenSchedulePrint(packet) : onSelectDetail(packet.packetId || packet.id)}
+                className="px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
+                title="Book 30-minute Printing Slot"
+              >
+                📅 Book Print Slot
+              </button>
+            ) : isPrinting ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onOpenSchedulePrint ? onOpenSchedulePrint(packet) : onSelectDetail(packet.packetId || packet.id)}
+                  className="px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-purple-50 text-[#7c4dff] border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer text-xs"
+                  title="View or Reschedule Printing Slot"
+                >
+                  📅 Slot Info
+                </button>
+                <button
+                  onClick={() => onCompleteTask(packet.packetId || packet.id, "PAPERS_STORED")}
+                  className="px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-cyan-600 text-white hover:bg-cyan-700 shadow-sm transition-colors cursor-pointer text-xs"
+                  title="Store Printed Papers in Safe Custody"
+                >
+                  📦 Store Papers
+                </button>
+              </div>
+            ) : isStored ? (
+              <button
+                onClick={() => onCompleteTask(packet.packetId || packet.id, "ANSWER_SHEETS_TAKEN")}
+                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-orange-600 text-white hover:bg-orange-700 shadow-sm transition-colors cursor-pointer text-xs"
+                title="Take Answer Sheets from Store"
+              >
+                📑 Take Answer Sheets
+              </button>
+            ) : isSheetsTaken ? (
+              <button
+                onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING")}
+                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-violet-600 text-white hover:bg-violet-700 shadow-sm transition-colors cursor-pointer text-xs"
+                title="Start Marking Answer Sheets"
+              >
+                ✏️ Start Marking
+              </button>
+            ) : isMarking ? (
+              <button
+                onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING_COMPLETE")}
+                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-colors cursor-pointer text-xs"
+                title="Finish Marking & Store Mark Sheets"
+              >
+                <Check className="w-3 h-3" />
+                Complete Marking
+              </button>
+            ) : isCompleted ? (
+              <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-teal-100 text-teal-800 text-xs">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Completed
+              </span>
+            ) : (
+              <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-purple-100 text-purple-800 text-xs">
+                <Clock className="w-3.5 h-3.5" />
+                In Moderation
+              </span>
+            )}
+          </>
         )}
       </div>
     </div>

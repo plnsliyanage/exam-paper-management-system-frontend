@@ -105,11 +105,19 @@ export default function PacketDetailModal({
     }
   };
 
-  const handleStatusAction = async (action) => {
+  const handleStatusAction = async (action, note = "") => {
     try {
       setActionLoading(true);
-      await axiosInstance.put(`/packets/${numericId}/status`, { action });
-      alert(action === "SUBMIT" ? "Exam paper submitted successfully for moderation!" : "Status updated successfully!");
+      await axiosInstance.put(`/packets/${numericId}/status`, { action, note });
+      alert(
+        action === "APPROVE"
+          ? "Exam paper approved successfully!"
+          : action === "REJECT"
+            ? "Exam paper returned to author for revision."
+            : action === "SUBMIT"
+              ? "Exam paper submitted successfully for moderation!"
+              : "Status updated successfully!"
+      );
       if (onStatusUpdated) onStatusUpdated();
       await loadPacketData();
     } catch (err) {
@@ -149,6 +157,12 @@ export default function PacketDetailModal({
 
   const isCompleted = packet.status === "COMPLETED";
   const isDraft = packet.status === "DRAFT" || !packet.status;
+  const currentUsername = (getUsername() || "").toLowerCase();
+  const isModOfPacket = (packet.moderatorUsername && packet.moderatorUsername.toLowerCase() === currentUsername) ||
+                        (packet.moderatorName && packet.moderatorName.toLowerCase() === currentUsername);
+  const isAuthorOfPacket = (packet.lecturerUsername && packet.lecturerUsername.toLowerCase() === currentUsername) ||
+                           (packet.lecturerName && packet.lecturerName.toLowerCase() === currentUsername) ||
+                           !isModOfPacket;
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -163,6 +177,15 @@ export default function PacketDetailModal({
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#7c4dff]/10 text-[#7c4dff] border border-[#7c4dff]/20">
                 {packet.status || "DRAFT"}
               </span>
+              {isModOfPacket ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                  🔍 Moderator
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                  ✍️ Author
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {packet.courseCode} — {packet.courseName}
@@ -250,7 +273,7 @@ export default function PacketDetailModal({
                   {printSchedule.notes && (
                     <p className="text-[10px] text-slate-500 italic">"{printSchedule.notes}"</p>
                   )}
-                  {printSchedule.status === "SCHEDULED" && (
+                  {printSchedule.status === "SCHEDULED" && !isModOfPacket && (
                     <div className="pt-1 flex items-center gap-2">
                       <button
                         type="button"
@@ -261,6 +284,11 @@ export default function PacketDetailModal({
                       </button>
                     </div>
                   )}
+                </div>
+              ) : isModOfPacket ? (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+                  <p className="font-semibold text-slate-700">Printing Queue</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Printing slot appointment will be scheduled by the course author ({packet.lecturerName || "Course Lecturer"}).</p>
                 </div>
               ) : (
                 <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2 text-xs">
@@ -364,78 +392,127 @@ export default function PacketDetailModal({
         {/* Footer */}
         <div className="flex justify-between items-center p-4 border-t border-slate-100 bg-slate-50">
           <div className="flex items-center gap-2">
-            {isDraft ? (
-              <button
-                onClick={() => handleStatusAction("SUBMIT")}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-[#7c4dff] text-white font-semibold rounded-xl hover:bg-[#6c3de8] disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-              >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Submit for Moderation
-              </button>
-            ) : packet.status === "APPROVED" ? (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsPrintModalOpen(true)}
-                  className="px-4 py-2 bg-[#7c4dff] text-white font-bold rounded-xl hover:bg-[#6c3de8] flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-                >
-                  📅 {printSchedule ? "Change Slot" : "Book Print Slot"}
-                </button>
-                {printSchedule && (
+            {/* ── MODERATOR ACTIONS ── */}
+            {isModOfPacket ? (
+              packet.status === "SUBMITTED" || packet.status === "UNDER_MODERATION" ? (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleStatusAction("PRINT")}
+                    onClick={() => handleStatusAction("APPROVE")}
                     disabled={actionLoading}
-                    className="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                    className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
                   >
-                    {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "🖨️ Proceed to Print"}
+                    {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✓"} Approve Exam Paper
                   </button>
-                )}
-              </div>
-            ) : packet.status === "PRINTING" ? (
-              <button
-                onClick={() => handleStatusAction("PAPERS_STORED")}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-cyan-600 text-white font-bold rounded-xl hover:bg-cyan-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-              >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "📦 Store Printed Papers"}
-              </button>
-            ) : packet.status === "PAPERS STORED" ? (
-              <button
-                onClick={() => handleStatusAction("ANSWER_SHEETS_TAKEN")}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-              >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "📑 Take Answer Sheets"}
-              </button>
-            ) : packet.status === "ANSWER SHEETS TAKEN" ? (
-              <button
-                onClick={() => handleStatusAction("MARKING")}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-              >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✏️ Start Marking"}
-              </button>
-            ) : packet.status === "MARKING" ? (
-              <button
-                onClick={() => handleStatusAction("MARKING_COMPLETE")}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-              >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✓ Marking Complete & Stored"}
-              </button>
-            ) : isCompleted || packet.status === "MARKING COMPLETE" ? (
-              <div className="px-4 py-2 bg-teal-50 border border-teal-200 text-teal-700 font-bold rounded-xl flex items-center gap-1.5 text-xs">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Marking Completed
-              </div>
+                  <button
+                    onClick={() => {
+                      const reason = prompt("Enter revision feedback / comments for rejecting this paper:");
+                      if (reason !== null && reason.trim()) {
+                        handleStatusAction("REJECT", reason.trim());
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className="px-3.5 py-2 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-xl hover:bg-rose-100 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs"
+                  >
+                    ✕ Reject / Request Revision
+                  </button>
+                </div>
+              ) : packet.status === "APPROVED" ? (
+                <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold rounded-lg text-xs">
+                  ✓ You approved this exam paper
+                </span>
+              ) : packet.status === "REJECTED" ? (
+                <span className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold rounded-lg text-xs">
+                  ⚠️ Returned to author for revision
+                </span>
+              ) : (
+                <span className="px-3 py-1.5 bg-slate-100 text-slate-600 font-medium rounded-lg text-xs">
+                  Author Stage: {packet.status}
+                </span>
+              )
             ) : (
-              <button
-                onClick={() => handleStatusAction("MARKING_COMPLETE")}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
-              >
-                {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Mark Complete"}
-              </button>
+              /* ── AUTHOR ACTIONS ── */
+              isDraft || packet.status === "PENDING" ? (
+                <button
+                  onClick={() => handleStatusAction("SUBMIT")}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-[#7c4dff] text-white font-semibold rounded-xl hover:bg-[#6c3de8] disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  Submit for Moderation
+                </button>
+              ) : packet.status === "REJECTED" ? (
+                <button
+                  onClick={() => handleStatusAction("SUBMIT")}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-[#7c4dff] text-white font-semibold rounded-xl hover:bg-[#6c3de8] disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  Resubmit for Moderation
+                </button>
+              ) : packet.status === "APPROVED" ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPrintModalOpen(true)}
+                    className="px-4 py-2 bg-[#7c4dff] text-white font-bold rounded-xl hover:bg-[#6c3de8] flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                  >
+                    📅 {printSchedule ? "Change Slot" : "Book Print Slot"}
+                  </button>
+                  {printSchedule && (
+                    <button
+                      onClick={() => handleStatusAction("PRINT")}
+                      disabled={actionLoading}
+                      className="px-3 py-2 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                    >
+                      {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "🖨️ Proceed to Print"}
+                    </button>
+                  )}
+                </div>
+              ) : packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE" ? (
+                <button
+                  onClick={() => handleStatusAction("PAPERS_STORED")}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-cyan-600 text-white font-bold rounded-xl hover:bg-cyan-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "📦 Store Printed Papers"}
+                </button>
+              ) : packet.status === "PAPERS STORED" ? (
+                <button
+                  onClick={() => handleStatusAction("ANSWER_SHEETS_TAKEN")}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "📑 Take Answer Sheets"}
+                </button>
+              ) : packet.status === "ANSWER SHEETS TAKEN" ? (
+                <button
+                  onClick={() => handleStatusAction("MARKING")}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✏️ Start Marking"}
+                </button>
+              ) : packet.status === "MARKING" ? (
+                <button
+                  onClick={() => handleStatusAction("MARKING_COMPLETE")}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "✓ Marking Complete & Stored"}
+                </button>
+              ) : isCompleted || packet.status === "MARKING COMPLETE" ? (
+                <div className="px-4 py-2 bg-teal-50 border border-teal-200 text-teal-700 font-bold rounded-xl flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Marking Completed
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleStatusAction("MARKING_COMPLETE")}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs shadow-sm"
+                >
+                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Mark Complete"}
+                </button>
+              )
             )}
           </div>
 
