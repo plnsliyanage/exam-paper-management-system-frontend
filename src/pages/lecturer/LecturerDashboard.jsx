@@ -9,6 +9,7 @@ import PacketCard from "../../components/lecturer/PacketCard";
 import WorkloadSummary from "../../components/lecturer/WorkloadSummary";
 import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 import {
   CheckCircle2,
   Clock,
@@ -22,6 +23,7 @@ import {
 
 export default function LecturerDashboard() {
   const { getUsername } = useAuth();
+  const { selectedCycleId } = useAcademicCycle();
   const username = getUsername() || "Lecturer";
 
   const [currentUser] = useState({
@@ -61,7 +63,7 @@ export default function LecturerDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-  }, [username]);
+  }, [username, selectedCycleId]);
 
   const loadDashboardData = async () => {
     try {

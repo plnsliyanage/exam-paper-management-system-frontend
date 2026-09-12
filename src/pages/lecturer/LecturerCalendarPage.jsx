@@ -14,6 +14,7 @@ import {
 import axiosInstance from "../../api/axiosInstance";
 import { lecturerApi } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 import SchedulePrintModal from "../../components/printing/SchedulePrintModal";
 
 const STATUS_CONFIG = {
@@ -41,6 +42,7 @@ const STATUS_CONFIG = {
 
 export default function LecturerCalendarPage() {
   const { getUsername } = useAuth();
+  const { selectedCycleId } = useAcademicCycle();
   const currentLecturerId = getUsername() || "1";
 
   const [events, setEvents] = useState([]);
@@ -58,7 +60,7 @@ export default function LecturerCalendarPage() {
   useEffect(() => {
     fetchDeadlines();
     fetchPrintingSchedules();
-  }, [currentLecturerId]);
+  }, [currentLecturerId, selectedCycleId]);
 
   const fetchDeadlines = async () => {
     try {

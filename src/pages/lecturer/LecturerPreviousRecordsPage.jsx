@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Archive, Eye, Filter, Search } from "lucide-react";
 import { lecturerApi } from "../../services/api";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 import PacketDetailModal from "../../components/PacketDetailModal";
 
 export default function LecturerPreviousRecordsPage() {
+  const { selectedCycleId } = useAcademicCycle();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -13,7 +15,7 @@ export default function LecturerPreviousRecordsPage() {
 
   useEffect(() => {
     loadPreviousPackets();
-  }, []);
+  }, [selectedCycleId]);
 
   const loadPreviousPackets = async () => {
     try {
