@@ -9,14 +9,15 @@ import {
   BookOpen,
   CheckSquare,
   Clock,
-  Sparkles,
   ShieldAlert,
   X,
   Mail,
 } from "lucide-react";
 import { hodApi } from "../../services/api";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 
 export default function HodWorkloadPage({ deptId = "ALL" }) {
+  const { selectedCycleId } = useAcademicCycle();
   const [lecturers, setLecturers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,7 +48,7 @@ export default function HodWorkloadPage({ deptId = "ALL" }) {
 
   useEffect(() => {
     loadWorkload();
-  }, [deptId]);
+  }, [deptId, selectedCycleId]);
 
   const handleSendNotification = async (staffId, customMsg, urgentFlag = false) => {
     const targetStaff = staffId ? lecturers.find((l) => l.lecturerId === staffId) : selectedStaff;

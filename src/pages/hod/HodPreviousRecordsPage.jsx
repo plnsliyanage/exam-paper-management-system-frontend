@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Search, Eye, Archive, CheckCircle2, RefreshCw, Layers } from "lucide-react";
 import { hodApi } from "../../services/api";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 
 export default function HodPreviousRecordsPage({ deptId = "ALL" }) {
+  const { selectedCycleId } = useAcademicCycle();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +26,7 @@ export default function HodPreviousRecordsPage({ deptId = "ALL" }) {
 
   useEffect(() => {
     loadRecords();
-  }, [deptId]);
+  }, [deptId, selectedCycleId]);
 
   const filteredRecords = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();

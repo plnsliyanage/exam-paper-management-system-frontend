@@ -13,9 +13,10 @@ import {
   Building2,
   Calendar,
   Layers,
-  Sparkles,
 } from "lucide-react";
+
 import { hodApi } from "../../services/api";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200", dot: "bg-slate-400" },
@@ -36,6 +37,7 @@ const STATUS_CONFIG = {
 };
 
 export default function HodReportsPage({ deptId = "ALL" }) {
+  const { selectedCycleId } = useAcademicCycle();
   const [selectedCourse, setSelectedCourse] = useState("all");
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function HodReportsPage({ deptId = "ALL" }) {
 
   useEffect(() => {
     loadReport();
-  }, [deptId]);
+  }, [deptId, selectedCycleId]);
 
   const courseBreakdown = useMemo(() => {
     return Array.isArray(report?.courseBreakdown) ? report.courseBreakdown : [];

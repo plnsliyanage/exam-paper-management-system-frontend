@@ -11,8 +11,10 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { hodApi } from "../../services/api";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 
 export default function HodOverduePage({ deptId = "ALL" }) {
+  const { selectedCycleId } = useAcademicCycle();
   const [packets, setPackets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,7 +40,7 @@ export default function HodOverduePage({ deptId = "ALL" }) {
 
   useEffect(() => {
     loadOverdue();
-  }, [deptId]);
+  }, [deptId, selectedCycleId]);
 
   const openExpediteModal = (packet) => {
     setSelectedPacket(packet);

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { hodApi } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 
 const TABS = [
   { key: "ALL", label: "All Packets" },
@@ -59,6 +60,7 @@ const STATUS_CONFIG = {
 
 export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
   const { getUsername } = useAuth();
+  const { selectedCycleId } = useAcademicCycle();
   const username = getUsername() || "HOD";
 
   const [packets, setPackets] = useState([]);
@@ -78,7 +80,7 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
 
   useEffect(() => {
     loadPackets();
-  }, [deptId]);
+  }, [deptId, selectedCycleId]);
 
   const loadPackets = async () => {
     setLoading(true);

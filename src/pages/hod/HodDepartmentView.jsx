@@ -11,7 +11,7 @@ import {
   Edit3,
   CheckSquare,
   Printer,
-  Sparkles,
+  BarChart2,
   BookOpen,
   RefreshCw,
   Building2,
@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { hodApi } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 
 const STATUS_CONFIG = {
   PENDING: { label: "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200", dot: "bg-slate-400" },
@@ -45,6 +46,7 @@ const STATUS_CONFIG = {
 export default function HodDepartmentView({ deptId = "ALL" }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { selectedCycleId } = useAcademicCycle();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,7 +85,7 @@ export default function HodDepartmentView({ deptId = "ALL" }) {
 
   useEffect(() => {
     loadData();
-  }, [deptId]);
+  }, [deptId, selectedCycleId]);
 
   const totalPacketsCount = stats?.totalPackets ?? packets.length;
   const pendingCount = stats?.pendingPackets ?? packets.filter((p) => (p.status || "").toUpperCase() === "PENDING").length;
@@ -182,9 +184,10 @@ export default function HodDepartmentView({ deptId = "ALL" }) {
               onClick={() => navigateTo("reports")}
               className="px-4 py-2.5 bg-[#7c4dff] hover:bg-[#6c3de8] text-white rounded-xl font-bold transition cursor-pointer flex items-center gap-2 text-xs shadow-lg shadow-[#7c4dff]/30"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <BarChart2 className="w-3.5 h-3.5" />
               Department Report
             </button>
+
           </div>
         </div>
       </div>
@@ -450,9 +453,10 @@ export default function HodDepartmentView({ deptId = "ALL" }) {
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 text-purple-600 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition">
-                    <Sparkles className="w-4 h-4" />
+                    <BarChart2 className="w-4 h-4" />
                   </div>
                   <div>
+
                     <p className="text-xs font-bold text-slate-800">Department Reports</p>
                     <p className="text-[11px] text-slate-500">Generate stats & export CSV</p>
                   </div>
