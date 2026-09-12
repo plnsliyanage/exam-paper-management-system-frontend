@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useAcademicCycle } from "../context/AcademicCycleContext";
+import SemesterRolloverModal from "../components/SemesterRolloverModal";
+
 
 const statusColors = {
   PENDING: "bg-amber-100 text-amber-800",
@@ -66,20 +69,27 @@ export default function Packets() {
   const isLecturer = role === "ROLE_USER" || role === "ROLE_MODERATOR";
   const navigate = useNavigate();
 
+  const { selectedCycleId, selectedCycle, isHistoricalView } = useAcademicCycle();
+  const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false);
+
+  const fetchPackets = useCallback(async () => {
+    setLoading(true);
+    try {
+      const cycleParam = selectedCycleId ? `?cycleId=${selectedCycleId}` : "";
+      const res = await axiosInstance.get(`/packets${cycleParam}`);
+      setPackets(res.data);
+      setFiltered(res.data);
+    } catch (err) {
+      setError("Failed to load packets.");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCycleId]);
+
   useEffect(() => {
-    const fetchPackets = async () => {
-      try {
-        const res = await axiosInstance.get("/packets");
-        setPackets(res.data);
-        setFiltered(res.data);
-      } catch (err) {
-        setError("Failed to load packets.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPackets();
-  }, []);
+  }, [fetchPackets]);
+
 
   useEffect(() => {
     let result = packets;
@@ -271,54 +281,73 @@ export default function Packets() {
             />
           </div>
 
-          {/* Status filter dropdown */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 outline-none"
-          >
-            <option value="ALL">All Status</option>
-            {statusTabs.slice(1).map((s) => (
-              <option key={s} value={s}>
-                {statusLabels[s]}
-              </option>
-            ))}
-          </select>
-
           {/* Export button */}
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition shadow-xs"
           >
             ⬇ Export
           </button>
         </div>
 
-        {/* Add Packet (Only for SystemAdmin) */}
-        {isSystemAdmin && (
-          <button
-            onClick={() => navigate("/packets/add")}
-            className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition"
-          >
-            + Add Packet
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Semester Rollover (Only for System Admin) */}
+          {isSystemAdmin && (
+            <button
+              onClick={() => setIsRolloverModalOpen(true)}
+              className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3.5 py-2 rounded-lg text-sm font-medium transition shadow-xs"
+              title="Automatically clone and initialize courses/packets for a new semester"
+            >
+              Semester Rollover
+            </button>
+          )}
+
+          {/* Add Packet (Only for SystemAdmin) */}
+          {isSystemAdmin && !isHistoricalView && (
+            <button
+              onClick={() => navigate("/packets/add")}
+              className="bg-[#7c4dff] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#6a3df0] transition shadow-xs"
+            >
+              + Add Packet
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Status tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {statusTabs.map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${statusFilter === s
-                ? "bg-[#7c4dff] text-white"
-                : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"
-              }`}
-          >
-            {s === "ALL" ? "All" : statusLabels[s]} ({countFor(s)})
-          </button>
-        ))}
+      {/* Status filter tabs */}
+      <div className="bg-white border border-gray-200/90 rounded-xl p-1.5 shadow-xs overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-1 min-w-max">
+          {statusTabs.map((s) => {
+            const count = countFor(s);
+            const isActive = statusFilter === s;
+            return (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                  isActive
+                    ? "bg-[#7c4dff] text-white shadow-xs font-semibold"
+                    : count > 0
+                    ? "text-gray-700 hover:text-gray-900 hover:bg-gray-100/80 font-medium"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50 font-normal"
+                }`}
+              >
+                <span>{s === "ALL" ? "All" : statusLabels[s]}</span>
+                <span
+                  className={`text-[11px] px-1.5 py-0.2 rounded-full font-semibold transition ${
+                    isActive
+                      ? "bg-white/25 text-white"
+                      : count > 0
+                      ? "bg-purple-100 text-[#7c4dff]"
+                      : "bg-gray-100 text-gray-400 font-normal"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Table */}
@@ -475,7 +504,13 @@ export default function Packets() {
           </tbody>
         </table>
       </div>
+      <SemesterRolloverModal
+        isOpen={isRolloverModalOpen}
+        onClose={() => setIsRolloverModalOpen(false)}
+        onSuccess={() => fetchPackets()}
+      />
     </div>
   );
 }
+
 

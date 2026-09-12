@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
+import { useAcademicCycle } from "../context/AcademicCycleContext";
 import SchedulePrintModal from "../components/printing/SchedulePrintModal";
 
 const STATUS_CONFIG = {
@@ -69,6 +70,7 @@ const formatLocalDate = (d = new Date()) => {
 
 export default function PrintingSchedule() {
   const { getRole, getUsername } = useAuth();
+  const { selectedCycleId } = useAcademicCycle();
   const role = getRole();
   const isSuperAdmin = role === "ROLE_SYSTEM_ADMIN";
   const isAR = role === "ROLE_ADMIN";
@@ -97,11 +99,6 @@ export default function PrintingSchedule() {
   const [delayModal, setDelayModal] = useState(null);
   const [delayNotes, setDelayNotes] = useState("");
 
-  useEffect(() => {
-    fetchSchedules();
-    fetchStats();
-  }, [selectedDate, statusFilter]);
-
   const fetchSchedules = async () => {
     try {
       setLoading(true);
@@ -114,6 +111,9 @@ export default function PrintingSchedule() {
       if (statusFilter !== "ALL") {
         params.status = statusFilter;
       }
+      if (selectedCycleId) {
+        params.cycleId = selectedCycleId;
+      }
       const res = await axiosInstance.get("/printing/schedules", { params });
       setSchedules(res.data || []);
     } catch (err) {
@@ -125,12 +125,18 @@ export default function PrintingSchedule() {
 
   const fetchStats = async () => {
     try {
-      const res = await axiosInstance.get("/printing/stats");
+      const params = selectedCycleId ? { cycleId: selectedCycleId } : {};
+      const res = await axiosInstance.get("/printing/stats", { params });
       setStats(res.data || {});
     } catch (err) {
       console.error("Failed to load printing stats", err);
     }
   };
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchStats();
+  }, [selectedDate, statusFilter, selectedCycleId]);
 
   const handleUpdateStatus = async (scheduleId, newStatus, customNotes = null) => {
     setActionLoading(`${scheduleId}-${newStatus}`);

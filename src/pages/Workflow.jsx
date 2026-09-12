@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axiosInstance from "../api/axiosInstance";
+import { useAcademicCycle } from "../context/AcademicCycleContext";
 
 const DEFAULT_COLOR = {
   circle: "border-[#7c4dff] text-[#7c4dff] bg-purple-50",
@@ -81,6 +82,7 @@ const DEFAULT_STAGES = [
 ];
 
 export default function Workflow() {
+  const { selectedCycleId } = useAcademicCycle();
   const [packets, setPackets] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,21 +99,25 @@ export default function Workflow() {
     );
   });
 
+  const fetchWorkflow = useCallback(async () => {
+    try {
+      setLoading(true);
+      const cycleParam = selectedCycleId ? `?cycleId=${selectedCycleId}` : "";
+      const res = await axiosInstance.get(`/workflow${cycleParam}`);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setPackets(list);
+      if (list.length > 0) setSelected(list[0]);
+      else setSelected(null);
+    } catch (err) {
+      setError("Failed to load workflow.");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCycleId]);
+
   useEffect(() => {
-    const fetchWorkflow = async () => {
-      try {
-        const res = await axiosInstance.get("/workflow");
-        const list = Array.isArray(res.data) ? res.data : [];
-        setPackets(list);
-        if (list.length > 0) setSelected(list[0]);
-      } catch (err) {
-        setError("Failed to load workflow.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchWorkflow();
-  }, []);
+  }, [fetchWorkflow]);
 
   if (loading)
     return (
