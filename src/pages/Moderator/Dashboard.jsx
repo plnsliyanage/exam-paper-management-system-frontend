@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 import {
   MdAccessTime,
   MdCheckCircle,
@@ -21,6 +22,7 @@ const DEFAULT_CHECKLIST = [
 ];
 
 export default function ModeratorDashboard() {
+  const { selectedCycleId } = useAcademicCycle();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,14 +36,11 @@ export default function ModeratorDashboard() {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get("/dashboard/moderator/summary");
+      const cycleParam = selectedCycleId ? `?cycleId=${selectedCycleId}` : "";
+      const res = await axiosInstance.get(`/dashboard/moderator/summary${cycleParam}`);
       setData(res.data);
 
       if (res.data.pendingPackets && res.data.pendingPackets.length > 0) {
@@ -60,7 +59,11 @@ export default function ModeratorDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCycleId]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleToggleCheck = (index) => {
     if (!selectedPacket) return;
