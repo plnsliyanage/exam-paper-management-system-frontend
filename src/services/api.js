@@ -21,6 +21,11 @@ api.interceptors.request.use(
       config.headers.Authorization = "Bearer " + token;
     }
 
+    const cycleId = localStorage.getItem("selectedCycleId");
+    if (cycleId && (!config.params || !config.params.cycleId) && !config.url?.startsWith("/auth") && !config.url?.startsWith("/cycles")) {
+      config.params = { ...config.params, cycleId };
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
