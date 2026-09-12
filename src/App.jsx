@@ -123,13 +123,18 @@ function AppRoutes() {
   );
 }
 
+import { AcademicCycleProvider } from "./context/AcademicCycleContext";
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <AcademicCycleProvider>
+          <AppRoutes />
+        </AcademicCycleProvider>
       </AuthProvider>
     </BrowserRouter>
   );
 }
+
 

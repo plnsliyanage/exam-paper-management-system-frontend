@@ -44,7 +44,7 @@ export default function Login() {
       console.error("Login authentication error:", err);
       setError(
         err.response?.data?.message ||
-          "Authentication failed. Please verify your credentials and try again."
+        "Authentication failed. Please verify your credentials and try again."
       );
     } finally {
       setLoading(false);
@@ -155,13 +155,12 @@ export default function Login() {
               ].map((s, idx) => (
                 <div
                   key={idx}
-                  className={`p-2.5 rounded-xl border transition-all ${
-                    s.active
-                      ? "bg-purple-600/20 border-purple-500/40 shadow-inner"
-                      : s.done
+                  className={`p-2.5 rounded-xl border transition-all ${s.active
+                    ? "bg-purple-600/20 border-purple-500/40 shadow-inner"
+                    : s.done
                       ? "bg-white/[0.03] border-white/[0.08]"
                       : "bg-white/[0.015] border-white/[0.04]"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] text-slate-400 font-medium">
