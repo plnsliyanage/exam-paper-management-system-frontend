@@ -1,6 +1,7 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Legend,
@@ -24,6 +25,7 @@ const DEFAULT_STATUS_DEFINITIONS = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { selectedCycleId } = useAcademicCycle();
   const [summary, setSummary] = useState(null);
   const [departmentStats, setDepartmentStats] = useState([]);
   const [submissionTrend, setSubmissionTrend] = useState([]);
@@ -33,9 +35,11 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'active'
   const [hoveredStatus, setHoveredStatus] = useState(null);
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     try {
-      const res = await axiosInstance.get("/dashboard/summary");
+      setLoading(true);
+      const cycleParam = selectedCycleId ? `?cycleId=${selectedCycleId}` : "";
+      const res = await axiosInstance.get(`/dashboard/summary${cycleParam}`);
       setSummary(res.data.summary);
       setDepartmentStats(res.data.departmentStats || []);
       setSubmissionTrend(res.data.submissionTrend || []);
@@ -46,11 +50,11 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCycleId]);
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   const totalPackets = Number(summary?.totalPackets || 0);
 

@@ -6,9 +6,12 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  console.log(">>> INTERCEPTOR FIRING, token:", token);  // add this
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  const cycleId = localStorage.getItem("selectedCycleId");
+  if (cycleId && (!config.params || !config.params.cycleId) && !config.url?.startsWith("/auth") && !config.url?.startsWith("/cycles")) {
+    config.params = { ...config.params, cycleId };
   }
   return config;
 });
