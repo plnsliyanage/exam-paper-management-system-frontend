@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -10,6 +11,8 @@ import {
   Layers,
   XCircle,
   AlertTriangle,
+  ArrowRight,
+  FileText,
 } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
 import { lecturerApi } from "../../services/api";
@@ -40,7 +43,31 @@ const STATUS_CONFIG = {
   },
 };
 
+const STATUS_BADGES = {
+  PENDING: "bg-amber-50 text-amber-800 border-amber-200",
+  DRAFT: "bg-blue-50 text-blue-800 border-blue-200",
+  SUBMITTED: "bg-purple-50 text-purple-800 border-purple-200",
+  UNDER_MODERATION: "bg-purple-50 text-purple-800 border-purple-200",
+  APPROVED: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  REJECTED: "bg-rose-50 text-rose-800 border-rose-200",
+  PRINTING: "bg-indigo-50 text-indigo-800 border-indigo-200",
+  PRINTING_QUEUE: "bg-indigo-50 text-indigo-800 border-indigo-200",
+  "PAPERS STORED": "bg-cyan-50 text-cyan-800 border-cyan-200",
+  PAPERS_STORED: "bg-cyan-50 text-cyan-800 border-cyan-200",
+  "ANSWER SHEETS TAKEN": "bg-orange-50 text-orange-800 border-orange-200",
+  ANSWER_SHEETS_TAKEN: "bg-orange-50 text-orange-800 border-orange-200",
+  FIRST_MARKING: "bg-violet-50 text-violet-800 border-violet-200",
+  "FIRST MARKING": "bg-violet-50 text-violet-800 border-violet-200",
+  MARKING: "bg-violet-50 text-violet-800 border-violet-200",
+  SECOND_MARKING: "bg-amber-50 text-amber-800 border-amber-200",
+  "SECOND MARKING": "bg-amber-50 text-amber-800 border-amber-200",
+  SECOND_MARKING_COMPLETE: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  "SECOND MARKING COMPLETE": "bg-emerald-50 text-emerald-800 border-emerald-200",
+  COMPLETED: "bg-teal-50 text-teal-800 border-teal-200",
+};
+
 export default function LecturerCalendarPage() {
+  const navigate = useNavigate();
   const { getUsername } = useAuth();
   const { selectedCycleId } = useAcademicCycle();
   const currentLecturerId = getUsername() || "1";
@@ -57,33 +84,61 @@ export default function LecturerCalendarPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchDeadlines();
-    fetchPrintingSchedules();
-  }, [currentLecturerId, selectedCycleId]);
-
-  const fetchDeadlines = async () => {
+  const fetchDeadlines = useCallback(async () => {
     try {
       setLoadingDeadlines(true);
       setDeadlineError("");
-      const response = await lecturerApi.getDeadlineCalendar(currentLecturerId);
-      const backendEvents = (Array.isArray(response.data) ? response.data : []).map((item) => ({
-        id: item.packetId,
-        packetId: item.packetId,
-        title: `${item.courseCode} - ${item.courseName}`,
-        date: item.deadline,
-        type: "DEADLINE",
-        status: item.status,
-      }));
+      const response = await lecturerApi.getDeadlineCalendar(currentLecturerId, selectedCycleId);
+      const list = Array.isArray(response.data) ? response.data : [];
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const backendEvents = list.map((item) => {
+        let isOverdue = false;
+        let daysText = "";
+
+        if (item.deadline) {
+          const d = new Date(item.deadline);
+          d.setHours(0, 0, 0, 0);
+          const diffTime = d.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays < 0) {
+            isOverdue = true;
+            daysText = `Overdue by ${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? "day" : "days"}`;
+          } else if (diffDays === 0) {
+            daysText = "Due today";
+          } else if (diffDays === 1) {
+            daysText = "Due tomorrow";
+          } else {
+            daysText = `Due in ${diffDays} days`;
+          }
+        }
+
+        return {
+          id: item.packetId,
+          packetId: item.packetId,
+          courseCode: item.courseCode,
+          courseName: item.courseName,
+          title: `${item.courseCode} - ${item.courseName}`,
+          date: item.deadline,
+          type: "DEADLINE",
+          status: item.status,
+          isOverdue,
+          daysText,
+        };
+      });
+
       setEvents(backendEvents);
     } catch (err) {
       setDeadlineError("Failed to load deadlines.");
     } finally {
       setLoadingDeadlines(false);
     }
-  };
+  }, [currentLecturerId, selectedCycleId]);
 
-  const fetchPrintingSchedules = async () => {
+  const fetchPrintingSchedules = useCallback(async () => {
     try {
       setLoadingPrintingSchedules(true);
       setPrintingScheduleError("");
@@ -94,7 +149,12 @@ export default function LecturerCalendarPage() {
     } finally {
       setLoadingPrintingSchedules(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDeadlines();
+    fetchPrintingSchedules();
+  }, [fetchDeadlines, fetchPrintingSchedules]);
 
   const handleCancel = async (scheduleId) => {
     if (!confirm("Are you sure you want to cancel this printing appointment?")) return;
@@ -113,7 +173,7 @@ export default function LecturerCalendarPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Academic Deadlines & Schedule</h1>
         <p className="text-slate-500 text-xs mt-1">
-          Review paper submission deadlines and manage your exam paper printing appointments.
+          Review your assigned exam paper deadlines and manage exam paper printing appointments.
         </p>
       </div>
 
@@ -133,10 +193,15 @@ export default function LecturerCalendarPage() {
 
       {/* Deadlines Section */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-          <CalendarIcon className="w-4 h-4 text-[#7c4dff]" />
-          Upcoming Submission Deadlines
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <CalendarIcon className="w-4 h-4 text-[#7c4dff]" />
+            Upcoming Submission Deadlines
+          </h2>
+          <span className="text-[11px] text-slate-400 font-medium">
+            {events.length} {events.length === 1 ? "deadline" : "deadlines"} for your assigned packets
+          </span>
+        </div>
 
         {loadingDeadlines ? (
           <div className="py-6 text-center text-slate-400">
@@ -148,24 +213,64 @@ export default function LecturerCalendarPage() {
             {deadlineError}
           </div>
         ) : events.length === 0 ? (
-          <p className="text-slate-400 italic py-4 text-center">No upcoming deadlines found.</p>
+          <div className="p-8 text-center text-slate-400 space-y-1 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+            <FileText className="w-7 h-7 mx-auto text-slate-300 mb-1" />
+            <p className="font-semibold text-slate-600">No upcoming deadlines found</p>
+            <p className="text-[11px] text-slate-400">
+              You currently have no active or pending submission deadlines in this academic cycle.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-2">
-            {events.map((evt) => (
-              <div
-                key={evt.id}
-                className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center"
-              >
-                <div>
-                  <h4 className="font-bold text-slate-800 text-xs">{evt.title}</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Packet ID: #{evt.packetId}</p>
+          <div className="space-y-2.5">
+            {events.map((evt) => {
+              const statusBadgeStyle = STATUS_BADGES[evt.status] || "bg-slate-100 text-slate-700 border-slate-200";
+
+              return (
+                <div
+                  key={evt.id}
+                  onClick={() => {
+                    const cleanId = typeof evt.packetId === "string" && evt.packetId.includes("-")
+                      ? parseInt(evt.packetId.split("-")[2], 10)
+                      : evt.packetId;
+                    navigate(`/packets/${cleanId}`);
+                  }}
+                  className="p-3.5 bg-slate-50 border border-slate-200/70 hover:border-[#7c4dff]/40 hover:bg-purple-50/20 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition cursor-pointer group"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-slate-800 text-xs group-hover:text-[#7c4dff] transition">
+                        {evt.title}
+                      </h4>
+                      <span className="text-[10px] font-semibold text-[#7c4dff] bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                        {evt.packetId}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Assigned course packet · Click to view management details
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 self-end sm:self-center">
+                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border ${statusBadgeStyle}`}>
+                      {evt.status?.replace(/_/g, " ") || "PENDING"}
+                    </span>
+
+                    <div className="text-right">
+                      <span className={`font-bold block text-xs ${evt.isOverdue ? "text-rose-600" : "text-slate-800"}`}>
+                        {evt.date || "N/A"}
+                      </span>
+                      {evt.daysText && (
+                        <span className={`text-[10px] font-semibold ${evt.isOverdue ? "text-rose-600 font-bold" : "text-amber-600"}`}>
+                          {evt.daysText}
+                        </span>
+                      )}
+                    </div>
+
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#7c4dff] group-hover:translate-x-0.5 transition hidden sm:block" />
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-bold text-slate-700 block text-xs">{evt.date || "N/A"}</span>
-                  <span className="text-[10px] text-amber-600 font-semibold">{evt.status || "PENDING"}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -178,7 +283,7 @@ export default function LecturerCalendarPage() {
               <Printer className="w-4 h-4 text-[#7c4dff]" />
               My Printing Appointments
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 font-medium">
               {schedules.length} {schedules.length === 1 ? "appointment" : "appointments"}
             </span>
           </div>

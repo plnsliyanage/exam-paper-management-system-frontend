@@ -283,6 +283,7 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
                   <th className="py-3 px-4">Lecturer</th>
                   <th className="py-3 px-4">Moderator</th>
                   <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Copies & Marking</th>
                   <th className="py-3 px-4">Deadline</th>
                   <th className="py-3 px-4">Priority</th>
                   <th className="py-3 px-4 text-right">Action</th>
@@ -291,7 +292,7 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
               <tbody className="divide-y divide-slate-100">
                 {filteredPackets.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-12 text-center text-slate-400">
+                    <td colSpan="8" className="py-12 text-center text-slate-400">
                       No matching exam packets found for this filter.
                     </td>
                   </tr>
@@ -299,6 +300,13 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
                   filteredPackets.map((pkt) => {
                     const statusKey = (pkt.status || "PENDING").toUpperCase();
                     const statusMeta = STATUS_CONFIG[statusKey] || STATUS_CONFIG.PENDING;
+                    const copies = pkt.numberOfCopies || pkt.totalScripts || 50;
+                    const marked = pkt.markedScripts || 0;
+                    const progress = pkt.markingProgress !== undefined && pkt.markingProgress !== null
+                      ? pkt.markingProgress
+                      : copies > 0 ? Math.round((marked / copies) * 100) : 0;
+                    const isMarkingStage = ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN", "FIRST_MARKING", "FIRST MARKING", "MARKING", "SECOND_MARKING", "SECOND MARKING", "SECOND_MARKING_COMPLETE", "COMPLETED"].includes(statusKey);
+
                     return (
                       <tr key={pkt.id || pkt.packetId} className="hover:bg-slate-50/80 transition">
                         <td className="py-3 px-4">
@@ -322,6 +330,26 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
                             <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
                             {statusMeta.label}
                           </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <span className="font-bold text-slate-800 text-xs">
+                              {copies} Copies
+                            </span>
+                            {isMarkingStage && (
+                              <div className="mt-1 flex items-center gap-1.5">
+                                <div className="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className="bg-violet-600 h-full rounded-full"
+                                    style={{ width: `${Math.min(progress, 100)}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] text-violet-700 font-semibold">
+                                  {marked}/{copies} ({Math.round(progress)}%)
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-4 text-slate-600 text-xs">
                           <span className="font-medium">{pkt.deadline || "N/A"}</span>
@@ -420,12 +448,14 @@ export default function HodDepartmentPacketsPage({ deptId = "ALL" }) {
                       <span className="font-bold text-[#7c4dff] text-xs">{packetDetail.status}</span>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Priority</span>
-                      <span className="font-bold text-slate-800 text-xs">{packetDetail.priority || "NORMAL"}</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Copies</span>
+                      <span className="font-bold text-slate-800 text-xs">{packetDetail.numberOfCopies || packetDetail.totalScripts || 50} Copies</span>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Duration</span>
-                      <span className="font-bold text-slate-800 text-xs">{packetDetail.duration || "3 Hours"}</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block">Marked Scripts</span>
+                      <span className="font-bold text-violet-700 text-xs">
+                        {packetDetail.markedScripts || 0} / {packetDetail.numberOfCopies || packetDetail.totalScripts || 50} ({Math.round(packetDetail.markingProgress || 0)}%)
+                      </span>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Marks</span>
