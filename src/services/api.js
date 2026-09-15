@@ -22,7 +22,9 @@ api.interceptors.request.use(
     }
 
     const cycleId = localStorage.getItem("selectedCycleId");
-    if (cycleId && (!config.params || !config.params.cycleId) && !config.url?.startsWith("/auth") && !config.url?.startsWith("/cycles")) {
+    const urlHasCycle = typeof config.url === "string" && (config.url.includes("cycleId=") || config.url.includes("cycleId"));
+    const paramsHasCycle = config.params && Boolean(config.params.cycleId);
+    if (cycleId && !urlHasCycle && !paramsHasCycle && !config.url?.startsWith("/auth") && !config.url?.startsWith("/cycles")) {
       config.params = { ...config.params, cycleId };
     }
 
@@ -91,13 +93,17 @@ export const lecturerApi = {
   getAssignedPacketCount: (lecturerId) =>
     api.get("/packets").then(res => ({ data: { count: (res.data || []).length } })),
 
-  // Add marking scripts
+  // Add/Update marking scripts
   addMarkingScripts: (data) =>
-    Promise.resolve({ data: { success: true } }),
+    api.post("/lecturer/marking", data),
 
   // Get marking by packet
-  getMarkingByPacketId: (packetId) =>
-    Promise.resolve({ data: { totalScripts: 0 } }),
+  getMarkingByPacketId: (packetId) => {
+    const id = typeof packetId === "string" && packetId.includes("-")
+      ? parseInt(packetId.split("-")[2], 10)
+      : packetId;
+    return api.get(`/lecturer/marking/${id}`);
+  },
 
   // Update packet status
   updateStatus: (packetId, data) => {
@@ -148,8 +154,8 @@ export const lecturerApi = {
     }),
 
   // Deadline calendar
-  getDeadlineCalendar: (lecturerId) =>
-    api.get("/packets"),
+  getDeadlineCalendar: (lecturerId, cycleId) =>
+    api.get(`/lecturer/${lecturerId}/deadline-calendar${cycleId ? `?cycleId=${cycleId}` : ""}`),
 
   // Printing schedules
   getPrintingSchedules: (lecturerId) =>
@@ -220,11 +226,15 @@ export const hodApi = {
     api.post("/hod/comment", payload),
 
   // Workload
-  getDepartmentWorkload: (deptId) =>
-    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/workload` : "/hod/workload"),
+  getDepartmentWorkload: (deptId, cycleId) => {
+    const params = cycleId && cycleId !== "ALL" ? `?cycleId=${encodeURIComponent(cycleId)}` : "";
+    return api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/workload${params}` : `/hod/workload${params}`);
+  },
 
-  getWorkload: (deptId) =>
-    api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/workload` : "/hod/workload"),
+  getWorkload: (deptId, cycleId) => {
+    const params = cycleId && cycleId !== "ALL" ? `?cycleId=${encodeURIComponent(cycleId)}` : "";
+    return api.get(deptId && deptId !== "ALL" ? `/hod/department/${deptId}/workload${params}` : `/hod/workload${params}`);
+  },
 
   // Overdue Packets
   getOverduePackets: (deptId) =>

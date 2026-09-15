@@ -10,7 +10,9 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   const cycleId = localStorage.getItem("selectedCycleId");
-  if (cycleId && (!config.params || !config.params.cycleId) && !config.url?.startsWith("/auth") && !config.url?.startsWith("/cycles")) {
+  const urlHasCycle = typeof config.url === "string" && (config.url.includes("cycleId=") || config.url.includes("cycleId"));
+  const paramsHasCycle = config.params && Boolean(config.params.cycleId);
+  if (cycleId && !urlHasCycle && !paramsHasCycle && !config.url?.startsWith("/auth") && !config.url?.startsWith("/cycles")) {
     config.params = { ...config.params, cycleId };
   }
   return config;
