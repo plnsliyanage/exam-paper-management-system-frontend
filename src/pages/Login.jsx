@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   MdSchool,
-  MdSecurity,
   MdLockOutline,
   MdPersonOutline,
   MdVisibility,
@@ -11,7 +10,6 @@ import {
   MdArrowForward,
   MdErrorOutline,
   MdClose,
-  MdVerifiedUser,
   MdCheck,
   MdShield,
   MdHelpOutline,
@@ -51,10 +49,6 @@ export default function Login() {
     }
   };
 
-  // Quick fill demo username for smooth reviewer UX
-  const handleQuickRole = (roleUsername) => {
-    setUsername(roleUsername);
-  };
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#070a13] text-slate-100 font-sans selection:bg-purple-500 selection:text-white">
@@ -93,9 +87,6 @@ export default function Login() {
                 <span className="text-base font-extrabold tracking-tight text-white font-['Outfit']">
                   UNIVERSITY EXAMINATION PORTAL
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                  ENTERPRISE
-                </span>
               </div>
               <p className="text-xs text-slate-400 font-medium tracking-wide">
                 Centralized Assessment & Moderation Management System
@@ -106,17 +97,6 @@ export default function Login() {
 
         {/* Center: Hero Narrative & Interactive Workflow Showcase */}
         <div className="relative z-10 my-10 lg:my-auto max-w-xl space-y-7">
-          {/* Security & Status Pill */}
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.1] text-xs font-medium text-purple-200 backdrop-blur-md shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="text-slate-300 font-semibold tracking-wide">
-              Official University Academic Network
-            </span>
-          </div>
-
           {/* Heading */}
           <h1 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white tracking-tight leading-[1.15] font-['Outfit']">
             Streamlining Examination Lifecycle with{" "}
@@ -178,19 +158,6 @@ export default function Login() {
                 </div>
               ))}
             </div>
-
-            {/* Micro Metrics Row */}
-            <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
-              <div className="flex items-center gap-1.5">
-                <MdVerifiedUser className="text-emerald-400 text-sm" />
-                <span className="text-[11px] text-slate-300 font-medium">
-                  256-Bit Cryptographic Envelope
-                </span>
-              </div>
-              <span className="text-[11px] text-purple-300 font-semibold">
-                99.98% On-Time Moderation
-              </span>
-            </div>
           </div>
         </div>
 
@@ -207,22 +174,12 @@ export default function Login() {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          RIGHT SIDE: PREMIUM AUTHENTICATION PANEL (45% Desktop)
+          RIGHT SIDE: AUTHENTICATION PANEL (45% Desktop)
       ───────────────────────────────────────────────────────────── */}
       <div className="lg:w-[46%] xl:w-[44%] flex items-center justify-center p-6 sm:p-10 xl:p-14 bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] text-slate-900 min-h-full">
         <div className="w-full max-w-md space-y-7">
-          {/* Header Card Area */}
+          {/* Header Area */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-[#7c4dff] bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
-                Staff Authentication
-              </span>
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs">
-                <MdSecurity className="text-emerald-600 text-sm" />
-                <span>SSL Encrypted</span>
-              </div>
-            </div>
-
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-['Outfit']">
               Welcome back
             </h2>
@@ -361,42 +318,20 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Registration Navigation Link */}
+          {/* Registration Navigation Link 
           <div className="pt-2 text-center text-xs text-slate-500">
             Don't have an authorized account?{" "}
+            
             <Link
               to="/register"
               className="text-[#7c4dff] font-bold hover:text-[#5825eb] hover:underline transition ml-1"
             >
               Create an account
             </Link>
+            
           </div>
+          */}
 
-          {/* Supported Roles Quick Demo Switcher */}
-          <div className="pt-4 border-t border-slate-200/80">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2.5">
-              Authorized Institutional Roles
-            </p>
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              {[
-                { label: "Assistant Registrar", id: "ar_admin", color: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100" },
-                { label: "Moderator", id: "moderator1", color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" },
-                { label: "Lecturer", id: "lecturer1", color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" },
-                { label: "HOD", id: "hod1", color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
-                { label: "System Admin", id: "sysadmin", color: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100" },
-              ].map((r, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleQuickRole(r.id)}
-                  title={`Click to test as ${r.label}`}
-                  className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition cursor-pointer ${r.color}`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Footer Copyright */}
           <div className="text-center text-[11px] text-slate-400 pt-1">

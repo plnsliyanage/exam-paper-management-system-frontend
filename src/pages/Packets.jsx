@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axiosInstance from "../api/axiosInstance";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAcademicCycle } from "../context/AcademicCycleContext";
 import SemesterRolloverModal from "../components/SemesterRolloverModal";
@@ -18,8 +18,15 @@ const statusColors = {
   PAPERS_STORED: "bg-cyan-100 text-cyan-800",
   "ANSWER SHEETS TAKEN": "bg-orange-100 text-orange-800",
   ANSWER_SHEETS_TAKEN: "bg-orange-100 text-orange-800",
+  FIRST_MARKING: "bg-violet-100 text-violet-800",
+  "FIRST MARKING": "bg-violet-100 text-violet-800",
   MARKING: "bg-violet-100 text-violet-800",
   UNDER_MARKING: "bg-violet-100 text-violet-800",
+  SECOND_MARKING: "bg-amber-100 text-amber-800",
+  "SECOND MARKING": "bg-amber-100 text-amber-800",
+  UNDER_SECOND_MARKING: "bg-amber-100 text-amber-800",
+  SECOND_MARKING_COMPLETE: "bg-emerald-100 text-emerald-800",
+  "SECOND MARKING COMPLETE": "bg-emerald-100 text-emerald-800",
   "MARKING COMPLETE": "bg-teal-100 text-teal-800",
   MARKING_COMPLETE: "bg-teal-100 text-teal-800",
   COMPLETED: "bg-teal-100 text-teal-800",
@@ -39,8 +46,15 @@ const statusLabels = {
   PAPERS_STORED: "Papers Stored",
   "ANSWER SHEETS TAKEN": "Sheets Taken",
   ANSWER_SHEETS_TAKEN: "Sheets Taken",
-  MARKING: "Marking",
-  UNDER_MARKING: "Marking",
+  FIRST_MARKING: "First Marking",
+  "FIRST MARKING": "First Marking",
+  MARKING: "First Marking",
+  UNDER_MARKING: "First Marking",
+  SECOND_MARKING: "Second Marking",
+  "SECOND MARKING": "Second Marking",
+  UNDER_SECOND_MARKING: "Second Marking",
+  SECOND_MARKING_COMPLETE: "2nd Marking Complete",
+  "SECOND MARKING COMPLETE": "2nd Marking Complete",
   "MARKING COMPLETE": "Completed",
   MARKING_COMPLETE: "Completed",
   COMPLETED: "Completed",
@@ -55,9 +69,12 @@ const priorityColors = {
 };
 
 export default function Packets() {
+  const [searchParams] = useSearchParams();
+  const querySearch = searchParams.get("search") || searchParams.get("course") || "";
+
   const [packets, setPackets] = useState([]);
   const [filtered, setFiltered] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(querySearch);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [roleScope, setRoleScope] = useState("ALL"); // ALL | AUTHORED | MODERATING
   const [loading, setLoading] = useState(true);
@@ -71,6 +88,12 @@ export default function Packets() {
 
   const { selectedCycleId, selectedCycle, isHistoricalView } = useAcademicCycle();
   const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (querySearch) {
+      setSearch(querySearch);
+    }
+  }, [querySearch]);
 
   const fetchPackets = useCallback(async () => {
     setLoading(true);
@@ -125,13 +148,13 @@ export default function Packets() {
       }
     }
     if (search) {
-      const q = search.toLowerCase();
+      const q = search.toLowerCase().trim();
       result = result.filter(
         (p) =>
-          p.packetId.toLowerCase().includes(q) ||
-          p.courseCode.toLowerCase().includes(q) ||
-          p.courseName.toLowerCase().includes(q) ||
-          p.lecturerName.toLowerCase().includes(q) ||
+          (p.packetId && p.packetId.toLowerCase().includes(q)) ||
+          (p.courseCode && p.courseCode.toLowerCase().includes(q)) ||
+          (p.courseName && p.courseName.toLowerCase().includes(q)) ||
+          (p.lecturerName && p.lecturerName.toLowerCase().includes(q)) ||
           (p.moderatorName && p.moderatorName.toLowerCase().includes(q))
       );
     }
@@ -377,27 +400,38 @@ export default function Packets() {
               </tr>
             ) : (
               filtered.map((p, index) => {
-                const numericId = p.id || parseInt(p.packetId.split("-")[2], 10);
+                const numericId = p.id || (p.packetId ? parseInt(p.packetId.split("-")[2], 10) : null);
                 const isAuthorOfPacket = (p.lecturerUsername && p.lecturerUsername.toLowerCase() === currentUsername) ||
                                          (p.lecturerName && p.lecturerName.toLowerCase() === currentUsername);
                 const isModOfPacket = (p.moderatorUsername && p.moderatorUsername.toLowerCase() === currentUsername) ||
                                       (p.moderatorName && p.moderatorName.toLowerCase() === currentUsername);
+                const priorityStr = p.priority ? p.priority.toUpperCase() : "MEDIUM";
 
                 return (
                   <tr
                     key={p.id || p.packetId || index}
-                    onClick={() => navigate(`/packets/${numericId}`)}
+                    onClick={() => numericId && navigate(`/packets/${numericId}`)}
                     className="border-b border-gray-50 hover:bg-purple-50/30 transition cursor-pointer"
                   >
                     <td className="px-5 py-4 text-sm font-semibold text-[#7c4dff]">
-                      {p.packetId}
+                      {p.packetId || `PKT-${p.id}`}
                     </td>
 
                     <td className="px-5 py-4">
-                      <p className="text-sm font-medium text-gray-800">
-                        {p.courseCode}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-800">
+                          {p.courseCode}
+                        </p>
+                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                          {p.numberOfCopies || p.totalScripts || 50} Copies
+                        </span>
+                      </div>
                       <p className="text-xs text-gray-400">{p.courseName}</p>
+                      {["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN", "FIRST_MARKING", "FIRST MARKING", "MARKING", "SECOND_MARKING", "SECOND MARKING", "SECOND_MARKING_COMPLETE", "COMPLETED"].includes((p.status || "").toUpperCase()) && (
+                        <p className="text-[11px] font-semibold text-violet-700 mt-0.5">
+                          📝 {p.markedScripts || 0}/{p.numberOfCopies || p.totalScripts || 50} Marked ({Math.round(p.markingProgress || ((p.markedScripts || 0) / (p.numberOfCopies || p.totalScripts || 50)) * 100)}%)
+                        </p>
+                      )}
                     </td>
 
                     {isLecturer && (
@@ -417,7 +451,7 @@ export default function Packets() {
                     )}
 
                     <td className="px-5 py-4 text-sm text-gray-600">
-                      {p.lecturerName}
+                      {p.lecturerName || "Unassigned"}
                     </td>
 
                     <td className="px-5 py-4 text-sm text-gray-600">
@@ -447,38 +481,40 @@ export default function Packets() {
                         className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[p.status] || "bg-gray-100 text-gray-500"
                           }`}
                       >
-                        {statusLabels[p.status] || p.status}
+                        {statusLabels[p.status] || p.status || "Pending"}
                       </span>
                     </td>
 
                     <td className="px-5 py-4">
                       <span
-                        className={`text-sm font-semibold ${priorityColors[p.priority]}`}
+                        className={`text-sm font-semibold ${priorityColors[priorityStr] || "text-gray-500"}`}
                       >
-                        ● {p.priority.charAt(0) + p.priority.slice(1).toLowerCase()}
+                        ● {priorityStr.charAt(0) + priorityStr.slice(1).toLowerCase()}
                       </span>
                     </td>
 
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/packets/${numericId}`);
-                          }}
-                          className="text-blue-500 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
-                          title="View Packet"
-                        >
-                          👁
-                        </button>
-                        {isSystemAdmin && (
+                        {numericId && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/packets/${numericId}`);
+                            }}
+                            className="text-blue-500 hover:text-blue-700 text-sm font-medium flex items-center gap-1 cursor-pointer"
+                            title="View Packet"
+                          >
+                            👁
+                          </button>
+                        )}
+                        {isSystemAdmin && numericId && (
                           <>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/packets/edit/${numericId}`);
                               }}
-                              className="text-gray-400 hover:text-[#7c4dff] text-base transition"
+                              className="text-gray-400 hover:text-[#7c4dff] text-base transition cursor-pointer"
                               title="Edit Packet"
                             >
                               ✏️
@@ -488,7 +524,7 @@ export default function Packets() {
                                 e.stopPropagation();
                                 handleDelete(p.packetId, numericId);
                               }}
-                              className="text-red-400 hover:text-red-600 text-base transition"
+                              className="text-red-400 hover:text-red-600 text-base transition cursor-pointer"
                               title="Delete Packet"
                             >
                               🗑

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -15,9 +16,11 @@ import {
   MdInfoOutline,
   MdPerson,
   MdVerifiedUser,
+  MdArrowForward,
 } from "react-icons/md";
 
 export default function CourseManagement({ isHod = false }) {
+  const navigate = useNavigate();
   const { getRole } = useAuth();
   const role = getRole();
   const isHodUser = isHod || role === "ROLE_GUEST";
@@ -65,13 +68,13 @@ export default function CourseManagement({ isHod = false }) {
   // Toast notification state
   const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
+  const showToast = (message, type = "success", action = null) => {
+    setToast({ message, type, action });
     // Dispatch global event for header notification bell badge update
     window.dispatchEvent(new Event("notificationsUpdated"));
     setTimeout(() => {
       setToast(null);
-    }, 4000);
+    }, 6000);
   };
 
   useEffect(() => {
@@ -153,8 +156,8 @@ export default function CourseManagement({ isHod = false }) {
   };
 
   // Save (Create or Update)
-  const handleSaveCourse = async (e) => {
-    e.preventDefault();
+  const handleSaveCourse = async (e, andNavigateToPackets = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     setFormError("");
 
     if (!formData.courseCode.trim()) {
@@ -209,11 +212,22 @@ export default function CourseManagement({ isHod = false }) {
         showToast(`Course "${payload.courseCode}" updated successfully!`);
       } else {
         await axiosInstance.post("/courses", payload);
-        showToast(`Course "${payload.courseCode}" added successfully!`);
+        showToast(
+          `Course "${payload.courseCode}" added! Initial exam packet linked.`,
+          "success",
+          {
+            label: "View in Packets →",
+            onClick: () => navigate(`/packets?search=${encodeURIComponent(payload.courseCode)}`),
+          }
+        );
       }
 
       setIsModalOpen(false);
       fetchCourses();
+
+      if (andNavigateToPackets) {
+        navigate(`/packets?search=${encodeURIComponent(payload.courseCode)}`);
+      }
     } catch (err) {
       console.error("Error saving course:", err);
       setFormError(
@@ -291,20 +305,32 @@ export default function CourseManagement({ isHod = false }) {
       {/* Toast Alert */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border transition-all animate-bounce ${toast.type === "success"
-              ? "bg-white border-green-200 text-green-800"
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border transition-all ${
+            toast.type === "success"
+              ? "bg-white border-green-200 text-gray-800"
               : "bg-white border-red-200 text-red-800"
-            }`}
+          }`}
         >
           {toast.type === "success" ? (
-            <MdCheckCircle className="text-green-500 text-xl" />
+            <MdCheckCircle className="text-green-500 text-xl shrink-0" />
           ) : (
-            <MdErrorOutline className="text-red-500 text-xl" />
+            <MdErrorOutline className="text-red-500 text-xl shrink-0" />
           )}
           <span className="text-sm font-medium">{toast.message}</span>
+          {toast.action && (
+            <button
+              onClick={() => {
+                toast.action.onClick();
+                setToast(null);
+              }}
+              className="ml-2 px-3 py-1 bg-[#7c4dff] hover:bg-[#6a3df0] text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <span>{toast.action.label}</span>
+            </button>
+          )}
           <button
             onClick={() => setToast(null)}
-            className="text-gray-400 hover:text-gray-600 text-sm ml-2"
+            className="text-gray-400 hover:text-gray-600 text-sm ml-1 cursor-pointer"
           >
             ✕
           </button>
@@ -350,17 +376,26 @@ export default function CourseManagement({ isHod = false }) {
         </div>
 
         {/* Linked Packets */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between">
+        <div
+          onClick={() => navigate("/packets")}
+          className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-purple-200 transition group"
+          title="View all exam packets"
+        >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
-              Linked Exam Packets
-            </p>
+            <div className="flex items-center gap-1.5 mb-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Linked Exam Packets
+              </p>
+              <MdArrowForward size={14} className="text-gray-400 group-hover:text-[#7c4dff] group-hover:translate-x-0.5 transition" />
+            </div>
             <p className="text-3xl font-bold text-gray-800">
               {stats.totalPacketsLinked}
             </p>
-            <p className="text-xs text-gray-400 mt-1">Associated exam packets</p>
+            <p className="text-xs text-[#7c4dff] font-medium mt-1 group-hover:underline">
+              View all exam packets →
+            </p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-500 text-2xl">
+          <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-500 text-2xl group-hover:bg-green-100 group-hover:scale-105 transition">
             <MdFolderOpen />
           </div>
         </div>
@@ -563,41 +598,57 @@ export default function CourseManagement({ isHod = false }) {
 
                       {/* Linked Packets */}
                       <td className="px-6 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${c.activePacketsCount > 0
-                              ? "bg-purple-50 text-[#7c4dff]"
-                              : "bg-gray-100 text-gray-400"
-                            }`}
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/packets?search=${encodeURIComponent(c.courseCode)}`)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold transition cursor-pointer hover:scale-105 ${
+                            c.activePacketsCount > 0
+                              ? "bg-purple-50 text-[#7c4dff] hover:bg-purple-100 border border-purple-100"
+                              : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                          }`}
+                          title={`View packets for ${c.courseCode}`}
                         >
-                          {c.activePacketsCount}{" "}
-                          {c.activePacketsCount === 1 ? "packet" : "packets"}
-                        </span>
+                          <MdFolderOpen size={13} />
+                          <span>
+                            {c.activePacketsCount}{" "}
+                            {c.activePacketsCount === 1 ? "packet" : "packets"}
+                          </span>
+                        </button>
                       </td>
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        {canManageCourses ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => handleOpenEditModal(c)}
-                              className="p-1.5 text-gray-400 hover:text-[#7c4dff] hover:bg-purple-50 rounded-lg transition"
-                              title="Edit course & staff assignments"
-                            >
-                              <MdEdit size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleOpenDeleteDialog(c)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                              title="Delete course"
-                            >
-                              <MdDeleteOutline size={18} />
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium">
-                            View Only
-                          </span>
-                        )}
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => navigate(`/packets?search=${encodeURIComponent(c.courseCode)}`)}
+                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
+                            title={`View packets for ${c.courseCode}`}
+                          >
+                            <MdFolderOpen size={18} />
+                          </button>
+                          {canManageCourses ? (
+                            <>
+                              <button
+                                onClick={() => handleOpenEditModal(c)}
+                                className="p-1.5 text-gray-400 hover:text-[#7c4dff] hover:bg-purple-50 rounded-lg transition"
+                                title="Edit course & staff assignments"
+                              >
+                                <MdEdit size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleOpenDeleteDialog(c)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                title="Delete course"
+                              >
+                                <MdDeleteOutline size={18} />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium ml-1">
+                              View Only
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -740,14 +791,26 @@ export default function CourseManagement({ isHod = false }) {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition"
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
                 >
                   Cancel
                 </button>
+                {!editingCourse && (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={(e) => handleSaveCourse(e, true)}
+                    className="px-4 py-2 text-sm font-semibold text-[#7c4dff] bg-purple-50 hover:bg-purple-100 border border-purple-200 disabled:opacity-50 rounded-xl transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    title="Save course and directly open the exam packets page"
+                  >
+                    <MdFolderOpen size={16} />
+                    <span>Create & Open in Packets</span>
+                  </button>
+                )}
                 <button
                   type="submit"
                   disabled={saving}

@@ -15,7 +15,12 @@ const statusColors = {
   PRINTING_QUEUE: "bg-indigo-100 text-indigo-800 border border-indigo-200",
   "PAPERS STORED": "bg-cyan-100 text-cyan-800 border border-cyan-200",
   "ANSWER SHEETS TAKEN": "bg-orange-100 text-orange-800 border border-orange-200",
+  FIRST_MARKING: "bg-violet-100 text-violet-800 border border-violet-200",
   MARKING: "bg-violet-100 text-violet-800 border border-violet-200",
+  SECOND_MARKING: "bg-amber-100 text-amber-800 border border-amber-200",
+  "SECOND MARKING": "bg-amber-100 text-amber-800 border border-amber-200",
+  SECOND_MARKING_COMPLETE: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+  "SECOND MARKING COMPLETE": "bg-emerald-100 text-emerald-800 border border-emerald-200",
   "MARKING COMPLETE": "bg-teal-100 text-teal-800 border border-teal-200",
   COMPLETED: "bg-teal-100 text-teal-800 border border-teal-200",
   UNDER_MODERATION: "bg-purple-100 text-purple-800 border border-purple-200",
@@ -32,8 +37,13 @@ const statusLabels = {
   PRINTING_QUEUE: "Printing in Progress",
   "PAPERS STORED": "Papers Stored in Safe",
   "ANSWER SHEETS TAKEN": "Answer Sheets Taken",
-  MARKING: "Marking in Progress",
-  "MARKING COMPLETE": "Marking Complete & Stored",
+  FIRST_MARKING: "First Marking (Lecturer)",
+  MARKING: "First Marking (Lecturer)",
+  SECOND_MARKING: "Second Marking (Moderator)",
+  "SECOND MARKING": "Second Marking (Moderator)",
+  SECOND_MARKING_COMPLETE: "2nd Marking Complete (Ready to Finalize)",
+  "SECOND MARKING COMPLETE": "2nd Marking Complete (Ready to Finalize)",
+  "MARKING COMPLETE": "Completed & Stored",
   COMPLETED: "Completed",
   UNDER_MODERATION: "Submitted for Moderation",
   DELAYED: "Delayed",
@@ -165,8 +175,13 @@ export default function PacketDetail() {
       if (activeTab === "history") {
         loadHistory();
       }
+      if (activeTab === "comments") {
+        loadComments();
+      }
     } catch (err) {
-      setError("Failed to update status.");
+      const errorMsg = err.response?.data?.message || "Failed to update status.";
+      setError(errorMsg);
+      setTimeout(() => setError(""), 5000);
     } finally {
       setActionLoading("");
       setNoteModal(null);
@@ -350,9 +365,10 @@ export default function PacketDetail() {
               {/* ── OVERVIEW ── */}
               {activeTab === "overview" && (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700">Exam Details</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <h3 className="text-sm font-semibold text-gray-700">Exam Details & Scripts</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {[
+                      { label: "Number of Copies", value: `${packet.numberOfCopies || packet.totalScripts || 50} Copies` },
                       { label: "Duration", value: packet.duration },
                       { label: "Total Marks", value: packet.totalMarks },
                       { label: "Questions", value: packet.questions },
@@ -364,6 +380,26 @@ export default function PacketDetail() {
                       </div>
                     ))}
                   </div>
+
+                  {/* Marking Progress Card */}
+                  {["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN", "FIRST_MARKING", "FIRST MARKING", "MARKING", "SECOND_MARKING", "SECOND MARKING", "SECOND_MARKING_COMPLETE", "COMPLETED"].includes((packet.status || "").toUpperCase()) && (
+                    <div className="bg-gradient-to-r from-violet-50 via-purple-50 to-indigo-50 border border-violet-200 rounded-2xl p-4 space-y-2.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-violet-900 flex items-center gap-1.5">
+                          📝 Paper Marking Progress
+                        </span>
+                        <span className="font-extrabold text-violet-800 bg-white/80 border border-violet-200 px-2.5 py-0.5 rounded-full">
+                          {packet.markedScripts || 0} / {packet.numberOfCopies || packet.totalScripts || 50} Scripts Marked ({Math.round(packet.markingProgress || ((packet.markedScripts || 0) / (packet.numberOfCopies || packet.totalScripts || 50)) * 100)}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-violet-200/70 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-[#7c4dff] h-full rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(packet.markingProgress || ((packet.markedScripts || 0) / (packet.numberOfCopies || packet.totalScripts || 50)) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   {packet.moderatorNote && (
                     <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 flex gap-3">
                       <span className="text-yellow-500 mt-0.5">⚠</span>
@@ -671,10 +707,49 @@ export default function PacketDetail() {
                             </div>
                           )}
 
-                          {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE" || packet.status === "PAPERS STORED" || packet.status === "ANSWER SHEETS TAKEN" || packet.status === "MARKING" || packet.status === "MARKING COMPLETE" || packet.status === "COMPLETED") && (
+                          {(packet.status === "MARKING" || packet.status === "FIRST_MARKING") && (
+                            <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-center space-y-1">
+                              <span className="text-xl">⏳</span>
+                              <p className="text-xs font-semibold text-purple-800">First Marking in Progress</p>
+                              <p className="text-[11px] text-purple-600">The assigned lecturer ({packet.lecturerName || "Lecturer"}) is grading the answer sheets. You will be notified once transferred for second marking.</p>
+                            </div>
+                          )}
+
+                          {(packet.status === "SECOND_MARKING" || packet.status === "SECOND MARKING") && (
+                            <div className="space-y-2">
+                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+                                📝 First marking completed by lecturer ({packet.lecturerName}). Please conduct and submit the second marking verification.
+                              </div>
+                              <button
+                                onClick={() => handleAction("COMPLETE_SECOND_MARKING")}
+                                disabled={!!actionLoading}
+                                className="w-full bg-teal-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                              >
+                                {actionLoading === "COMPLETE_SECOND_MARKING" ? <span className="animate-spin">⟳</span> : "✓"} Complete 2nd Marking & Return to Lecturer
+                              </button>
+                            </div>
+                          )}
+
+                          {(packet.status === "SECOND_MARKING_COMPLETE" || packet.status === "SECOND MARKING COMPLETE") && (
+                            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-1">
+                              <span className="text-xl">✓</span>
+                              <p className="text-xs font-semibold text-emerald-800">You Completed Second Marking</p>
+                              <p className="text-[11px] text-emerald-600">Packet has been returned to lecturer ({packet.lecturerName}) for finalization and storage.</p>
+                            </div>
+                          )}
+
+                          {(packet.status === "PRINTING" || packet.status === "PRINTING_QUEUE" || packet.status === "PAPERS STORED" || packet.status === "ANSWER SHEETS TAKEN") && (
                             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-1">
                               <p className="text-xs font-semibold text-slate-700">Stage: {statusLabels[packet.status] || packet.status}</p>
                               <p className="text-[11px] text-slate-500">Post-moderation exam lifecycle in progress.</p>
+                            </div>
+                          )}
+
+                          {(packet.status === "COMPLETED" || packet.status === "MARKING COMPLETE") && (
+                            <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-center space-y-1">
+                              <span className="text-xl">✅</span>
+                              <p className="text-xs font-semibold text-teal-800">Exam Packet Finalized</p>
+                              <p className="text-[11px] text-teal-600">All marking stages completed and packet archived.</p>
                             </div>
                           )}
                         </>
@@ -724,12 +799,17 @@ export default function PacketDetail() {
 
                         {packet.status === "REJECTED" && (
                           <div className="space-y-3">
-                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-1">
-                              <p className="font-semibold flex items-center gap-1">⚠️ Paper Returned for Revision</p>
-                              {packet.moderatorNote && (
-                                <p className="text-red-700 bg-white/70 p-2 rounded border border-red-200 mt-1 italic">
-                                  "{packet.moderatorNote}"
-                                </p>
+                            <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-2">
+                              <p className="font-bold flex items-center gap-1 text-red-900 text-xs">
+                                ⚠️ Paper Returned for Revision by Moderator
+                              </p>
+                              {packet.moderatorNote ? (
+                                <div className="bg-white/80 p-2.5 rounded-lg border border-red-200 space-y-0.5">
+                                  <span className="font-bold text-red-900 block text-[11px]">Moderator Revision Feedback:</span>
+                                  <p className="text-red-800 text-xs italic font-medium">"{packet.moderatorNote}"</p>
+                                </div>
+                              ) : (
+                                <p className="text-red-700 italic">Please review the comments and resubmit the draft paper.</p>
                               )}
                             </div>
                             <div className="flex gap-2">
@@ -753,8 +833,9 @@ export default function PacketDetail() {
 
                         {packet.status === "APPROVED" && (
                           <div className="space-y-3">
-                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
-                              🎉 Exam paper approved by moderator! Schedule a printing slot before printing papers.
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>Exam paper approved by moderator! Schedule a printing slot before printing papers.</span>
                             </div>
 
                             {/* Printing appointment card if booked */}
@@ -906,17 +987,40 @@ export default function PacketDetail() {
                           </div>
                         )}
 
-                        {packet.status === "MARKING" && (
+                        {(packet.status === "MARKING" || packet.status === "FIRST_MARKING") && (
                           <div className="space-y-2">
                             <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800">
-                              ✏️ Answer sheet marking is in progress. Once marking is finalized, store the mark sheets securely in the department.
+                              ✏️ First marking is in progress. Once complete, submit the marked scripts to the moderator for second marking.
                             </div>
                             <button
-                              onClick={() => handleAction("MARKING_COMPLETE")}
+                              onClick={() => handleAction("COMPLETE_FIRST_MARKING")}
+                              disabled={!!actionLoading}
+                              className="w-full bg-[#7c4dff] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#6c3ce8] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
+                            >
+                              {actionLoading === "COMPLETE_FIRST_MARKING" ? <span className="animate-spin">⟳</span> : "✓"} Finish 1st Marking & Send to Moderator
+                            </button>
+                          </div>
+                        )}
+
+                        {(packet.status === "SECOND_MARKING" || packet.status === "SECOND MARKING") && (
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center space-y-1">
+                            <span className="text-xl">⏳</span>
+                            <p className="text-xs font-semibold text-amber-800">Awaiting Second Marking</p>
+                            <p className="text-[11px] text-amber-600">You completed first marking. The assigned peer moderator ({packet.moderatorName || "Assigned Moderator"}) is conducting the second marking stage.</p>
+                          </div>
+                        )}
+
+                        {(packet.status === "SECOND_MARKING_COMPLETE" || packet.status === "SECOND MARKING COMPLETE") && (
+                          <div className="space-y-2">
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium">
+                              ✓ Second marking verified and completed by moderator ({packet.moderatorName || "Assigned Moderator"}). You can now finalize and store the packet.
+                            </div>
+                            <button
+                              onClick={() => handleAction("COMPLETE")}
                               disabled={!!actionLoading}
                               className="w-full bg-teal-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-teal-700 transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm cursor-pointer"
                             >
-                              {actionLoading === "MARKING_COMPLETE" ? <span className="animate-spin">⟳</span> : "✓"} Finish Marking & Store Mark Sheets
+                              {actionLoading === "COMPLETE" ? <span className="animate-spin">⟳</span> : "📦"} Finalize & Complete Exam Packet
                             </button>
                           </div>
                         )}
@@ -924,8 +1028,8 @@ export default function PacketDetail() {
                         {(packet.status === "MARKING COMPLETE" || packet.status === "COMPLETED") && (
                           <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl text-center space-y-1">
                             <span className="text-xl">✅</span>
-                            <p className="text-xs font-semibold text-teal-800">Marking Complete & Stored</p>
-                            <p className="text-[11px] text-teal-600">All examination workflow stages, marking, and custody storage finalized.</p>
+                            <p className="text-xs font-semibold text-teal-800">Exam Packet Finalized</p>
+                            <p className="text-[11px] text-teal-600">First and second marking complete. Exam packet archived.</p>
                           </div>
                         )}
                       </>
@@ -1083,45 +1187,65 @@ export default function PacketDetail() {
       </div>
 
       {/* Note Modal */}
-      {noteModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-base font-semibold text-gray-800 mb-1">
-              {noteModal === "RETURN" ? "Return for Revision" : "Reject Packet"}
-            </h3>
-            <p className="text-sm text-gray-400 mb-4">
-              {noteModal === "RETURN"
-                ? "Provide a reason for returning this packet."
-                : "Provide a reason for rejecting this packet."}
-            </p>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Enter reason (optional)..."
-              rows={3}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#7c4dff] focus:ring-1 focus:ring-[#7c4dff] mb-4"
-            />
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => { setNoteModal(null); setNote(""); }}
-                className="px-4 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleAction(noteModal, note)}
-                disabled={!!actionLoading}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 transition ${noteModal === "RETURN"
-                  ? "bg-yellow-500 hover:bg-yellow-600"
-                  : "bg-red-500 hover:bg-red-600"
+      {noteModal && (() => {
+        const isRejection = noteModal === "REJECT" || noteModal === "RETURN";
+        const isNoteEmpty = !note.trim();
+
+        return (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-slate-100">
+              <h3 className="text-base font-bold text-gray-800 mb-1">
+                {noteModal === "RETURN" ? "Return Paper for Revision" : "Reject Exam Paper"}
+              </h3>
+              <p className="text-xs text-gray-500 mb-3">
+                {isRejection
+                  ? "A reason/comment is compulsory. Please provide detailed feedback for the lecturer explaining what needs to be revised."
+                  : "Provide a note for this status update."}
+              </p>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder={isRejection ? "Enter mandatory feedback for lecturer (Required)..." : "Enter reason (optional)..."}
+                rows={4}
+                className={`w-full border rounded-xl px-3.5 py-2.5 text-xs outline-none focus:ring-2 bg-white text-gray-800 placeholder:text-gray-400 mb-2 ${
+                  isRejection && isNoteEmpty
+                    ? "border-rose-300 focus:border-rose-400 focus:ring-rose-200"
+                    : "border-gray-200 focus:border-[#7c4dff] focus:ring-[#7c4dff]/20"
+                }`}
+              />
+              {isRejection && isNoteEmpty && (
+                <p className="text-[11px] text-rose-600 font-semibold mb-3 flex items-center gap-1">
+                  ⚠️ Comment is compulsory before rejecting or returning this exam paper.
+                </p>
+              )}
+              <div className="flex items-center justify-end gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={() => { setNoteModal(null); setNote(""); }}
+                  className="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isRejection && isNoteEmpty) return;
+                    handleAction(noteModal, note.trim());
+                  }}
+                  disabled={!!actionLoading || (isRejection && isNoteEmpty)}
+                  className={`px-4 py-2 text-xs font-bold text-white rounded-lg disabled:opacity-50 transition cursor-pointer ${
+                    noteModal === "RETURN"
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "bg-red-600 hover:bg-red-700"
                   }`}
-              >
-                {actionLoading ? "Processing..." : noteModal === "RETURN" ? "Return" : "Reject"}
-              </button>
+                >
+                  {actionLoading ? "Processing..." : noteModal === "RETURN" ? "Return for Revision" : "Reject Paper"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Printing Schedule Modal */}
       {isPrintModalOpen && (
