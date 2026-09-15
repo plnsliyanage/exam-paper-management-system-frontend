@@ -35,6 +35,8 @@ export default function LecturerDashboard() {
     currentSemester: "2026-S1",
   });
 
+  // Human-readable label for the currently selected academic cycle/semester, with fallbacks.
+
   const currentSemester = currentUser.currentSemester;
   const [packets, setPackets] = useState([]);
   const [allPackets, setAllPackets] = useState([]);
