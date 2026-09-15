@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 export default function LecturerDashboard() {
+  // Initialize the user identity and profile state using authentication and active academic cycle contexts
   const { getUsername } = useAuth();
   const { selectedCycleId, selectedCycle } = useAcademicCycle();
   const username = getUsername() || "Lecturer";
@@ -32,7 +33,8 @@ export default function LecturerDashboard() {
     department: "Academic Faculty",
   });
 
-  const currentSemester = selectedCycle?.cycleName || selectedCycle?.cycleId || "Active Semester";
+  const currentSemester =
+    selectedCycle?.cycleName || selectedCycle?.cycleId || "Active Semester";
   const [packets, setPackets] = useState([]);
   const [allPackets, setAllPackets] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,24 +70,41 @@ export default function LecturerDashboard() {
     try {
       setLoading(true);
       const packetsResponse = await axiosInstance.get("/packets");
-      const rawPackets = Array.isArray(packetsResponse.data) ? packetsResponse.data : [];
+      const rawPackets = Array.isArray(packetsResponse.data)
+        ? packetsResponse.data
+        : [];
 
       const normalizedUsername = (username || "").toLowerCase();
 
       const packetsWithMeta = rawPackets.map((p) => {
-        const isMod = (p.moderatorUsername && p.moderatorUsername.toLowerCase() === normalizedUsername) ||
-                      (p.moderatorName && p.moderatorName.toLowerCase() === normalizedUsername);
-        const isAuthor = (p.lecturerUsername && p.lecturerUsername.toLowerCase() === normalizedUsername) ||
-                         (p.lecturerName && p.lecturerName.toLowerCase() === normalizedUsername) ||
-                         !isMod;
+        const isMod =
+          (p.moderatorUsername &&
+            p.moderatorUsername.toLowerCase() === normalizedUsername) ||
+          (p.moderatorName &&
+            p.moderatorName.toLowerCase() === normalizedUsername);
+        const isAuthor =
+          (p.lecturerUsername &&
+            p.lecturerUsername.toLowerCase() === normalizedUsername) ||
+          (p.lecturerName &&
+            p.lecturerName.toLowerCase() === normalizedUsername) ||
+          !isMod;
 
         let defaultTaskType = isMod ? "MODERATION" : "SET_PAPER";
-        if (isAuthor && (p.status === "APPROVED" || p.status === "PRINTING_QUEUE" || p.status === "PRINTING")) {
+        if (
+          isAuthor &&
+          (p.status === "APPROVED" ||
+            p.status === "PRINTING_QUEUE" ||
+            p.status === "PRINTING")
+        ) {
           defaultTaskType = "MARK_SCRIPTS";
         }
         return {
           ...p,
-          id: p.id || (p.packetId && p.packetId.includes("-") ? parseInt(p.packetId.split("-")[2], 10) : p.packetId),
+          id:
+            p.id ||
+            (p.packetId && p.packetId.includes("-")
+              ? parseInt(p.packetId.split("-")[2], 10)
+              : p.packetId),
           taskType: p.taskType || defaultTaskType,
           isAuthor,
           isMod,
@@ -96,7 +115,7 @@ export default function LecturerDashboard() {
 
       // Filter packets requiring moderation review
       const pendingReviews = packetsWithMeta.filter(
-        (p) => p.isMod && ["SUBMITTED", "UNDER_MODERATION"].includes(p.status)
+        (p) => p.isMod && ["SUBMITTED", "UNDER_MODERATION"].includes(p.status),
       );
       setPendingModerationReviews(pendingReviews);
 
@@ -112,18 +131,55 @@ export default function LecturerDashboard() {
 
   const calculateStats = (data) => {
     const totalActive = data.length;
-    const assignedPreparationCount = data.filter((p) => p.isAuthor && ["PENDING", "DRAFT", "REJECTED"].includes(p.status)).length;
-    const inModerationCount = data.filter((p) => p.isAuthor && ["SUBMITTED", "UNDER_MODERATION"].includes(p.status)).length;
-    const approvedPrintCount = data.filter((p) => p.isAuthor && ["APPROVED", "PRINTING", "PRINTING_QUEUE", "PAPERS STORED", "PAPERS_STORED"].includes(p.status)).length;
-    const markingCount = data.filter((p) => p.isAuthor && ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN", "MARKING", "UNDER_MARKING"].includes(p.status)).length;
-    const completed = data.filter((p) => ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status)).length;
+    const assignedPreparationCount = data.filter(
+      (p) => p.isAuthor && ["PENDING", "DRAFT", "REJECTED"].includes(p.status),
+    ).length;
+    const inModerationCount = data.filter(
+      (p) => p.isAuthor && ["SUBMITTED", "UNDER_MODERATION"].includes(p.status),
+    ).length;
+    const approvedPrintCount = data.filter(
+      (p) =>
+        p.isAuthor &&
+        [
+          "APPROVED",
+          "PRINTING",
+          "PRINTING_QUEUE",
+          "PAPERS STORED",
+          "PAPERS_STORED",
+        ].includes(p.status),
+    ).length;
+    const markingCount = data.filter(
+      (p) =>
+        p.isAuthor &&
+        [
+          "ANSWER SHEETS TAKEN",
+          "ANSWER_SHEETS_TAKEN",
+          "MARKING",
+          "UNDER_MARKING",
+        ].includes(p.status),
+    ).length;
+    const completed = data.filter((p) =>
+      ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status),
+    ).length;
     const overdue = data.filter((p) => p.overdue).length;
-    const rate = totalActive > 0 ? Math.round((completed / totalActive) * 100) : 0;
+    const rate =
+      totalActive > 0 ? Math.round((completed / totalActive) * 100) : 0;
 
     // Moderation stats
     const modPackets = data.filter((p) => p.isMod);
-    const pendingMod = modPackets.filter((p) => ["SUBMITTED", "UNDER_MODERATION"].includes(p.status)).length;
-    const approvedMod = modPackets.filter((p) => !["SUBMITTED", "UNDER_MODERATION", "DRAFT", "PENDING", "REJECTED"].includes(p.status)).length;
+    const pendingMod = modPackets.filter((p) =>
+      ["SUBMITTED", "UNDER_MODERATION"].includes(p.status),
+    ).length;
+    const approvedMod = modPackets.filter(
+      (p) =>
+        ![
+          "SUBMITTED",
+          "UNDER_MODERATION",
+          "DRAFT",
+          "PENDING",
+          "REJECTED",
+        ].includes(p.status),
+    ).length;
 
     setDashboardStats({
       totalActiveTasks: totalActive,
@@ -173,21 +229,39 @@ export default function LecturerDashboard() {
       } else if (type === "DRAFT") {
         filtered = filtered.filter((p) => p.status === "DRAFT");
       } else if (type === "SUBMITTED") {
-        filtered = filtered.filter((p) => ["SUBMITTED", "UNDER_MODERATION", "SUBMITTED_FOR_MODERATION"].includes(p.status));
+        filtered = filtered.filter((p) =>
+          [
+            "SUBMITTED",
+            "UNDER_MODERATION",
+            "SUBMITTED_FOR_MODERATION",
+          ].includes(p.status),
+        );
       } else if (type === "APPROVED") {
         filtered = filtered.filter((p) => p.status === "APPROVED");
       } else if (type === "REJECTED") {
         filtered = filtered.filter((p) => p.status === "REJECTED");
       } else if (type === "PRINTING") {
-        filtered = filtered.filter((p) => ["PRINTING", "PRINTING_QUEUE"].includes(p.status));
+        filtered = filtered.filter((p) =>
+          ["PRINTING", "PRINTING_QUEUE"].includes(p.status),
+        );
       } else if (type === "PAPERS STORED") {
-        filtered = filtered.filter((p) => ["PAPERS STORED", "PAPERS_STORED"].includes(p.status));
+        filtered = filtered.filter((p) =>
+          ["PAPERS STORED", "PAPERS_STORED"].includes(p.status),
+        );
       } else if (type === "ANSWER SHEETS TAKEN") {
-        filtered = filtered.filter((p) => ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN"].includes(p.status));
+        filtered = filtered.filter((p) =>
+          ["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN"].includes(p.status),
+        );
       } else if (type === "MARKING") {
-        filtered = filtered.filter((p) => ["MARKING", "UNDER_MARKING"].includes(p.status));
+        filtered = filtered.filter((p) =>
+          ["MARKING", "UNDER_MARKING"].includes(p.status),
+        );
       } else if (type === "COMPLETED") {
-        filtered = filtered.filter((p) => ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(p.status));
+        filtered = filtered.filter((p) =>
+          ["COMPLETED", "MARKING COMPLETE", "MARKING_COMPLETE"].includes(
+            p.status,
+          ),
+        );
       }
     }
     if (query.trim()) {
@@ -212,10 +286,13 @@ export default function LecturerDashboard() {
 
   const handleSubmitPacket = async (packetId) => {
     try {
-      const numericId = typeof packetId === "string" && packetId.includes("-")
-        ? parseInt(packetId.split("-")[2], 10)
-        : packetId;
-      await axiosInstance.put(`/packets/${numericId}/status`, { action: "SUBMIT" });
+      const numericId =
+        typeof packetId === "string" && packetId.includes("-")
+          ? parseInt(packetId.split("-")[2], 10)
+          : packetId;
+      await axiosInstance.put(`/packets/${numericId}/status`, {
+        action: "SUBMIT",
+      });
       await loadDashboardData();
     } catch (error) {
       console.error("Error submitting packet:", error);
@@ -225,9 +302,10 @@ export default function LecturerDashboard() {
 
   const handleCompleteTask = async (packetId, action = "COMPLETE") => {
     try {
-      const numericId = typeof packetId === "string" && packetId.includes("-")
-        ? parseInt(packetId.split("-")[2], 10)
-        : packetId;
+      const numericId =
+        typeof packetId === "string" && packetId.includes("-")
+          ? parseInt(packetId.split("-")[2], 10)
+          : packetId;
       await axiosInstance.put(`/packets/${numericId}/status`, { action });
       await loadDashboardData();
     } catch (error) {
@@ -246,7 +324,10 @@ export default function LecturerDashboard() {
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto text-xs">
-      <LecturerHeader currentUser={currentUser} currentSemester={currentSemester} />
+      <LecturerHeader
+        currentUser={currentUser}
+        currentSemester={currentSemester}
+      />
 
       {/* Moderation Review Action Banner (Active if peer papers are pending review) */}
       {pendingModerationReviews.length > 0 && (
@@ -259,7 +340,8 @@ export default function LecturerDashboard() {
                   Moderation Review Required ({pendingModerationReviews.length})
                 </h3>
                 <p className="text-xs text-purple-700">
-                  You are assigned as the Peer Moderator for the following exam paper(s). Please review and submit your decision.
+                  You are assigned as the Peer Moderator for the following exam
+                  paper(s). Please review and submit your decision.
                 </p>
               </div>
             </div>
@@ -273,13 +355,22 @@ export default function LecturerDashboard() {
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-800 text-xs">{pkt.courseCode}</span>
+                    <span className="font-bold text-slate-800 text-xs">
+                      {pkt.courseCode}
+                    </span>
                     <span className="text-[10px] text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded font-medium border border-purple-100">
                       {pkt.packetId}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{pkt.courseName}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Author: <strong className="text-slate-600">{pkt.lecturerName}</strong></p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {pkt.courseName}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Author:{" "}
+                    <strong className="text-slate-600">
+                      {pkt.lecturerName}
+                    </strong>
+                  </p>
                 </div>
                 <button
                   onClick={() => setSelectedPacketId(pkt.packetId || pkt.id)}
