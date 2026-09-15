@@ -39,6 +39,9 @@ export default function PacketDetailModal({
   const [submittingComment, setSubmittingComment] = useState(false);
 
   const [actionLoading, setActionLoading] = useState(false);
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [rejectionError, setRejectionError] = useState("");
 
   useEffect(() => {
     if (!numericId) return;
@@ -159,10 +162,10 @@ export default function PacketDetailModal({
   const isDraft = packet.status === "DRAFT" || !packet.status;
   const currentUsername = (getUsername() || "").toLowerCase();
   const isModOfPacket = (packet.moderatorUsername && packet.moderatorUsername.toLowerCase() === currentUsername) ||
-                        (packet.moderatorName && packet.moderatorName.toLowerCase() === currentUsername);
+    (packet.moderatorName && packet.moderatorName.toLowerCase() === currentUsername);
   const isAuthorOfPacket = (packet.lecturerUsername && packet.lecturerUsername.toLowerCase() === currentUsername) ||
-                           (packet.lecturerName && packet.lecturerName.toLowerCase() === currentUsername) ||
-                           !isModOfPacket;
+    (packet.lecturerName && packet.lecturerName.toLowerCase() === currentUsername) ||
+    !isModOfPacket;
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -222,7 +225,11 @@ export default function PacketDetailModal({
           </div>
 
           {/* Exam Specs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border border-slate-200 rounded-xl p-3 bg-white">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 border border-slate-200 rounded-xl p-3 bg-white">
+            <div>
+              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Copies</span>
+              <span className="font-bold text-violet-700">{packet.numberOfCopies || packet.totalScripts || 50}</span>
+            </div>
             <div>
               <span className="text-[10px] text-slate-400 font-semibold uppercase block">Duration</span>
               <span className="font-medium text-slate-800">{packet.duration || "—"}</span>
@@ -241,10 +248,32 @@ export default function PacketDetailModal({
             </div>
           </div>
 
+          {/* Script Marking Progress (for marking stages) */}
+          {["ANSWER SHEETS TAKEN", "ANSWER_SHEETS_TAKEN", "FIRST_MARKING", "FIRST MARKING", "MARKING", "SECOND_MARKING", "SECOND MARKING", "SECOND_MARKING_COMPLETE", "COMPLETED"].includes((packet.status || "").toUpperCase()) && (
+            <div className="p-4 bg-gradient-to-r from-violet-50/80 to-purple-50/80 border border-violet-200 rounded-2xl space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-violet-900 flex items-center gap-1.5 text-xs">
+                  📝 Answer Script Copies & Marking Progress
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full font-bold bg-violet-200/80 text-violet-800 text-[11px]">
+                  {packet.markedScripts || 0} / {packet.numberOfCopies || packet.totalScripts || 50} Marked ({Math.round(packet.markingProgress || ((packet.markedScripts || 0) / (packet.numberOfCopies || packet.totalScripts || 50)) * 100)}%)
+                </span>
+              </div>
+              <div className="w-full bg-violet-200/60 h-2 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#7c4dff] h-full rounded-full transition-all"
+                  style={{ width: `${Math.min(packet.markingProgress || ((packet.markedScripts || 0) / (packet.numberOfCopies || packet.totalScripts || 50)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {packet.moderatorNote && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-amber-800">
-              <span className="font-bold text-amber-900 block mb-0.5">Moderator Note:</span>
-              <p className="text-xs">{packet.moderatorNote}</p>
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-rose-900 space-y-1">
+              <span className="font-bold text-rose-900 flex items-center gap-1.5 text-xs">
+                ⚠️ Moderator Revision Feedback:
+              </span>
+              <p className="text-xs text-rose-800 italic font-medium">"{packet.moderatorNote}"</p>
             </div>
           )}
 
@@ -405,10 +434,9 @@ export default function PacketDetailModal({
                   </button>
                   <button
                     onClick={() => {
-                      const reason = prompt("Enter revision feedback / comments for rejecting this paper:");
-                      if (reason !== null && reason.trim()) {
-                        handleStatusAction("REJECT", reason.trim());
-                      }
+                      setRejectionFeedback("");
+                      setRejectionError("");
+                      setRejectionModalOpen(true);
                     }}
                     disabled={actionLoading}
                     className="px-3.5 py-2 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-xl hover:bg-rose-100 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer text-xs"
@@ -537,6 +565,72 @@ export default function PacketDetailModal({
             if (onStatusUpdated) onStatusUpdated();
           }}
         />
+      )}
+
+      {/* Rejection Modal */}
+      {rejectionModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-100 space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Reject Exam Paper & Request Revision
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                A comment explaining the reasons for rejection is <strong>compulsory</strong>. Please provide constructive feedback for the author.
+              </p>
+            </div>
+
+            <textarea
+              value={rejectionFeedback}
+              onChange={(e) => {
+                setRejectionFeedback(e.target.value);
+                if (e.target.value.trim()) setRejectionError("");
+              }}
+              placeholder="Enter detailed revision feedback / instructions for the lecturer (Compulsory)..."
+              rows={4}
+              className={`w-full border rounded-xl p-3 text-xs outline-none focus:ring-2 bg-white text-slate-800 placeholder:text-slate-400 ${rejectionError
+                  ? "border-rose-300 focus:border-rose-400 focus:ring-rose-200"
+                  : "border-slate-200 focus:border-[#7c4dff] focus:ring-[#7c4dff]/20"
+                }`}
+            />
+
+            {rejectionError && (
+              <p className="text-[11px] text-rose-600 font-semibold flex items-center gap-1">
+                ⚠️ {rejectionError}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setRejectionModalOpen(false);
+                  setRejectionFeedback("");
+                  setRejectionError("");
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading || !rejectionFeedback.trim()}
+                onClick={async () => {
+                  if (!rejectionFeedback.trim()) {
+                    setRejectionError("A comment explaining why the packet is rejected is compulsory.");
+                    return;
+                  }
+                  await handleStatusAction("REJECT", rejectionFeedback.trim());
+                  setRejectionModalOpen(false);
+                  setRejectionFeedback("");
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs disabled:opacity-50 transition cursor-pointer"
+              >
+                {actionLoading ? "Processing..." : "Reject Paper"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
