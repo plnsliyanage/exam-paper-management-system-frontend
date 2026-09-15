@@ -65,6 +65,7 @@ export default function LecturerDashboard() {
   const [scheduleModalPacket, setScheduleModalPacket] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Reload dashboard data whenever the logged-in user or the selected academic cycle changes.
   useEffect(() => {
     loadDashboardData();
   }, [username, selectedCycleId]);
