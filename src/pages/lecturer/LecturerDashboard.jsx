@@ -70,6 +70,9 @@ export default function LecturerDashboard() {
     loadDashboardData();
   }, [username, selectedCycleId]);
 
+  // Fetches all packets from the API, enriches them with derived metadata (author/moderator flags, task type, etc.),
+  // then updates state for the packet list, moderation banner, and summary stats.
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
