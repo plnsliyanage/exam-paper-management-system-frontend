@@ -138,8 +138,20 @@ export default function Reports() {
 
   if (error)
     return (
-      <div className="flex items-center justify-center h-64 text-red-400 text-sm">
-        {error}
+      <div className="flex flex-col items-center justify-center h-64 text-center p-6 bg-white rounded-2xl border border-red-100 shadow-xs space-y-3">
+        <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl font-bold">
+          !
+        </div>
+        <p className="text-gray-700 font-semibold text-sm">{error}</p>
+        <p className="text-gray-400 text-xs max-w-sm">
+          There might be no data recorded for the selected cycle yet, or the server was restarting.
+        </p>
+        <button
+          onClick={() => (viewMode === "SINGLE_CYCLE" ? fetchSingleReport() : fetchMultiCycleTrends())}
+          className="px-4 py-2 bg-[#7c4dff] text-white text-xs font-semibold rounded-xl hover:bg-[#6c3df0] transition shadow-xs"
+        >
+          Retry Loading
+        </button>
       </div>
     );
 
@@ -314,53 +326,65 @@ export default function Reports() {
               <h2 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">
                 Root Causes of Delays
               </h2>
-              <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie
-                    data={report.delayReasons || []}
-                    dataKey="count"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={65}
-                    paddingAngle={2}
-                  >
-                    {(report.delayReasons || []).map((entry, index) => (
-                      <Cell
-                        key={index}
-                        fill={
-                          REASON_COLORS[entry.reason] ||
-                          PIE_COLORS[index % PIE_COLORS.length]
-                        }
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name, props) => [
-                      `${props.payload.percentage}%`,
-                      props.payload.reason,
-                    ]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-
-              <div className="space-y-1.5 mt-2">
-                {(report.delayReasons || []).map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <div
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{
-                          backgroundColor:
-                            REASON_COLORS[item.reason] ||
-                            PIE_COLORS[i % PIE_COLORS.length],
-                        }}
-                      />
-                      <span className="text-gray-500 truncate max-w-[150px]">{item.reason}</span>
-                    </div>
-                    <span className="font-semibold text-gray-700">{item.percentage}%</span>
+              {(!report.delayReasons || report.delayReasons.length === 0) ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center text-gray-400 text-xs">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 font-bold text-sm border border-emerald-200">
+                    ✓
                   </div>
-                ))}
-              </div>
+                  <span className="font-semibold text-gray-700">No delay causes recorded</span>
+                  <span className="text-[11px] text-gray-400 mt-0.5">All packets processed on schedule</span>
+                </div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie
+                        data={report.delayReasons || []}
+                        dataKey="count"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={65}
+                        paddingAngle={2}
+                      >
+                        {(report.delayReasons || []).map((entry, index) => (
+                          <Cell
+                            key={index}
+                            fill={
+                              REASON_COLORS[entry.reason] ||
+                              PIE_COLORS[index % PIE_COLORS.length]
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value, name, props) => [
+                          `${props.payload.percentage}%`,
+                          props.payload.reason,
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  <div className="space-y-1.5 mt-2">
+                    {(report.delayReasons || []).map((item, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor:
+                                REASON_COLORS[item.reason] ||
+                                PIE_COLORS[i % PIE_COLORS.length],
+                            }}
+                          />
+                          <span className="text-gray-500 truncate max-w-[150px]">{item.reason}</span>
+                        </div>
+                        <span className="font-semibold text-gray-700">{item.percentage}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

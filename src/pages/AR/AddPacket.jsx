@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
+import { useAcademicCycle } from "../../context/AcademicCycleContext";
 
 export default function AddPacket() {
   const { id } = useParams(); // if editing
   const navigate = useNavigate();
   const { getRole } = useAuth();
+  const { selectedCycleId, selectedCycle } = useAcademicCycle();
   const role = getRole();
   const isEdit = !!id;
 
@@ -14,6 +16,8 @@ export default function AddPacket() {
     courseId: "", lecturerId: "", moderatorId: "", statusId: "",
     deadline: "", moderationDeadline: "", examDate: "",
     duration: "", totalMarks: "", questions: "", format: "", moderatorNote: "",
+    numberOfCopies: 50,
+    cycleId: selectedCycleId || "",
   });
 
   const [dropdowns, setDropdowns] = useState({
@@ -30,7 +34,8 @@ export default function AddPacket() {
     }
 
     // Load dropdown data
-    axiosInstance.get("/form-data").then(res => {
+    const cycleParam = selectedCycleId ? `?cycleId=${selectedCycleId}` : "";
+    axiosInstance.get(`/form-data${cycleParam}`).then(res => {
       setDropdowns(res.data);
     }).catch(() => {});
 
@@ -51,10 +56,12 @@ export default function AddPacket() {
           questions: p.questions || "",
           format: p.format || "",
           moderatorNote: p.moderatorNote || "",
+          numberOfCopies: p.numberOfCopies || p.totalScripts || 50,
+          cycleId: p.cycleId || selectedCycleId || "",
         });
       }).catch(() => {});
     }
-  }, [id, isEdit, role, navigate]);
+  }, [id, isEdit, role, navigate, selectedCycleId]);
 
   const handleCourseChange = (e) => {
     const selectedCourseId = e.target.value;
@@ -63,6 +70,7 @@ export default function AddPacket() {
       ...prev,
       courseId: selectedCourseId,
       lecturerId: selectedCourse?.lecturerId ? String(selectedCourse.lecturerId) : "",
+      cycleId: selectedCycleId || prev.cycleId || "",
     }));
   };
 
@@ -77,20 +85,16 @@ export default function AddPacket() {
     e.preventDefault();
     setError("");
 
-    if (!isEdit) {
-      const selected = dropdowns.courses.find(c => String(c.id) === String(formData.courseId));
-      if (selected && selected.hasPacket) {
-        setError(`An exam packet already exists for course ${selected.code}. Please update the existing packet.`);
-        return;
-      }
-    }
-
     setLoading(true);
     try {
+      const payload = {
+        ...formData,
+        cycleId: selectedCycleId || formData.cycleId || "",
+      };
       if (isEdit) {
-        await axiosInstance.put(`/packets/${id}`, formData);
+        await axiosInstance.put(`/packets/${id}`, payload);
       } else {
-        await axiosInstance.post("/packets", formData);
+        await axiosInstance.post("/packets", payload);
       }
       navigate("/packets");
     } catch (err) {
@@ -110,15 +114,15 @@ export default function AddPacket() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-800">
-            {isEdit ? "Edit Packet" : "Add New Packet"}
+            {isEdit ? "Edit Packet" : "Add / Configure Packet"}
           </h1>
           <p className="text-sm text-gray-400 mt-0.5">
-            {isEdit ? "Update packet details" : "Create a new exam packet"}
+            {isEdit ? "Update packet details" : `Create or configure an exam packet (${selectedCycle?.cycleName || "Active Semester"})`}
           </p>
         </div>
         <button
           onClick={() => navigate("/packets")}
-          className="text-sm text-gray-500 hover:text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2"
+          className="text-sm text-gray-500 hover:text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 cursor-pointer shadow-xs"
         >
           ← Back to Packets
         </button>
@@ -127,6 +131,24 @@ export default function AddPacket() {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
           {error}
+        </div>
+      )}
+
+      {selectedCourse?.hasPacket && !isEdit && (
+        <div className="bg-purple-50 border border-purple-200 text-purple-800 text-xs rounded-xl p-3.5 flex items-center justify-between gap-3">
+          <div>
+            <span className="font-bold">Initial Packet Exists: </span>
+            <span>A basic record exists for {selectedCourse.code}. Submitting this form will configure its moderator, deadlines, and exam parameters.</span>
+          </div>
+          {selectedCourse.existingPacketId && (
+            <button
+              type="button"
+              onClick={() => navigate(`/packets/edit/${selectedCourse.existingPacketId}`)}
+              className="bg-[#7c4dff] text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-[#6a3df0] shrink-0 transition"
+            >
+              Full Edit Mode →
+            </button>
+          )}
         </div>
       )}
 
@@ -141,14 +163,11 @@ export default function AddPacket() {
               <label className={labelClass}>Course</label>
               <select name="courseId" value={formData.courseId} onChange={handleCourseChange} className={inputClass} required>
                 <option value="">Select course</option>
-                {dropdowns.courses.map(c => {
-                  const isTaken = !isEdit && c.hasPacket;
-                  return (
-                    <option key={c.id} value={c.id} disabled={isTaken}>
-                      {c.code} — {c.name} {isTaken ? " (Packet already exists)" : ""}
-                    </option>
-                  );
-                })}
+                {dropdowns.courses.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.code} — {c.name} {c.hasPacket ? " (Ready to configure)" : ""}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -197,8 +216,21 @@ export default function AddPacket() {
 
         {/* Exam Details */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Exam Details</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">Exam Details & Printing Volume</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>Number of Copies (Total Scripts)</label>
+              <input
+                type="number"
+                min="1"
+                name="numberOfCopies"
+                value={formData.numberOfCopies || ""}
+                onChange={handleChange}
+                placeholder="e.g. 50"
+                className={inputClass}
+                required
+              />
+            </div>
             <div>
               <label className={labelClass}>Duration</label>
               <input type="text" name="duration" value={formData.duration} onChange={handleChange} placeholder="e.g. 3 Hours" className={inputClass} />
@@ -207,7 +239,7 @@ export default function AddPacket() {
               <label className={labelClass}>Total Marks</label>
               <input type="number" name="totalMarks" value={formData.totalMarks} onChange={handleChange} placeholder="e.g. 100" className={inputClass} />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className={labelClass}>Questions</label>
               <input type="text" name="questions" value={formData.questions} onChange={handleChange} placeholder="e.g. 7 sections, 40 questions" className={inputClass} />
             </div>

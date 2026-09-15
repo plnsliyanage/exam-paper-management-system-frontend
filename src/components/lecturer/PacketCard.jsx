@@ -27,7 +27,15 @@ const statusConfig = {
   PAPERS_STORED: { label: "Papers Stored", bg: "bg-cyan-50 text-cyan-800 border-cyan-200" },
   "ANSWER SHEETS TAKEN": { label: "Sheets Taken", bg: "bg-orange-50 text-orange-800 border-orange-200" },
   ANSWER_SHEETS_TAKEN: { label: "Sheets Taken", bg: "bg-orange-50 text-orange-800 border-orange-200" },
-  MARKING: { label: "Marking", bg: "bg-violet-50 text-violet-800 border-violet-200" },
+  FIRST_MARKING: { label: "1st Marking", bg: "bg-violet-50 text-violet-800 border-violet-200" },
+  "FIRST MARKING": { label: "1st Marking", bg: "bg-violet-50 text-violet-800 border-violet-200" },
+  MARKING: { label: "1st Marking", bg: "bg-violet-50 text-violet-800 border-violet-200" },
+  UNDER_MARKING: { label: "1st Marking", bg: "bg-violet-50 text-violet-800 border-violet-200" },
+  SECOND_MARKING: { label: "2nd Marking", bg: "bg-amber-50 text-amber-800 border-amber-200" },
+  "SECOND MARKING": { label: "2nd Marking", bg: "bg-amber-50 text-amber-800 border-amber-200" },
+  UNDER_SECOND_MARKING: { label: "2nd Marking", bg: "bg-amber-50 text-amber-800 border-amber-200" },
+  SECOND_MARKING_COMPLETE: { label: "2nd Mark Done", bg: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+  "SECOND MARKING COMPLETE": { label: "2nd Mark Done", bg: "bg-emerald-50 text-emerald-800 border-emerald-200" },
   "MARKING COMPLETE": { label: "Completed", bg: "bg-teal-50 text-teal-800 border-teal-200" },
   MARKING_COMPLETE: { label: "Completed", bg: "bg-teal-50 text-teal-800 border-teal-200" },
   COMPLETED: { label: "Completed", bg: "bg-teal-50 text-teal-800 border-teal-200" },
@@ -59,7 +67,9 @@ export default function PacketCard({
   const isPrinting = statusKey === "PRINTING" || statusKey === "PRINTING_QUEUE";
   const isStored = statusKey === "PAPERS STORED" || statusKey === "PAPERS_STORED";
   const isSheetsTaken = statusKey === "ANSWER SHEETS TAKEN" || statusKey === "ANSWER_SHEETS_TAKEN";
-  const isMarking = statusKey === "MARKING";
+  const isMarking = statusKey === "MARKING" || statusKey === "FIRST_MARKING" || statusKey === "FIRST MARKING" || statusKey === "UNDER_MARKING";
+  const isSecondMarking = statusKey === "SECOND_MARKING" || statusKey === "SECOND MARKING" || statusKey === "UNDER_SECOND_MARKING";
+  const isSecondMarkingComplete = statusKey === "SECOND_MARKING_COMPLETE" || statusKey === "SECOND MARKING COMPLETE";
   const isSubmitted = statusKey === "SUBMITTED" || statusKey === "UNDER_MODERATION" || statusKey === "SUBMITTED_FOR_MODERATION";
   const statusInfo = statusConfig[packet.status] || statusConfig[statusKey] || { label: packet.status || "Pending", bg: "bg-slate-100 text-slate-700 border-slate-200" };
 
@@ -109,6 +119,12 @@ export default function PacketCard({
             {isCompleted ? <CheckCircle2 className="w-3 h-3" /> : isSubmitted ? <Clock className="w-3 h-3" /> : null}
             {statusInfo.label}
           </span>
+
+          {(isMarking || isSheetsTaken || isSecondMarking || isSecondMarkingComplete || isCompleted) && (
+            <span className="text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-200 flex items-center gap-1">
+              📝 Marked: {packet.markedScripts || 0} / {packet.numberOfCopies || packet.totalScripts || 50} ({Math.round(packet.markingProgress || ((packet.markedScripts || 0) / (packet.numberOfCopies || packet.totalScripts || 50)) * 100)}%)
+            </span>
+          )}
         </div>
 
         <h3 className="font-bold text-slate-800 text-sm">
@@ -122,15 +138,18 @@ export default function PacketCard({
             <>Moderator: <span className="text-slate-700 font-medium">{packet.moderatorName || "Unassigned"}</span></>
           )}
           {" | "}Deadline: <span className={packet.overdue ? "text-red-500 font-semibold" : "text-slate-600"}>{packet.deadline || "N/A"}</span>
-          {packet.taskType === "MARK_SCRIPTS" && isAuthorOfPacket && (
-            <>
-              {" | "}Scripts:{" "}
-              <span className="font-bold text-amber-600">
-                {packet.scriptsCount ?? packet.totalScripts ?? 0}
-              </span>
-            </>
-          )}
+          {" | "}Copies: <span className="font-semibold text-slate-700">{packet.numberOfCopies || packet.totalScripts || 50}</span>
         </p>
+
+        {isRejected && packet.moderatorNote && (
+          <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 text-xs flex items-start gap-2 mt-1.5">
+            <span className="text-xs shrink-0">⚠️</span>
+            <div>
+              <span className="font-bold text-rose-900 block text-[11px]">Moderator Revision Feedback:</span>
+              <p className="text-rose-700 italic font-medium">"{packet.moderatorNote}"</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 self-end sm:self-center">
@@ -140,9 +159,7 @@ export default function PacketCard({
           className="p-2 hover:bg-[#7c4dff]/10 rounded-lg text-slate-500 hover:text-[#7c4dff] transition-colors cursor-pointer"
         >
           <Eye className="w-4 h-4" />
-        </button>
-
-        {/* ── MODERATOR SPECIFIC ACTIONS ── */}
+        </button>        {/* ── MODERATOR SPECIFIC ACTIONS ── */}
         {isModOfPacket ? (
           isSubmitted ? (
             <button
@@ -158,9 +175,23 @@ export default function PacketCard({
               <CheckCircle2 className="w-3.5 h-3.5" />
               Approved by You
             </span>
+          ) : isSecondMarking ? (
+            <button
+              onClick={() => onSelectDetail(packet.packetId || packet.id)}
+              className="px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-colors cursor-pointer text-xs animate-pulse"
+              title="Complete Second Marking & Return to Lecturer"
+            >
+              <Check className="w-3.5 h-3.5" />
+              Complete 2nd Marking
+            </button>
+          ) : isSecondMarkingComplete ? (
+            <span className="px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              2nd Marking Done
+            </span>
           ) : isDraft || isPending ? (
             <span className="px-2.5 py-1 rounded-lg font-medium flex items-center gap-1 bg-slate-50 text-slate-500 border border-slate-200 text-xs">
-              <Clock className="w-3 h-3" />
+              <Clock className="w-3.5 h-3.5" />
               Author Preparing
             </span>
           ) : isRejected ? (
@@ -246,21 +277,53 @@ export default function PacketCard({
                 📑 Take Answer Sheets
               </button>
             ) : isSheetsTaken ? (
-              <button
-                onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING")}
-                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-violet-600 text-white hover:bg-violet-700 shadow-sm transition-colors cursor-pointer text-xs"
-                title="Start Marking Answer Sheets"
-              >
-                ✏️ Start Marking
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onOpenMarking(packet)}
+                  className="px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors cursor-pointer text-xs"
+                  title="Update Marked Copies Count"
+                >
+                  ✏️ Marks ({packet.markedScripts || 0}/{packet.numberOfCopies || packet.totalScripts || 50})
+                </button>
+                <button
+                  onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING")}
+                  className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-violet-600 text-white hover:bg-violet-700 shadow-sm transition-colors cursor-pointer text-xs"
+                  title="Start Marking Answer Sheets"
+                >
+                  ✏️ Start Marking
+                </button>
+              </div>
             ) : isMarking ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onOpenMarking(packet)}
+                  className="px-2.5 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors cursor-pointer text-xs"
+                  title="Update Marked Copies Count"
+                >
+                  ✏️ Marks ({packet.markedScripts || 0}/{packet.numberOfCopies || packet.totalScripts || 50})
+                </button>
+                <button
+                  onClick={() => onCompleteTask(packet.packetId || packet.id, "COMPLETE_FIRST_MARKING")}
+                  className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-[#7c4dff] text-white hover:bg-[#6a3df0] shadow-sm transition-colors cursor-pointer text-xs"
+                  title="Finish 1st Marking & Send to Moderator"
+                >
+                  <Check className="w-3 h-3" />
+                  Finish 1st Marking
+                </button>
+              </div>
+            ) : isSecondMarking ? (
+              <span className="px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 text-xs">
+                <Clock className="w-3.5 h-3.5" />
+                In 2nd Marking (Mod)
+              </span>
+            ) : isSecondMarkingComplete ? (
               <button
-                onClick={() => onCompleteTask(packet.packetId || packet.id, "MARKING_COMPLETE")}
-                className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 bg-teal-600 text-white hover:bg-teal-700 shadow-sm transition-colors cursor-pointer text-xs"
-                title="Finish Marking & Store Mark Sheets"
+                onClick={() => onCompleteTask(packet.packetId || packet.id, "COMPLETE")}
+                className="px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-colors cursor-pointer text-xs"
+                title="Finalize & Complete Exam Packet"
               >
-                <Check className="w-3 h-3" />
-                Complete Marking
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Finalize Packet
               </button>
             ) : isCompleted ? (
               <span className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 bg-teal-100 text-teal-800 text-xs">
