@@ -318,7 +318,7 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Registration Navigation Link 
+          {/* Registration Navigation Link */}
           <div className="pt-2 text-center text-xs text-slate-500">
             Don't have an authorized account?{" "}
             
@@ -330,7 +330,7 @@ export default function Login() {
             </Link>
             
           </div>
-          */}
+          
 
 
           {/* Footer Copyright */}
