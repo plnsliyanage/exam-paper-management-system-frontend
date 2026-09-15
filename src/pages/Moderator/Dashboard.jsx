@@ -300,7 +300,16 @@ export default function ModeratorDashboard() {
                       by {pkt.lecturerName}
                     </p>
 
-                    <div className="flex items-center justify-end mt-2">
+                    <div className="flex items-center justify-between mt-2">
+                      {pkt.status === "SECOND_MARKING" ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                          📝 2nd Marking
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400">
+                          {pkt.status}
+                        </span>
+                      )}
                       <span className="text-[11px] text-red-500 font-medium">
                         Due: {pkt.deadline}
                       </span>
@@ -398,47 +407,60 @@ export default function ModeratorDashboard() {
 
               {/* Review Feedback Section */}
               <div>
-                <h3 className="text-xs font-bold text-gray-800 mb-2 uppercase tracking-wider">
-                  Review Feedback
+                <h3 className="text-xs font-bold text-gray-800 mb-2 uppercase tracking-wider flex items-center justify-between">
+                  <span>Review Feedback</span>
+                  <span className="text-[10px] text-rose-600 font-semibold lowercase">(compulsory for return / reject)</span>
                 </h3>
                 <textarea
                   value={feedbackText}
                   onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Provide detailed feedback for the lecturer (required for return/rejection)..."
+                  placeholder="Provide detailed feedback for the lecturer explaining required revisions (Compulsory for return/rejection)..."
                   rows={3}
                   className="w-full border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-[#7c4dff] focus:ring-1 focus:ring-[#7c4dff] resize-none bg-white text-gray-800 placeholder:text-gray-400"
                 />
               </div>
 
-              {/* 3 Bottom Action Buttons */}
-              <div className="grid grid-cols-3 gap-3 pt-2">
-                {/* Approve Button (Green) */}
-                <button
-                  onClick={() => handleAction("APPROVE")}
-                  disabled={actionLoading}
-                  className="bg-[#dcfce7] text-[#166534] hover:bg-[#bbf7d0] py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
-                >
-                  <MdCheck size={16} /> Approve
-                </button>
+              {/* Action Buttons */}
+              {selectedPacket.status === "SECOND_MARKING" ? (
+                <div className="pt-2">
+                  <button
+                    onClick={() => handleAction("COMPLETE_SECOND_MARKING")}
+                    disabled={actionLoading}
+                    className="w-full bg-[#dcfce7] text-[#166534] hover:bg-[#bbf7d0] py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm cursor-pointer"
+                  >
+                    <MdCheck size={16} /> Complete Second Marking & Return to Lecturer
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  {/* Approve Button (Green) */}
+                  <button
+                    onClick={() => handleAction("APPROVE")}
+                    disabled={actionLoading}
+                    className="bg-[#dcfce7] text-[#166534] hover:bg-[#bbf7d0] py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
+                  >
+                    <MdCheck size={16} /> Approve
+                  </button>
 
-                {/* Return Button (Yellow) */}
-                <button
-                  onClick={() => handleAction("RETURN")}
-                  disabled={actionLoading}
-                  className="bg-[#fef9c3] text-[#854d0e] hover:bg-[#fef08a] py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
-                >
-                  <MdReplay size={16} /> Return
-                </button>
+                  {/* Return Button (Yellow) */}
+                  <button
+                    onClick={() => handleAction("RETURN")}
+                    disabled={actionLoading}
+                    className="bg-[#fef9c3] text-[#854d0e] hover:bg-[#fef08a] py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
+                  >
+                    <MdReplay size={16} /> Return
+                  </button>
 
-                {/* Reject Button (Red) */}
-                <button
-                  onClick={() => handleAction("REJECT")}
-                  disabled={actionLoading}
-                  className="bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca] py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
-                >
-                  <MdClose size={16} /> Reject
-                </button>
-              </div>
+                  {/* Reject Button (Red) */}
+                  <button
+                    onClick={() => handleAction("REJECT")}
+                    disabled={actionLoading}
+                    className="bg-[#fee2e2] text-[#991b1b] hover:bg-[#fecaca] py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
+                  >
+                    <MdClose size={16} /> Reject
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <div className="py-20 text-center text-gray-400 text-xs">

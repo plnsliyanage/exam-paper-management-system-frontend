@@ -23,17 +23,16 @@ import {
 
 export default function LecturerDashboard() {
   const { getUsername } = useAuth();
-  const { selectedCycleId } = useAcademicCycle();
+  const { selectedCycleId, selectedCycle } = useAcademicCycle();
   const username = getUsername() || "Lecturer";
 
   const [currentUser] = useState({
     id: username,
     name: username,
     department: "Academic Faculty",
-    currentSemester: "2026-S1",
   });
 
-  const currentSemester = currentUser.currentSemester;
+  const currentSemester = selectedCycle?.cycleName || selectedCycle?.cycleId || "Active Semester";
   const [packets, setPackets] = useState([]);
   const [allPackets, setAllPackets] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -343,8 +342,6 @@ export default function LecturerDashboard() {
           <TaskFilterTabs
             roleScope={roleScope}
             onScopeChange={handleScopeChange}
-            taskFilter={taskFilter}
-            onFilterChange={handleFilterChange}
           />
 
           <div className="space-y-3 pt-2">

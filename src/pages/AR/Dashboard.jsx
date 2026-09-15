@@ -91,28 +91,28 @@ export default function Dashboard() {
       const count = serverItem != null
         ? Number(serverItem.count || 0)
         : Number(
-            def.key === "PENDING"
-              ? summary?.pending ?? 0
-              : def.key === "DRAFT"
+          def.key === "PENDING"
+            ? summary?.pending ?? 0
+            : def.key === "DRAFT"
               ? summary?.draft ?? 0
               : def.key === "UNDER_MODERATION"
-              ? summary?.underModeration ?? 0
-              : def.key === "APPROVED"
-              ? summary?.approved ?? 0
-              : def.key === "PRINTING"
-              ? summary?.printingQueue ?? 0
-              : def.key === "PAPERS_STORED"
-              ? summary?.papersStored ?? 0
-              : def.key === "ANSWER_SHEETS_TAKEN"
-              ? summary?.answerSheetsTaken ?? 0
-              : def.key === "MARKING"
-              ? summary?.marking ?? 0
-              : def.key === "COMPLETED"
-              ? (summary?.completed ?? summary?.markingComplete ?? 0)
-              : def.key === "DELAYED"
-              ? summary?.delayed ?? 0
-              : 0
-          );
+                ? summary?.underModeration ?? 0
+                : def.key === "APPROVED"
+                  ? summary?.approved ?? 0
+                  : def.key === "PRINTING"
+                    ? summary?.printingQueue ?? 0
+                    : def.key === "PAPERS_STORED"
+                      ? summary?.papersStored ?? 0
+                      : def.key === "ANSWER_SHEETS_TAKEN"
+                        ? summary?.answerSheetsTaken ?? 0
+                        : def.key === "MARKING"
+                          ? summary?.marking ?? 0
+                          : def.key === "COMPLETED"
+                            ? (summary?.completed ?? summary?.markingComplete ?? 0)
+                            : def.key === "DELAYED"
+                              ? summary?.delayed ?? 0
+                              : 0
+        );
 
       const percentage = totalPackets > 0
         ? Math.round(((count / totalPackets) * 100) * 10) / 10
@@ -341,17 +341,15 @@ export default function Dashboard() {
               <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
                 <button
                   onClick={() => setStatusFilter("all")}
-                  className={`px-2.5 py-1 rounded-lg transition ${
-                    statusFilter === "all" ? "bg-white text-indigo-600 shadow-xs" : "hover:text-slate-900"
-                  }`}
+                  className={`px-2.5 py-1 rounded-lg transition ${statusFilter === "all" ? "bg-white text-indigo-600 shadow-xs" : "hover:text-slate-900"
+                    }`}
                 >
                   All (10)
                 </button>
                 <button
                   onClick={() => setStatusFilter("active")}
-                  className={`px-2.5 py-1 rounded-lg transition ${
-                    statusFilter === "active" ? "bg-white text-indigo-600 shadow-xs" : "hover:text-slate-900"
-                  }`}
+                  className={`px-2.5 py-1 rounded-lg transition ${statusFilter === "active" ? "bg-white text-indigo-600 shadow-xs" : "hover:text-slate-900"
+                    }`}
                 >
                   Active ({activeCount})
                 </button>
@@ -419,11 +417,10 @@ export default function Dashboard() {
                     onMouseEnter={() => setHoveredStatus(item.key)}
                     onMouseLeave={() => setHoveredStatus(null)}
                     onClick={() => navigate(`/packets?status=${item.key}`)}
-                    className={`group flex items-center justify-between text-xs py-2 px-3 rounded-xl transition cursor-pointer ${
-                      isActive
+                    className={`group flex items-center justify-between text-xs py-2 px-3 rounded-xl transition cursor-pointer ${isActive
                         ? "bg-slate-50 hover:bg-slate-100/80 text-slate-800"
                         : "bg-transparent hover:bg-slate-50/60 text-slate-400"
-                    }`}
+                      }`}
                   >
                     {/* Left: Indicator & Name */}
                     <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-3">
@@ -456,11 +453,10 @@ export default function Dashboard() {
                     {/* Right: Count & Percentage */}
                     <div className="flex items-center gap-2 shrink-0">
                       <span
-                        className={`font-bold px-2 py-0.5 rounded-lg text-xs ${
-                          isActive
+                        className={`font-bold px-2 py-0.5 rounded-lg text-xs ${isActive
                             ? "bg-white text-slate-900 shadow-xs border border-slate-200/60"
                             : "text-slate-400"
-                        }`}
+                          }`}
                       >
                         {item.count}
                       </span>
@@ -543,9 +539,8 @@ export default function Dashboard() {
                 recentActivity.map((item, index) => (
                   <div key={index} className="flex items-start gap-3 p-2 rounded-xl hover:bg-slate-50 transition">
                     <div
-                      className={`w-8 h-8 rounded-full ${
-                        item.actorColor || "bg-indigo-600"
-                      } flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm`}
+                      className={`w-8 h-8 rounded-full ${item.actorColor || "bg-indigo-600"
+                        } flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm`}
                     >
                       {item.actorInitials || "AR"}
                     </div>
