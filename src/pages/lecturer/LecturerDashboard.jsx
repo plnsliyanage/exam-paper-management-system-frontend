@@ -26,6 +26,8 @@ export default function LecturerDashboard() {
   const { selectedCycleId } = useAcademicCycle();
   const username = getUsername() || "Lecturer";
 
+  // Minimal local "profile" object derived from the logged-in username.
+  // Kept in state (even though it never changes after mount) so it can be passed down as a stable object reference.
   const [currentUser] = useState({
     id: username,
     name: username,
